@@ -29,7 +29,7 @@
     cherry.transpiler
   (:require
    [cherry.internal.destructure :refer [core-let]]
-   [cherry.internal.fn :refer [core-fn]]
+   [cherry.internal.fn :refer [core-defn core-fn]]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.string :as str]
@@ -322,7 +322,7 @@
        "\n }"))
 
 (defn emit-var-declarations []
-  (when-not (empty? @var-declarations)
+  #_(when-not (empty? @var-declarations)
     (apply str "var "
            (str/join ", " (map emit @var-declarations))
            statement-separator)))
@@ -338,10 +338,15 @@
 
 (defn emit-function* [expr]
   (let [name (when (symbol? (first expr)) (first expr))
-        async? (:async (meta name))]
+        expr (if name (rest expr) expr)
+        async? (:async (meta name))
+        expr (if (seq? (first expr))
+               ;; TODO: multi-arity:
+               (first expr)
+               expr)]
     (if name
-      (let [signature (second expr)
-            body (rest (rest expr))]
+      (let [signature (first expr)
+            body (rest expr)]
         (str (when async?
                "async ") "function " name " "
              (binding [*async* async?]
@@ -351,13 +356,15 @@
         (str (emit-function nil signature body))))))
 
 (defmethod emit-special 'fn* [type [fn & sigs]]
-  (emit-function* (first sigs)))
+  (emit-function* sigs))
 
 (defmethod emit-special 'fn [type [fn & sigs :as expr]]
-  (emit (core-fn expr (rest sigs))))
+  (let [expanded (core-fn expr sigs)]
+    (emit expanded)))
 
-(defmethod emit-special 'defn [type [fn & expr]]
-  (emit-function* expr))
+(defmethod emit-special 'defn [type [fn name & args :as expr]]
+  (let [expanded (core-defn expr {} name args)]
+    (emit expanded)))
 
 (defmethod emit-special 'try [type [try & body :as expression]]
   (let [try-body (remove #(contains? #{'catch 'finally} (first %))
