@@ -29,6 +29,7 @@
     cherry.transpiler
   (:require
    [cherry.internal.destructure :refer [core-let]]
+   [cherry.internal.fn :refer [core-fn]]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.string :as str]
@@ -96,7 +97,7 @@
 (defmethod emit :default [expr]
   (str expr))
 
-(def special-forms (set ['var '. '.. 'if 'funcall 'fn 'quote 'set!
+(def special-forms (set ['var '. '.. 'if 'funcall 'fn 'fn* 'quote 'set!
                          'return 'delete 'new 'do 'aget 'while 'doseq
                          'inc! 'dec! 'dec 'inc 'defined? 'and 'or
                          '? 'try 'break
@@ -326,12 +327,14 @@
            (str/join ", " (map emit @var-declarations))
            statement-separator)))
 
+(declare emit-function*)
+
 (defn emit-function [name sig body & [elide-function? async?]]
-  (assert (or (symbol? name) (nil? name)))
-  (assert (vector? sig))
-  (let [body (return (emit-do body {:async? async?}))]
-    (str (when-not elide-function? "function ") (comma-list sig) " {\n"
-         (emit-var-declarations) body "\n}")))
+  (do (assert (or (symbol? name) (nil? name)))
+      (assert (vector? sig))
+      (let [body (return (emit-do body {:async? async?}))]
+        (str (when-not elide-function? "function ") (comma-list sig) " {\n"
+             #_(emit-var-declarations) body "\n}"))))
 
 (defn emit-function* [expr]
   (let [name (when (symbol? (first expr)) (first expr))
@@ -347,8 +350,11 @@
             body (rest expr)]
         (str (emit-function nil signature body))))))
 
-(defmethod emit-special 'fn [type [fn & expr]]
-  (emit-function* expr ))
+(defmethod emit-special 'fn* [type [fn & sigs]]
+  (emit-function* (first sigs)))
+
+(defmethod emit-special 'fn [type [fn & sigs :as expr]]
+  (emit (core-fn expr (rest sigs))))
 
 (defmethod emit-special 'defn [type [fn & expr]]
   (emit-function* expr))
