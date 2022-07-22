@@ -5,8 +5,13 @@
   "version": "0.0.0-alpha.9",
   "files": [
     "cljs.core.js",
-    "lib/cljs_core.js"
+    "lib",
+    "node_cli.js",
+    "index.js"
   ],
+  "bin": {
+    "cherry": "node_cli.js"
+  },
   "devDependencies": {
     "@vercel/ncc": "^0.34.0",
     "chalk": "^5.0.1",
