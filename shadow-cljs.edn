@@ -30,6 +30,8 @@
                           }}
     :transpiler {:depends-on #{:cljs_core}
                  :exports
-                 {transpileFile cherry.transpiler/transpile-file}}}
+                 {transpileFile cherry.transpiler/transpile-file}}
+    :cli {:depends-on #{:transpiler}
+          :init-fn cherry.internal.cli/init}}
    :build-hooks [(shadow.cljs.build-report/hook
                   {:output-to "report.html"})]}}}
