@@ -212,11 +212,11 @@ break; }"
                     temps exprs)
                )
      (str/join "\n"
-                (map (fn [binding temp]
-                       (statement (format "%s = %s"
-                                          binding temp)))
-                     bindings temps)
-                )
+               (map (fn [binding temp]
+                      (statement (format "%s = %s"
+                                         binding temp)))
+                    bindings temps)
+               )
      "continue;\n")))
 
 (defmethod emit-special 'const [_type env [_const & more]]
@@ -242,19 +242,23 @@ break; }"
 (defn return [s]
   (format "return %s;" s))
 
-(defmethod emit-special 'let* [type env [_let bindings & more]]
-  (let [partitioned (partition 2 bindings)]
-    (wrap-iife
-     (str
-      (let [names (distinct (map (fn [[name _]]
-                                   name)
-                                 partitioned))]
-        (statement (str "let " (str/join ", " names))))
-      (apply str (interleave (map (fn [[name expr]]
-                                    (str (emit name env) " = " (emit expr env)))
-                                  partitioned)
-                             (repeat statement-separator)))
-      (emit-do env more)))))
+(defmethod emit-special 'let* [_type env [_let bindings & more]]
+  (let [context      (:context env)
+        partitioned (partition 2 bindings)]
+    (str
+     (let [names (distinct (map (fn [[name _]]
+                                  name)
+                                partitioned))]
+       (statement (str "let " (str/join ", " names))))
+     (let [expr-env (assoc env :context :expr)]
+       (apply str (interleave
+                   (map (fn [[name expr]]
+                          (str (emit name env) " = "
+                               (emit expr expr-env)))
+                        partitioned)
+                   (repeat statement-separator))))
+     (let [env (assoc env :context (if (= :expr context) :return context))]
+       (emit-do env more)))))
 
 (defmethod emit-special 'let [type env [_let bindings & more]]
   (emit (core-let bindings more) env)
@@ -333,7 +337,7 @@ break; }"
   (statement (str "return " (emit expr env))))
 
 #_(defmethod emit-special 'delete [type [return expr]]
-  (str "delete " (emit expr)))
+    (str "delete " (emit expr)))
 
 (defmethod emit-special 'set! [_type env [_set! var val & more]]
   (assert (or (nil? more) (even? (count more))))
@@ -481,7 +485,7 @@ break; }"
                         "}\n"))))))
 
 #_(defmethod emit-special 'break [_type _env [_break]]
-  (statement "break"))
+    (statement "break"))
 
 (derive #?(:clj clojure.lang.Cons :cljs Cons) ::list)
 (derive #?(:clj clojure.lang.IPersistentList :cljs IList) ::list)
