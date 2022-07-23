@@ -45,9 +45,9 @@
 
 #?(:cljs (def format gstring/format))
 
-(defmulti emit (fn [expr _ctx] (type expr)))
+(defmulti emit (fn [expr _env] (type expr)))
 
-(defmulti emit-special (fn [disp _ctx & _args] disp))
+(defmulti emit-special (fn [disp _env & _args] disp))
 
 (def statement-separator ";\n")
 
@@ -67,16 +67,16 @@
 (defmethod emit nil [_ _]
   "null")
 
-(defmethod emit #?(:clj java.lang.Integer :cljs js/Number) [expr _ctx]
+(defmethod emit #?(:clj java.lang.Integer :cljs js/Number) [expr _env]
   (str expr))
 
 #?(:clj (defmethod emit clojure.lang.Ratio [expr]
           (str (float expr))))
 
-(defmethod emit #?(:clj java.lang.String :cljs js/String) [^String expr _ctx]
+(defmethod emit #?(:clj java.lang.String :cljs js/String) [^String expr _env]
   (pr-str expr))
 
-(defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr _ctx]
+(defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr _env]
   (swap! *imported-core-vars* conj 'keyword)
   (str (format "keyword(%s)" (pr-str (subs (str expr) 1)))))
 
@@ -87,7 +87,7 @@
            (not= (str expr) "default"))
       (str/replace #"\$$" ""))))
 
-(defmethod emit #?(:clj clojure.lang.Symbol :cljs Symbol) [expr _ctx]
+(defmethod emit #?(:clj clojure.lang.Symbol :cljs Symbol) [expr _env]
   (let [expr-ns (namespace expr)
         js? (= "js" expr-ns)
         expr-ns (when-not js? expr-ns)
@@ -96,10 +96,10 @@
                   (munge* (name expr)))]
     (str expr)))
 
-#?(:clj (defmethod emit #?(:clj java.util.regex.Pattern) [expr _ctx]
+#?(:clj (defmethod emit #?(:clj java.util.regex.Pattern) [expr _env]
           (str \/ expr \/)))
 
-(defmethod emit :default [expr _ctx]
+(defmethod emit :default [expr _env]
   ;; RegExp case moved here:
   ;; References to the global RegExp object prevents optimization of regular expressions.
   #?(:cljs (if (instance? js/RegExp expr)
@@ -168,47 +168,47 @@
 (defn emit-suffix-unary [_type [operator arg]]
   (str (emit arg) operator))
 
-(defn emit-infix [_type ctx [operator & args]]
+(defn emit-infix [_type env [operator & args]]
   (when (and (not (chainable-infix-operators operator)) (> (count args) 2))
     (throw (Exception. (str "operator " operator " supports only 2 arguments"))))
   (let [substitutions {'= '=== '!= '!== 'not= '!==}]
     (str "(" (str/join (str " " (or (substitutions operator) operator) " ")
-                       (map #(emit % ctx) args)) ")")))
+                       (map #(emit % env) args)) ")")))
 
 (def ^{:dynamic true} var-declarations nil)
 
-(defmethod emit-special 'var [type ctx [var & more]]
+(defmethod emit-special 'var [type env [var & more]]
   (apply swap! var-declarations conj (filter identity (map (fn [name i] (when (odd? i) name)) more (iterate inc 1))))
   (apply str (interleave (map (fn [[name expr]]
-                                (str (when-not var-declarations "var ") (emit ctx name) " = " (emit ctx expr)))
+                                (str (when-not var-declarations "var ") (emit env name) " = " (emit env expr)))
                               (partition 2 more))
                          (repeat statement-separator))))
 
-(defn emit-const [more ctx]
+(defn emit-const [more env]
   (apply str (interleave (map (fn [[name expr]]
-                                (str "const " (emit name ctx) " = " (emit expr ctx)))
+                                (str "const " (emit name env) " = " (emit expr env)))
                               (partition 2 more))
                          (repeat statement-separator))))
 
 
 (def ^:dynamic *recur-targets* [])
 
-(defmethod emit-special 'loop* [_ ctx [x bindings & body]]
+(defmethod emit-special 'loop* [_ env [x bindings & body]]
   (binding [*recur-targets* bindings]
     (format "while (true) {
 %s
 
 break; }"
-            (emit (list* 'let bindings body) ctx))))
+            (emit (list* 'let bindings body) env))))
 
-(defmethod emit-special 'recur [_ ctx [_ & exprs]]
+(defmethod emit-special 'recur [_ env [_ & exprs]]
   (let [bindings *recur-targets*
         temps (repeatedly (count exprs) gensym)]
     (str
      (str/join "\n"
                (map (fn [temp expr]
                       (statement (format "%s = %s"
-                                         temp (emit expr ctx))))
+                                         temp (emit expr env))))
                     temps exprs)
                )
      (str/join "\n"
@@ -219,21 +219,21 @@ break; }"
                 )
      "continue;\n")))
 
-(defmethod emit-special 'const [_type ctx [_const & more]]
-  (emit-const more ctx))
+(defmethod emit-special 'const [_type env [_const & more]]
+  (emit-const more env))
 
-(defmethod emit-special 'def [_type ctx [_const & more]]
+(defmethod emit-special 'def [_type env [_const & more]]
   (let [name (first more)]
     (swap! *public-vars* conj (munge* name))
-    (emit-const more ctx)))
+    (emit-const more env)))
 
 (declare emit-do)
 
 (defn wrap-await [s]
   (format "(%s)" (str "await " s)))
 
-(defmethod emit-special 'await [_ ctx [_await more]]
-  (wrap-await (emit more ctx)))
+(defmethod emit-special 'await [_ env [_await more]]
+  (wrap-await (emit more env)))
 
 (defn wrap-iife [s]
   (cond-> (format "(%sfunction () {\n %s\n})()" (if *async* "async " "") s)
@@ -242,7 +242,7 @@ break; }"
 (defn return [s]
   (format "return %s;" s))
 
-(defmethod emit-special 'let* [type ctx [_let bindings & more]]
+(defmethod emit-special 'let* [type env [_let bindings & more]]
   (let [partitioned (partition 2 bindings)]
     (wrap-iife
      (str
@@ -251,13 +251,13 @@ break; }"
                                  partitioned))]
         (statement (str "let " (str/join ", " names))))
       (apply str (interleave (map (fn [[name expr]]
-                                    (str (emit name ctx) " = " (emit expr ctx)))
+                                    (str (emit name env) " = " (emit expr env)))
                                   partitioned)
                              (repeat statement-separator)))
-      (return (emit-do ctx more))))))
+      (emit-do env more)))))
 
-(defmethod emit-special 'let [type ctx [_let bindings & more]]
-  (emit (core-let bindings more) ctx)
+(defmethod emit-special 'let [type env [_let bindings & more]]
+  (emit (core-let bindings more) env)
   #_(prn (core-let bindings more)))
 
 (defn process-require-clause [[libname & {:keys [refer as]}]]
@@ -266,7 +266,7 @@ break; }"
        (when refer
          (statement (format "import { %s } from '%s'"  (str/join ", " refer) libname)))))
 
-(defmethod emit-special 'ns [_type _ctx [_ns _name & clauses]]
+(defmethod emit-special 'ns [_type _env [_ns _name & clauses]]
   (reduce (fn [acc [k & exprs]]
             (if (= :require k)
               (str acc (str/join "" (map process-require-clause exprs)))
@@ -275,125 +275,130 @@ break; }"
           clauses
           ))
 
-(defmethod emit-special 'funcall [_type ctx [name & args :as expr]]
+(defmethod emit-special 'funcall [_type env [name & args :as expr]]
   (if (and (symbol? name)
            (= "cljs.core" (namespace name)))
     (emit (with-meta (list* (symbol (clojure.core/name name)) args)
-            (meta expr)) ctx)
+            (meta expr)) env)
     (str (if (and (list? name) (= 'fn (first name))) ; function literal call
-           (str "(" (emit name ctx) ")")
+           (str "(" (emit name env) ")")
            (let [name
                  (if (contains? core-vars name)
                    (let [name (symbol (munge* name))]
                      (swap! *imported-core-vars* conj name)
                      name)
                    name)]
-             (emit name ctx)))
-         (comma-list (map #(emit % ctx) args)))))
+             (emit name env)))
+         (comma-list (map #(emit % env) args)))))
 
-(defn map-emit [ctx args]
-  (map #(emit % ctx) args))
+(defn map-emit [env args]
+  (map #(emit % env) args))
 
-(defmethod emit-special 'str [type ctx [str & args]]
-  (apply clojure.core/str (interpose " + " (map-emit ctx args))))
+(defmethod emit-special 'str [type env [str & args]]
+  (apply clojure.core/str (interpose " + " (map-emit env args))))
 
-(defn emit-method [ctx obj method args]
-  (str (emit obj) "." (emit method) (comma-list (map-emit ctx args))))
+(defn emit-method [env obj method args]
+  (str (emit obj) "." (emit method) (comma-list (map-emit env args))))
 
-(defmethod emit-special '. [type ctx [period obj method & args]]
-  (emit-method ctx obj method args))
+(defmethod emit-special '. [type env [period obj method & args]]
+  (emit-method env obj method args))
 
-(defmethod emit-special '.. [type ctx [dotdot & args]]
-  (apply str (interpose "." (map-emit ctx args))))
+(defmethod emit-special '.. [type env [dotdot & args]]
+  (apply str (interpose "." (map-emit env args))))
 
-(defmethod emit-special 'if [type ctx [if test true-form & false-form]]
-  (str "if (" (emit test ctx) ") { \n"
-       (emit true-form ctx)
+(defmethod emit-special 'if [type env [if test true-form & false-form]]
+  (str "if (" (emit test env) ") { \n"
+       (emit true-form env)
        "\n }"
        (when (first false-form)
          (str " else { \n"
-              (emit (first false-form) ctx)
+              (emit (first false-form) env)
               " }"))))
 
-(defn emit-aget [ctx var idxs]
+(defn emit-aget [env var idxs]
   (apply str
-         (emit var ctx)
-         (interleave (repeat "[") (map-emit ctx idxs) (repeat "]"))))
+         (emit var env)
+         (interleave (repeat "[") (map-emit env idxs) (repeat "]"))))
 
-(defmethod emit-special 'aget [type ctx [_aget var & idxs]]
-  (emit-aget ctx var idxs))
+(defmethod emit-special 'aget [type env [_aget var & idxs]]
+  (emit-aget env var idxs))
 
-(defmethod emit-special 'dot-method [_type ctx [method obj & args]]
+(defmethod emit-special 'dot-method [_type env [method obj & args]]
   (let [method-str (rstr/drop 1 (str method))]
     (if (str/starts-with? method-str "-")
-      (emit-aget ctx obj [(subs method-str 1)])
-      (emit-method ctx obj (symbol method-str) args))))
+      (emit-aget env obj [(subs method-str 1)])
+      (emit-method env obj (symbol method-str) args))))
 
-(defmethod emit-special 'return [type ctx [return expr]]
-  (statement (str "return " (emit expr ctx))))
+(defmethod emit-special 'return [type env [return expr]]
+  (statement (str "return " (emit expr env))))
 
 #_(defmethod emit-special 'delete [type [return expr]]
   (str "delete " (emit expr)))
 
-(defmethod emit-special 'set! [_type ctx [_set! var val & more]]
+(defmethod emit-special 'set! [_type env [_set! var val & more]]
   (assert (or (nil? more) (even? (count more))))
-  (str (emit var) " = " (emit val ctx) statement-separator
-       (when more (str (emit (cons 'set! more) ctx)))))
+  (str (emit var) " = " (emit val env) statement-separator
+       (when more (str (emit (cons 'set! more) env)))))
 
-(defmethod emit-special 'new [_type ctx [_new class & args]]
-  (str "new " (emit class ctx) (comma-list (map-emit ctx args))))
+(defmethod emit-special 'new [_type env [_new class & args]]
+  (str "new " (emit class env) (comma-list (map-emit env args))))
 
-(defmethod emit-special 'inc! [_type ctx [_inc var]]
-  (str (emit var ctx) "++"))
+(defmethod emit-special 'inc! [_type env [_inc var]]
+  (str (emit var env) "++"))
 
-(defmethod emit-special 'dec! [_type ctx [_dec var]]
-  (str (emit var ctx) "--"))
+(defmethod emit-special 'dec! [_type env [_dec var]]
+  (str (emit var env) "--"))
 
-(defmethod emit-special 'dec [_type ctx [_ var]]
-  (str "(" (emit var ctx) " - " 1 ")"))
+(defmethod emit-special 'dec [_type env [_ var]]
+  (str "(" (emit var env) " - " 1 ")"))
 
-(defmethod emit-special 'inc [_type ctx [_ var]]
-  (str "(" (emit var ctx) " + " 1 ")"))
+(defmethod emit-special 'inc [_type env [_ var]]
+  (str "(" (emit var env) " + " 1 ")"))
 
-(defmethod emit-special 'defined? [_type ctx [_ var]]
-  (str "typeof " (emit var ctx) " !== \"undefined\" && " (emit var ctx) " !== null"))
+(defmethod emit-special 'defined? [_type env [_ var]]
+  (str "typeof " (emit var env) " !== \"undefined\" && " (emit var env) " !== null"))
 
-(defmethod emit-special '? [_type ctx [_ test then else]]
-  (str (emit test ctx) " ? " (emit then ctx) " : " (emit else ctx)))
+(defmethod emit-special '? [_type env [_ test then else]]
+  (str (emit test env) " ? " (emit then env) " : " (emit else env)))
 
-(defmethod emit-special 'and [_type ctx [_ & more]]
-  (apply str (interpose "&&" (map-emit ctx more))))
+(defmethod emit-special 'and [_type env [_ & more]]
+  (apply str (interpose "&&" (map-emit env more))))
 
-(defmethod emit-special 'or [_type ctx [_ & more]]
-  (apply str (interpose "||" (map-emit ctx more))))
+(defmethod emit-special 'or [_type env [_ & more]]
+  (apply str (interpose "||" (map-emit env more))))
 
-(defmethod emit-special 'quote [_type _ctx [_ & more]]
+(defmethod emit-special 'quote [_type _env [_ & more]]
   (apply str more))
 
-(defn emit-do [ctx exprs & [{:keys [top-level?]
-                         }]]
+(defn emit-do [env exprs]
   (let [bl (butlast exprs)
-        l (last exprs)]
-    (cond-> (str (str/join "" (map #(statement (emit % ctx)) bl))
-                 (cond-> (emit l ctx)
-                   (not top-level?)
-                   (return)))
-      (not top-level?) (wrap-iife))))
+        l (last exprs)
+        ctx (:context env)
+        statement-env (assoc env :context :statement)
+        ret-env  (if (= :statement (:context env))
+                   (assoc env :context :statement)
+                   (assoc env :context :return))]
+    (cond-> (str (str/join "" (map #(statement (emit % statement-env)) bl))
+                 (cond-> (emit l ret-env)
+                   (not= :statement ctx)
+                   return))
+      (and (seq bl) (= :expr ctx))
+      (wrap-iife))))
 
-(defmethod emit-special 'do [_type ctx [_ & exprs]]
-  (emit-do ctx exprs))
+(defmethod emit-special 'do [_type env [_ & exprs]]
+  (emit-do env exprs))
 
-(defmethod emit-special 'while [_type ctx [_while test & body]]
+(defmethod emit-special 'while [_type env [_while test & body]]
   (str "while (" (emit test) ") { \n"
-       (emit-do ctx body)
+       (emit-do env body)
        "\n }"))
 
 ;; TODO: re-implement
-(defmethod emit-special 'doseq [_type ctx [_doseq bindings & body]]
-  (str "for (" (emit (first bindings) ctx) " in " (emit (second bindings) ctx) ") { \n"
+(defmethod emit-special 'doseq [_type env [_doseq bindings & body]]
+  (str "for (" (emit (first bindings) env) " in " (emit (second bindings) env) ") { \n"
        (if-let [more (nnext bindings)]
-         (emit (list* 'doseq more body) ctx)
-         (emit-do body ctx))
+         (emit (list* 'doseq more body) env)
+         (emit-do body env))
        "\n }"))
 
 (defn emit-var-declarations []
@@ -404,16 +409,16 @@ break; }"
 
 (declare emit-function*)
 
-(defn emit-function [ctx name sig body & [elide-function?]]
+(defn emit-function [env name sig body & [elide-function?]]
   (assert (or (symbol? name) (nil? name)))
   (assert (vector? sig))
-  (let [body (return (emit-do ctx body))]
+  (let [body (return (emit-do env body))]
     (str (when-not elide-function?
            (str (when *async*
                   "async ") "function ")) (comma-list sig) " {\n"
          #_(emit-var-declarations) body "\n}")))
 
-(defn emit-function* [ctx expr]
+(defn emit-function* [env expr]
   (let [name (when (symbol? (first expr)) (first expr))
         expr (if name (rest expr) expr)
         expr (if (seq? (first expr))
@@ -425,27 +430,27 @@ break; }"
             body (rest expr)]
         (str (when *async*
                "async ") "function " name " "
-             (emit-function ctx name signature body true)))
+             (emit-function env name signature body true)))
       (let [signature (first expr)
             body (rest expr)]
-        (str (emit-function ctx nil signature body))))))
+        (str (emit-function env nil signature body))))))
 
-(defmethod emit-special 'fn* [_type ctx [_fn & sigs :as expr]]
+(defmethod emit-special 'fn* [_type env [_fn & sigs :as expr]]
   (let [async? (:async (meta expr))]
     (binding [*async* async?]
-      (emit-function* ctx sigs))))
+      (emit-function* env sigs))))
 
-(defmethod emit-special 'fn [_type ctx [fn & sigs :as expr]]
+(defmethod emit-special 'fn [_type env [fn & sigs :as expr]]
   (let [expanded (core-fn expr sigs)]
-    (emit expanded ctx)))
+    (emit expanded env)))
 
-(defmethod emit-special 'defn [_type ctx [fn name & args :as expr]]
+(defmethod emit-special 'defn [_type env [fn name & args :as expr]]
   (let [;;async (:async (meta name))
         [_def _name _fn-expr :as expanded] (core-defn expr {} name args)]
     ;; (prn fn-expr (meta fn-expr))
-    (emit expanded ctx)))
+    (emit expanded env)))
 
-(defmethod emit-special 'try [_type ctx [_try & body :as expression]]
+(defmethod emit-special 'try [_type env [_try & body :as expression]]
   (let [try-body (remove #(contains? #{'catch 'finally} (first %))
                          body)
         catch-clause (filter #(= 'catch (first %))
@@ -464,59 +469,59 @@ break; }"
       (throw (new Exception (str "Cannot supply more than one finally clause in a try statement! " expression)))
 
       :true (str "try{\n"
-                 (emit-do ctx try-body)
+                 (emit-do env try-body)
                  "}\n"
                  (if-let [[_ exception & catch-body] (first catch-clause)]
-                   (str "catch(" (emit ctx exception) "){\n"
-                        (emit-do ctx catch-body)
+                   (str "catch(" (emit env exception) "){\n"
+                        (emit-do env catch-body)
                         "}\n"))
                  (if-let [[_ & finally-body] (first finally-clause)]
                    (str "finally{\n"
-                        (emit-do ctx finally-body)
+                        (emit-do env finally-body)
                         "}\n"))))))
 
-#_(defmethod emit-special 'break [_type _ctx [_break]]
+#_(defmethod emit-special 'break [_type _env [_break]]
   (statement "break"))
 
 (derive #?(:clj clojure.lang.Cons :cljs Cons) ::list)
 (derive #?(:clj clojure.lang.IPersistentList :cljs IList) ::list)
 #?(:cljs (derive List ::list))
 
-(defmethod emit ::list [expr ctx]
+(defmethod emit ::list [expr env]
   (if (symbol? (first expr))
     (let [head (first expr)]
       (cond
         (and (= (rstr/get (str head) 0) \.)
              (> (count (str head)) 1)
 
-             (not (= (rstr/get (str head) 1) \.))) (emit-special 'dot-method ctx expr)
+             (not (= (rstr/get (str head) 1) \.))) (emit-special 'dot-method env expr)
         (contains? built-in-macros head) (let [macro (built-in-macros head)]
-                                           (emit (apply macro expr {} (rest expr)) ctx))
-        (special-form? head) (emit-special head ctx expr)
-        (infix-operator? head) (emit-infix head ctx expr)
+                                           (emit (apply macro expr {} (rest expr)) env))
+        (special-form? head) (emit-special head env expr)
+        (infix-operator? head) (emit-infix head env expr)
         (prefix-unary? head) (emit-prefix-unary head expr)
         (suffix-unary? head) (emit-suffix-unary head expr)
-        :else (emit-special 'funcall ctx expr)))
+        :else (emit-special 'funcall env expr)))
     (if (list? expr)
-      (emit-special 'funcall ctx expr)
+      (emit-special 'funcall env expr)
       (throw (new Exception (str "invalid form: " expr))))))
 
 #?(:cljs (derive PersistentVector ::vector))
 
 (defmethod emit #?(:clj clojure.lang.IPersistentVector
-                   :cljs ::vector) [expr ctx]
+                   :cljs ::vector) [expr env]
   (swap! *imported-core-vars* conj 'vector)
-  (format "vector(%s)" (str/join ", " (map-emit ctx expr))))
+  (format "vector(%s)" (str/join ", " (map-emit env expr))))
 
 (defmethod emit #?(:clj clojure.lang.LazySeq
-                   :cljs LazySeq) [expr ctx]
-  (emit (into [] expr) ctx))
+                   :cljs LazySeq) [expr env]
+  (emit (into [] expr) env))
 
 #?(:cljs (derive PersistentArrayMap ::map))
 #?(:cljs (derive PersistentHashMap ::map))
 
 (defmethod emit #?(:clj clojure.lang.IPersistentMap
-                   :cljs ::map) [expr ctx]
+                   :cljs ::map) [expr env]
   (let [map-fn
         (when-not (::js (meta expr))
           (if (<= (count expr) 8)
@@ -524,8 +529,8 @@ break; }"
             'hashMap))
         key-fn (if-not map-fn
                  name identity)
-        mk-pair (fn [pair] (str (emit (key-fn (key pair)) ctx) (if map-fn ", " ": ")
-                                (emit (val pair) ctx)))
+        mk-pair (fn [pair] (str (emit (key-fn (key pair)) env) (if map-fn ", " ": ")
+                                (emit (val pair) env)))
         keys (str/join ", " (map mk-pair (seq expr)))]
     (when map-fn
       (swap! *imported-core-vars* conj map-fn))
@@ -534,7 +539,7 @@ break; }"
       (format "{ %s }" keys))))
 
 (defn transpile-form [f]
-  (emit f {}))
+  (emit f {:context :statement}))
 
 (defn transpile-string [s]
   (let [rdr (e/reader s)]
