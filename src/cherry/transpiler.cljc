@@ -34,6 +34,7 @@
    #?(:clj [cherry.resource :as resource])
    [cherry.internal.destructure :refer [core-let]]
    [cherry.internal.fn :refer [core-defn core-fn]]
+   [cherry.internal.loop :as loop]
    [cherry.internal.macros :as macros]
    [clojure.string :as str]
    [com.reasonr.string :as rstr]
@@ -117,7 +118,8 @@
                          'return 'delete 'new 'do 'aget 'while 'doseq
                          'inc! 'dec! 'dec 'inc 'defined? 'and 'or
                          '? 'try 'break
-                         'await 'const 'defn 'let 'let* 'ns 'def]))
+                         'await 'const 'defn 'let 'let* 'ns 'def 'loop*
+                         'recur]))
 
 (def built-in-macros {'-> macros/core->
                       '->> macros/core->>
@@ -137,7 +139,8 @@
                       'when-first macros/core-when-first
                       'when-some macros/core-when-some
                       'some-> macros/core-some->
-                      'some>> macros/core-some->>})
+                      'some>> macros/core-some->>
+                      'loop loop/core-loop})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
@@ -197,6 +200,35 @@
                                 (str "const " (emit name) " = " (emit expr)))
                               (partition 2 more))
                          (repeat statement-separator))))
+
+
+(def ^:dynamic *recur-targets* [])
+
+(defmethod emit-special 'loop* [_ [x bindings & body]]
+  (binding [*recur-targets* bindings]
+    (format "while (true) {
+%s
+
+break; }"
+            (emit (list* 'let bindings body)))))
+
+(defmethod emit-special 'recur [_ [_ & exprs]]
+  (let [bindings *recur-targets*
+        temps (repeatedly (count exprs) gensym)]
+    (str
+     (str/join "\n"
+               (map (fn [temp expr]
+                      (statement (format "%s = %s"
+                                         temp (emit expr))))
+                    temps exprs)
+               )
+     (str/join "\n"
+                (map (fn [binding temp]
+                       (statement (format "%s = %s"
+                                          binding temp)))
+                     bindings temps)
+                )
+     "continue;\n")))
 
 (defmethod emit-special 'const [_type [_const & more]]
   (emit-const more))
