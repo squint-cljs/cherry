@@ -30,7 +30,7 @@ help                      Print this help"))
       (when (:show opts)
         (println res))
       (-> (esm/dynamic-import (str (js/process.cwd) "/" f))
-          (.then (fn [_]
+          (.finally (fn [_]
                    (fs/rmSync dir #js {:force true :recursive true})))))
     (if (or (:help opts)
             (= "help" (first rest-cmds))
