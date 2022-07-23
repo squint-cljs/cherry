@@ -179,7 +179,7 @@
 
 (def ^{:dynamic true} var-declarations nil)
 
-(defmethod emit-special 'var [type env [var & more]]
+#_(defmethod emit-special 'var [type env [var & more]]
   (apply swap! var-declarations conj (filter identity (map (fn [name i] (when (odd? i) name)) more (iterate inc 1))))
   (apply str (interleave (map (fn [[name expr]]
                                 (str (when-not var-declarations "var ") (emit env name) " = " (emit env expr)))
@@ -187,10 +187,12 @@
                          (repeat statement-separator))))
 
 (defn emit-const [more env]
-  (apply str (interleave (map (fn [[name expr]]
-                                (str "const " (emit name env) " = " (emit expr env)))
+  (apply str
+         (interleave (map (fn [[name expr]]
+                            (str "const " (emit name env) " = "
+                                 (emit expr (assoc env :context :expr))))
                               (partition 2 more))
-                         (repeat statement-separator))))
+                     (repeat statement-separator))))
 
 
 (def ^:dynamic *recur-targets* [])
@@ -241,7 +243,7 @@ break; }"
   (cond-> (format "(%sfunction () {\n %s\n})()" (if *async* "async " "") s)
     *async* (wrap-await)))
 
-(defn return [_env s]
+(defn return [s]
   (format "return %s;" s))
 
 (defmethod emit-special 'let* [_type env [_let bindings & more]]
@@ -386,7 +388,7 @@ break; }"
                    (assoc env :context :statement)
                    (assoc env :context :return))]
     (cond-> (str (str/join "" (map #(statement (emit % statement-env)) bl))
-                 (return env (emit l ret-env)))
+                 (return (emit l ret-env)))
       (and (seq bl) (= :expr ctx))
       (wrap-iife))))
 

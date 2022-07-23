@@ -1,8 +1,9 @@
 (ns cherry.internal.cli
-  (:require [babashka.cli :as cli]
-            [cherry.transpiler :as t]
-            [shadow.esm :as esm]
-            ["fs" :as fs]))
+  (:require
+   ["fs" :as fs]
+   [babashka.cli :as cli]
+   [cherry.transpiler :as t]
+   [shadow.esm :as esm]))
 
 (defn transpile-files
   [files]
@@ -26,6 +27,8 @@ help                      Print this help"))
           dir (fs/mkdtempSync ".tmp")
           f (str dir "/cherry.mjs")]
       (fs/writeFileSync f res "utf-8")
+      (when (:show opts)
+        (println res))
       (-> (esm/dynamic-import (str (js/process.cwd) "/" f))
           (.then (fn [_]
                    (fs/rmSync dir #js {:force true :recursive true})))))
