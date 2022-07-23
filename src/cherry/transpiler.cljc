@@ -38,6 +38,8 @@
    [cherry.internal.macros :as macros]
    [clojure.string :as str]
    [com.reasonr.string :as rstr]
+   ;; [cljs.analyzer :as ana]
+   ;; [cljs.compiler :as compiler]
    [edamame.core :as e])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
 
@@ -239,7 +241,7 @@ break; }"
   (cond-> (format "(%sfunction () {\n %s\n})()" (if *async* "async " "") s)
     *async* (wrap-await)))
 
-(defn return [s]
+(defn return [_env s]
   (format "return %s;" s))
 
 (defmethod emit-special 'let* [_type env [_let bindings & more]]
@@ -333,8 +335,9 @@ break; }"
       (emit-aget env obj [(subs method-str 1)])
       (emit-method env obj (symbol method-str) args))))
 
-(defmethod emit-special 'return [type env [return expr]]
-  (statement (str "return " (emit expr env))))
+;; TODO: this should not be reachable in user space
+(defmethod emit-special 'return [_type env [_return expr]]
+  (statement (str "return " (emit (assoc env :context :expr) env))))
 
 #_(defmethod emit-special 'delete [type [return expr]]
     (str "delete " (emit expr)))
@@ -383,9 +386,7 @@ break; }"
                    (assoc env :context :statement)
                    (assoc env :context :return))]
     (cond-> (str (str/join "" (map #(statement (emit % statement-env)) bl))
-                 (cond-> (emit l ret-env)
-                   (not= :statement ctx)
-                   return))
+                 (return env (emit l ret-env)))
       (and (seq bl) (= :expr ctx))
       (wrap-iife))))
 
@@ -512,10 +513,16 @@ break; }"
 
 #?(:cljs (derive PersistentVector ::vector))
 
+(defn wrap-expr [env s]
+  (case (:context env)
+    :expr (wrap-iife s)
+    :statement s
+    :return s))
+
 (defmethod emit #?(:clj clojure.lang.IPersistentVector
                    :cljs ::vector) [expr env]
   (swap! *imported-core-vars* conj 'vector)
-  (format "vector(%s)" (str/join ", " (map-emit env expr))))
+  (wrap-expr env (format "vector(%s)" (str/join ", " (map-emit env expr)))))
 
 (defmethod emit #?(:clj clojure.lang.LazySeq
                    :cljs LazySeq) [expr env]
@@ -545,7 +552,7 @@ break; }"
 (defn transpile-form [f]
   (emit f {:context :statement}))
 
-(defn transpile-string [s]
+(defn transpile-string* [s]
   (let [rdr (e/reader s)]
     (loop [transpiled ""]
       (let [next-form (e/parse-next rdr {:readers {'js #(vary-meta % assoc ::js true)}})]
@@ -555,22 +562,12 @@ break; }"
                 next-js (some-> next-t not-empty (statement))]
             (recur (str transpiled next-js))))))))
 
-#?(:cljs
-   (defn slurp [f]
-     (fs/readFileSync f "utf-8")))
-
-#?(:cljs
-   (defn spit [f s]
-     (fs/writeFileSync f s "utf-8")))
-
-(defn transpile-file [{:keys [in-file out-file]}]
+(defn transpile-string [s]
   (let [core-vars (atom #{})
         public-vars (atom #{})]
     (binding [*imported-core-vars* core-vars
               *public-vars* public-vars]
-      (let [out-file (or out-file
-                         (str/replace in-file #".cljs$" ".mjs"))
-            transpiled (transpile-string (slurp in-file))
+      (let [transpiled (transpile-string* s)
             transpiled (if-let [core-vars (seq @core-vars)]
                          (str (format "import { %s } from 'cherry-cljs/cljs.core.js'\n"
                                       (str/join ", " core-vars))
@@ -581,5 +578,24 @@ break; }"
                                     (str/join ", " (disj @public-vars "default$")))
                             (when (contains? @public-vars "default$")
                               "export default default$\n"))]
-        (spit out-file transpiled)
-        {:out-file out-file}))))
+        transpiled))))
+
+#?(:cljs
+   (defn slurp [f]
+     (fs/readFileSync f "utf-8")))
+
+#?(:cljs
+   (defn spit [f s]
+     (fs/writeFileSync f s "utf-8")))
+
+(defn transpile-file [{:keys [in-file out-file]}]
+  (let [out-file (or out-file
+                     (str/replace in-file #".cljs$" ".mjs"))
+        transpiled (transpile-string (slurp in-file))]
+    (spit out-file transpiled)
+    {:out-file out-file}))
+
+(defn compile! [s]
+  #_(let [expr (e/parse-string s)
+        analyzed (ana/analyze (ana/empty-env) expr)]
+    (with-out-str (compiler/emit* analyzed))))
