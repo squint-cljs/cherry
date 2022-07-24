@@ -11,6 +11,9 @@
 (deftest do-test
   (let [[v s] (js! '(do 1 2 3))]
     (is (= 3 v))
+    (is (not (str/includes? s "function"))))
+  (let [[v s] (js! '(do 1 2 3 (do 4 5 6)))]
+    (is (= 6 v))
     (is (not (str/includes? s "function")))))
 
 (deftest let-test
