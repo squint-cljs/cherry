@@ -99,9 +99,11 @@
   (let [expr-ns (namespace expr)
         js? (= "js" expr-ns)
         expr-ns (when-not js? expr-ns)
-        expr (str expr-ns (when expr-ns
-                            ".")
-                  (munge* (name expr)))]
+        expr (if-let [renamed (get (:var->ident env) expr)]
+               (str renamed)
+               (str expr-ns (when expr-ns
+                              ".")
+                    (munge* (name expr))))]
     (emit-wrap env (str expr))))
 
 ;; #?(:clj (defmethod emit #?(:clj java.util.regex.Pattern) [expr _env]
@@ -249,20 +251,36 @@ break; }"
     *async* (wrap-await)))
 
 (defmethod emit-special 'let* [_type enc-env [_let bindings & more]]
-  (let [env (assoc enc-env :context :expr)
-        partitioned (partition 2 bindings)]
-    (str
-     (let [names (distinct (map (fn [[name _]]
-                                  name)
-                                partitioned))]
-       (statement (str "let " (str/join ", " names))))
-     (apply str (interleave
-                 (map (fn [[name expr]]
-                        (str (emit name env) " = "
-                             (emit expr env)))
-                      partitioned)
-                 (repeat statement-separator)))
-     (emit-do enc-env more))))
+  (let [context (:context enc-env)
+        env (assoc enc-env :context :expr)
+        partitioned (partition 2 bindings)
+        iife? (= :expr context)
+        upper-var->ident (:var->ident enc-env)
+        [bindings var->ident]
+        (reduce (fn [[acc var->ident] [var-name rhs]]
+                  (let [renamed (gensym var-name)
+                        lhs (str renamed)
+                        rhs (emit rhs (assoc env :var->ident var->ident))
+                        expr (format "let %s = %s;\n" lhs rhs)
+                        var->ident (assoc var->ident var-name renamed)]
+                    [(str acc expr) var->ident]))
+                ["" upper-var->ident]
+                partitioned)
+        enc-env (assoc enc-env :var->ident var->ident)]
+    (cond->> (str
+              #_(let [names renamed]
+                (statement (str "let " (str/join ", " names))))
+              bindings #_(apply str (interleave
+                                     (map (fn [[name expr]]
+                                            (str (emit name env) " = "
+                                                 (emit expr env)))
+                                          partitioned)
+                                     (repeat statement-separator)))
+              (emit-do (if iife?
+                         (assoc enc-env :context :return)
+                         enc-env) more))
+      (= :expr context)
+      (wrap-iife))))
 
 (defmethod emit-special 'let [type env [_let bindings & more]]
   (emit (core-let bindings more) env)
