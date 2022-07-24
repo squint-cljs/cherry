@@ -18,6 +18,10 @@
   (let [[v s] (js! '(do (def x (do 4 5 6))
                         x))]
     (is (= 6 v))
+    (is (str/includes? s "function")))
+  (let [[v s] (js! '(let [x (do 4 5 6)]
+                      x))]
+    (is (= 6 v))
     (is (str/includes? s "function"))))
 
 (deftest let-test
