@@ -182,18 +182,18 @@
 (def ^{:dynamic true} var-declarations nil)
 
 #_(defmethod emit-special 'var [type env [var & more]]
-  (apply swap! var-declarations conj (filter identity (map (fn [name i] (when (odd? i) name)) more (iterate inc 1))))
-  (apply str (interleave (map (fn [[name expr]]
-                                (str (when-not var-declarations "var ") (emit env name) " = " (emit env expr)))
-                              (partition 2 more))
-                         (repeat statement-separator))))
+    (apply swap! var-declarations conj (filter identity (map (fn [name i] (when (odd? i) name)) more (iterate inc 1))))
+    (apply str (interleave (map (fn [[name expr]]
+                                  (str (when-not var-declarations "var ") (emit env name) " = " (emit env expr)))
+                                (partition 2 more))
+                           (repeat statement-separator))))
 
 (defn emit-const [more env]
   (apply str
          (interleave (map (fn [[name expr]]
                             (str "const " (emit name env) " = "
                                  (emit expr (assoc env :context :expr))))
-                              (partition 2 more))
+                          (partition 2 more))
                      (repeat statement-separator))))
 
 
@@ -384,15 +384,17 @@ break; }"
 (defn emit-do [env exprs]
   (let [bl (butlast exprs)
         l (last exprs)
-        #_#_ctx (:context env)
+        ctx (:context env)
         statement-env (assoc env :context :statement)
         ret-env  (if (= :statement (:context env))
                    (assoc env :context :statement)
                    (assoc env :context :return))]
-    (str (str/join "" (map #(statement (emit % statement-env)) bl))
-         (emit l ret-env))
-    #_#_(and (seq bl) (= :expr ctx))
-    (wrap-iife)))
+    (cond-> (str (str/join "" (map #(statement (emit % statement-env)) bl))
+                 (cond-> (emit l ret-env)
+                   (= :return (:context ret-env))
+                   (return)))
+      (and (seq bl) (= :expr ctx))
+      (wrap-iife))))
 
 (defmethod emit-special 'do [_type env [_ & exprs]]
   (emit-do env exprs))
@@ -600,14 +602,14 @@ break; }"
     {:out-file out-file}))
 
 #_(defn compile! [s]
-  (prn :s s)
-  (let [expr (e/parse-string s {:row-key :line
-                                :col-key :column
-                                :end-location false})
-        compiler-env (ana-api/empty-state)]
-    (prn :expr expr (meta expr))
-    (binding [cljs.env/*compiler* compiler-env
-              ana/*cljs-ns* 'cljs.user]
-     (let [analyzed (ana/analyze (ana/empty-env) expr)]
-        (prn (keys analyzed))
-        (prn (compiler/emit-str analyzed))))))
+    (prn :s s)
+    (let [expr (e/parse-string s {:row-key :line
+                                  :col-key :column
+                                  :end-location false})
+          compiler-env (ana-api/empty-state)]
+      (prn :expr expr (meta expr))
+      (binding [cljs.env/*compiler* compiler-env
+                ana/*cljs-ns* 'cljs.user]
+        (let [analyzed (ana/analyze (ana/empty-env) expr)]
+          (prn (keys analyzed))
+          (prn (compiler/emit-str analyzed))))))
