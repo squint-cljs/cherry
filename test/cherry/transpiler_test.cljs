@@ -63,7 +63,11 @@
                                x)] x))]
     (is (= 2 (js/eval s))))
   (is (= 7 (jsv! '(let [{:keys [a b]} {:a 1 :b (+ 1 2 3)}]
-                    (+ a b))))))
+                    (+ a b)))))
+  (is (= 8 (jsv!
+            '(+ 1
+                (let [{:keys [a b]} {:a 1 :b (+ 1 2 3)}]
+                  (+ a b)))))))
 
 (deftest destructure-test
   (let [s (jss! "(let [^js {:keys [a b c]} #js {:a 1 :b 2 :c 3}]

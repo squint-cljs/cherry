@@ -1,17 +1,15 @@
 const log = console.log;
 log("hello");
 log((1 + 2 + 3));
-let y, inc;
-y = let x;
-x = (function () {
+let y1 = (function () {
+ let x2 = (function () {
  log("in do");
 return 12;
 })();
-(function () {
- log("x + 1 =", (x + 1));
-return (x + 13);
+log("x + 1 =", (x2 + 1));
+return (x2 + 13);
 })();
-inc = "inc";
-log("y =", y, inc);
+let inc3 = "inc";
+log("y =", y1, inc3);
 
 export { log }
