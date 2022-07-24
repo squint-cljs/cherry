@@ -68,28 +68,25 @@
 (defn comma-list [coll]
   (str "(" (str/join ", " coll) ")"))
 
-(defmethod emit nil [_ _]
-  "null")
-
 (defn emit-wrap [env s]
   ;; (prn :wrap s (:contet env))
   (if (= :return (:context env))
     (format "return %s;" s)
     s))
 
+(defmethod emit nil [_ env]
+  (emit-wrap env "null"))
+
 (defmethod emit #?(:clj java.lang.Integer :cljs js/Number) [expr env]
   (->> (str expr)
        (emit-wrap env)))
 
-#?(:clj (defmethod emit clojure.lang.Ratio [expr]
-          (str (float expr))))
+(defmethod emit #?(:clj java.lang.String :cljs js/String) [^String expr env]
+  (emit-wrap env (pr-str expr)))
 
-(defmethod emit #?(:clj java.lang.String :cljs js/String) [^String expr _env]
-  (pr-str expr))
-
-(defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr _env]
+(defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr env]
   (swap! *imported-core-vars* conj 'keyword)
-  (str (format "keyword(%s)" (pr-str (subs (str expr) 1)))))
+  (emit-wrap env (str (format "keyword(%s)" (pr-str (subs (str expr) 1))))))
 
 (defn munge* [expr]
   (let [munged (str (munge expr))]
@@ -107,16 +104,16 @@
                   (munge* (name expr)))]
     (emit-wrap env (str expr))))
 
-#?(:clj (defmethod emit #?(:clj java.util.regex.Pattern) [expr _env]
-          (str \/ expr \/)))
+;; #?(:clj (defmethod emit #?(:clj java.util.regex.Pattern) [expr _env]
+;;           (str \/ expr \/)))
 
-(defmethod emit :default [expr _env]
-  ;; RegExp case moved here:
-  ;; References to the global RegExp object prevents optimization of regular expressions.
-  #?(:cljs (if (instance? js/RegExp expr)
-             (str \/ expr \/)
-             (str expr))
-     :clj (str expr)))
+#?(:cljs
+   (defmethod emit :default [expr env]
+     ;; RegExp case moved here:
+     ;; References to the global RegExp object prevents optimization of regular expressions.
+     (emit-wrap env (if (instance? js/RegExp expr)
+                      (str \/ expr \/)
+                      (str expr)))))
 
 (def special-forms (set ['var '. '.. 'if 'funcall 'fn 'fn* 'quote 'set!
                          'return 'delete 'new 'do 'aget 'while 'doseq
@@ -234,9 +231,6 @@ break; }"
                )
      "continue;\n")))
 
-(defmethod emit-special 'const [_type env [_const & more]]
-  (emit-const more env))
-
 (defmethod emit-special 'def [_type env [_const & more]]
   (let [name (first more)]
     (swap! *public-vars* conj (munge* name))
@@ -307,20 +301,21 @@ break; }"
     ;; (prn :-> s)
     s #_(emit-wrap env s)))
 
-(defn map-emit [env args]
-  (map #(emit % env) args))
+(defn emit-args [env args]
+  (let [env (assoc env :context :expr)]
+    (map #(emit % env) args)))
 
 (defmethod emit-special 'str [type env [str & args]]
-  (apply clojure.core/str (interpose " + " (map-emit env args))))
+  (apply clojure.core/str (interpose " + " (emit-args env args))))
 
 (defn emit-method [env obj method args]
-  (str (emit obj) "." (emit method) (comma-list (map-emit env args))))
+  (str (emit obj) "." (emit method) (comma-list (emit-args env args))))
 
 (defmethod emit-special '. [type env [period obj method & args]]
   (emit-method env obj method args))
 
 (defmethod emit-special '.. [type env [dotdot & args]]
-  (apply str (interpose "." (map-emit env args))))
+  (apply str (interpose "." (emit-args env args))))
 
 (defmethod emit-special 'if [type env [if test true-form & false-form]]
   (str "if (" (emit test env) ") { \n"
@@ -334,7 +329,7 @@ break; }"
 (defn emit-aget [env var idxs]
   (apply str
          (emit var env)
-         (interleave (repeat "[") (map-emit env idxs) (repeat "]"))))
+         (interleave (repeat "[") (emit-args env idxs) (repeat "]"))))
 
 (defmethod emit-special 'aget [type env [_aget var & idxs]]
   (emit-aget env var idxs))
@@ -358,7 +353,7 @@ break; }"
        (when more (str (emit (cons 'set! more) env)))))
 
 (defmethod emit-special 'new [_type env [_new class & args]]
-  (str "new " (emit class env) (comma-list (map-emit env args))))
+  (str "new " (emit class env) (comma-list (emit-args env args))))
 
 (defmethod emit-special 'inc! [_type env [_inc var]]
   (str (emit var env) "++"))
@@ -379,10 +374,10 @@ break; }"
   (str (emit test env) " ? " (emit then env) " : " (emit else env)))
 
 (defmethod emit-special 'and [_type env [_ & more]]
-  (apply str (interpose "&&" (map-emit env more))))
+  (apply str (interpose "&&" (emit-args env more))))
 
 (defmethod emit-special 'or [_type env [_ & more]]
-  (apply str (interpose "||" (map-emit env more))))
+  (apply str (interpose "||" (emit-args env more))))
 
 (defmethod emit-special 'quote [_type _env [_ & more]]
   (apply str more))
@@ -525,7 +520,7 @@ break; }"
 
 #?(:cljs (derive PersistentVector ::vector))
 
-(defn wrap-expr [env s]
+#_(defn wrap-expr [env s]
   (case (:context env)
     :expr (wrap-iife s)
     :statement s
@@ -534,7 +529,8 @@ break; }"
 (defmethod emit #?(:clj clojure.lang.IPersistentVector
                    :cljs ::vector) [expr env]
   (swap! *imported-core-vars* conj 'vector)
-  (wrap-expr env (format "vector(%s)" (str/join ", " (map-emit env expr)))))
+  (emit-wrap env (format "vector(%s)"
+                         (str/join ", " (emit-args env expr)))))
 
 (defmethod emit #?(:clj clojure.lang.LazySeq
                    :cljs LazySeq) [expr env]
@@ -545,21 +541,23 @@ break; }"
 
 (defmethod emit #?(:clj clojure.lang.IPersistentMap
                    :cljs ::map) [expr env]
-  (let [map-fn
+  (let [expr-env (assoc env :context :expr)
+        map-fn
         (when-not (::js (meta expr))
           (if (<= (count expr) 8)
             'arrayMap
             'hashMap))
         key-fn (if-not map-fn
                  name identity)
-        mk-pair (fn [pair] (str (emit (key-fn (key pair)) env) (if map-fn ", " ": ")
-                                (emit (val pair) env)))
+        mk-pair (fn [pair] (str (emit (key-fn (key pair)) expr-env) (if map-fn ", " ": ")
+                                (emit (val pair) expr-env)))
         keys (str/join ", " (map mk-pair (seq expr)))]
     (when map-fn
       (swap! *imported-core-vars* conj map-fn))
-    (if map-fn
-      (format "%s(%s)" map-fn keys)
-      (format "{ %s }" keys))))
+    (->> (if map-fn
+          (format "%s(%s)" map-fn keys)
+          (format "{ %s }" keys))
+         (emit-wrap env))))
 
 (defn transpile-form [f]
   (emit f {:context :statement}))

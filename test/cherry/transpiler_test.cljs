@@ -4,6 +4,11 @@
    [clojure.string :as str]
    [clojure.test :as t :refer [deftest is]]))
 
+(aset js/globalThis "__destructure_map" cljs.core/--destructure-map)
+(aset js/globalThis "vector" cljs.core/vector)
+(aset js/globalThis "arrayMap" cljs.core/array-map)
+(aset js/globalThis "keyword" cljs.core/keyword)
+
 (defn jss! [expr]
   (if (string? expr)
     (cherry/transpile-string expr {:elide-imports true
@@ -17,6 +22,22 @@
 (defn jsv! [expr]
   (first (js! expr)))
 
+(deftest return-test
+  (is (str/includes? (jss! '(do (def x (do 1 2 nil))))
+                     "return"))
+  (is (str/includes? (jss! '(do (def x (do 1 2 "foo"))))
+                     "return"))
+  (is (str/includes? (jss! '(do (def x (do 1 2 :foo))))
+                     "return"))
+  (is (str/includes? (jss! "(do (def x (do 1 2 \"hello\")))")
+                     "return"))
+  (let [s (jss! "(do (def x (do 1 2 [1 2 3])) x)")]
+    (is (= [1 2 3] (js/eval s))))
+  (let [s (jss! "(do (def x (do 1 2 {:x 1 :y 2})) x)")]
+    (is (= {:x 1 :y 2} (js/eval s))))
+  (let [s (jss! "(do (def x (do 1 2 #js {:x 1 :y 2})) x)")]
+    (is (= (str #js {:x 1 :y 2}) (str (js/eval s))))))
+
 (deftest do-test
   (let [[v s] (js! '(do 1 2 3))]
     (is (= 3 v))
@@ -26,7 +47,6 @@
     (is (not (str/includes? s "function"))))
   (let [[v s] (js! '(do (def x (do 4 5 6))
                         x))]
-    (prn :do s)
     (is (= 6 v))
     (is (str/includes? s "function")))
   (let [[v s] (js! '(let [x (do 4 5 6)]
@@ -37,7 +57,6 @@
 (deftest let-test
   (is (= 3 (jsv! '(let [x (do 1 2 3)] x)))))
 
-(aset js/globalThis "__destructure_map" cljs.core/--destructure-map)
 
 (deftest destructure-test
   (let [s (jss! "(let [^js {:keys [a b c]} #js {:a 1 :b 2 :c 3}]
