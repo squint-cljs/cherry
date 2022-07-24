@@ -423,7 +423,7 @@ break; }"
 (defn emit-function [env name sig body & [elide-function?]]
   (assert (or (symbol? name) (nil? name)))
   (assert (vector? sig))
-  (let [body (emit-do env body)]
+  (let [body (emit-do (assoc env :context :return) body)]
     (str (when-not elide-function?
            (str (when *async*
                   "async ") "function ")) (comma-list sig) " {\n"

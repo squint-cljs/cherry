@@ -46,4 +46,7 @@
 (deftest fn-test
   (let [s (jss! '(let [f (fn [x] x)]
                    f))]
+    (is (= 1 ((js/eval s) 1))))
+  (let [s (jss! '(let [f (fn [x] 1 2 x)]
+                   f))]
     (is (= 1 ((js/eval s) 1)))))
