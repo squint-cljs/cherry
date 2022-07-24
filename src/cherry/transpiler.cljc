@@ -283,27 +283,28 @@ break; }"
           clauses
           ))
 
+(defn emit-args [env args]
+  (let [env (assoc env :context :expr)]
+    (map #(emit % env) args)))
+
 (defmethod emit-special 'funcall [_type env [name & args :as expr]]
   (let [s (if (and (symbol? name)
                    (= "cljs.core" (namespace name)))
             (emit (with-meta (list* (symbol (clojure.core/name name)) args)
                     (meta expr)) env)
-            (str (if (and (list? name) (= 'fn (first name))) ; function literal call
-                   (str "(" (emit name env) ")")
-                   (let [name
-                         (if (contains? core-vars name)
-                           (let [name (symbol (munge* name))]
-                             (swap! *imported-core-vars* conj name)
-                             name)
-                           name)]
-                     (emit name env)))
-                 (comma-list (map #(emit % env) args))))]
+            (emit-wrap env
+                       (str (if (and (list? name) (= 'fn (first name))) ; function literal call
+                              (str "(" (emit name env) ")")
+                              (let [name
+                                    (if (contains? core-vars name)
+                                      (let [name (symbol (munge* name))]
+                                        (swap! *imported-core-vars* conj name)
+                                        name)
+                                      name)]
+                                (emit name (assoc env :context :expr))))
+                            (comma-list (emit-args env args)))))]
     ;; (prn :-> s)
     s #_(emit-wrap env s)))
-
-(defn emit-args [env args]
-  (let [env (assoc env :context :expr)]
-    (map #(emit % env) args)))
 
 (defmethod emit-special 'str [type env [str & args]]
   (apply clojure.core/str (interpose " + " (emit-args env args))))
@@ -521,10 +522,10 @@ break; }"
 #?(:cljs (derive PersistentVector ::vector))
 
 #_(defn wrap-expr [env s]
-  (case (:context env)
-    :expr (wrap-iife s)
-    :statement s
-    :return s))
+    (case (:context env)
+      :expr (wrap-iife s)
+      :statement s
+      :return s))
 
 (defmethod emit #?(:clj clojure.lang.IPersistentVector
                    :cljs ::vector) [expr env]
@@ -555,8 +556,8 @@ break; }"
     (when map-fn
       (swap! *imported-core-vars* conj map-fn))
     (->> (if map-fn
-          (format "%s(%s)" map-fn keys)
-          (format "{ %s }" keys))
+           (format "%s(%s)" map-fn keys)
+           (format "{ %s }" keys))
          (emit-wrap env))))
 
 (defn transpile-form [f]

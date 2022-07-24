@@ -1,6 +1,5 @@
 import { seq, first, js_obj, prn, vector, __destructure_map, keyword, next, clj__GT_js, arrayMap } from 'cherry-cljs/cljs.core.js'
-(function () {
- let map__1, m, a, map__2, b, vec__3, seq__4, first__5, c, d, e, f;
+let map__1, m, a, map__2, b, vec__3, seq__4, first__5, c, d, e, f;
 map__1 = clj__GT_js(arrayMap(keyword("a"), 1));
 map__1 = __destructure_map(map__1);
 m = map__1;
@@ -20,9 +19,6 @@ first__5 = first(seq__4);
 seq__4 = next(seq__4);
 e = first__5;
 f = seq__4;
-return (function () {
- return prn(m, a, b, c, d, e, f);
-})();
-})();
+prn(m, a, b, c, d, e, f);
 
 export {  }

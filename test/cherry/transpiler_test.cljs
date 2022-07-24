@@ -8,6 +8,7 @@
 (aset js/globalThis "vector" cljs.core/vector)
 (aset js/globalThis "arrayMap" cljs.core/array-map)
 (aset js/globalThis "keyword" cljs.core/keyword)
+(aset js/globalThis "dissoc" cljs.core/dissoc)
 
 (defn jss! [expr]
   (if (string? expr)
@@ -79,11 +80,13 @@
 
 (deftest defn-test
   (let [s (jss! '(do (defn f [x] x) f))]
-    (prn :s s)
     (is (= 1 ((js/eval s) 1))))
   (let [s (jss! '(do (defn f [x] (let [y 1] (+ x y))) f))]
-    (prn :s s)
     (is (= 2 ((js/eval s) 1))))
+  (let [s (jss! '(do (defn foo [x]
+                       (dissoc x :foo))
+                     (foo {:a 1 :foo :bar})))]
+    (is (= {:a 1} (js/eval s))))
   #_(let [s (jss! "(do (defn f [^js {:keys [a b c]}] (+ a b c)) f)")]
     (prn s)
     (is (= 1 ((js/eval s) #js {:a 1 :b 2 :c 3})))))
