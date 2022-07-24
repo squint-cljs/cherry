@@ -2,8 +2,7 @@
   (:require
    [cherry.transpiler :as cherry]
    [clojure.string :as str]
-   [clojure.test :as t :refer [deftest is]]
-   ))
+   [clojure.test :as t :refer [deftest is]]))
 
 (defn jss! [expr]
   (if (string? expr)
@@ -37,9 +36,14 @@
 (deftest let-test
   (is (= 3 (jsv! '(let [x (do 1 2 3)] x)))))
 
-(aset js/globalThis "__destructure_map" cljs.core/--destructure-map )
+(aset js/globalThis "__destructure_map" cljs.core/--destructure-map)
 
 (deftest destructure-test
   (let [s (jss! "(let [^js {:keys [a b c]} #js {:a 1 :b 2 :c 3}]
                    (+ a b c))")]
     (is (= 6 (js/eval s)))))
+
+(deftest fn-test
+  (let [s (jss! '(let [f (fn [x] x)]
+                   f))]
+    (is (= 1 ((js/eval s) 1)))))
