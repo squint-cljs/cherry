@@ -38,8 +38,10 @@
    [cherry.internal.macros :as macros]
    [clojure.string :as str]
    [com.reasonr.string :as rstr]
-   ;; [cljs.analyzer :as ana]
-   ;; [cljs.compiler :as compiler]
+   #_[cherry.vendor.cljs.analyzer :as ana]
+   #_[cherry.vendor.cljs.compiler :as compiler]
+   #_[cljs.analyzer.api :as ana-api]
+   #_[cljs.env]
    [edamame.core :as e])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
 
@@ -382,15 +384,15 @@ break; }"
 (defn emit-do [env exprs]
   (let [bl (butlast exprs)
         l (last exprs)
-        ctx (:context env)
+        #_#_ctx (:context env)
         statement-env (assoc env :context :statement)
         ret-env  (if (= :statement (:context env))
                    (assoc env :context :statement)
                    (assoc env :context :return))]
-    (cond-> (str (str/join "" (map #(statement (emit % statement-env)) bl))
-                 (return (emit l ret-env)))
-      (and (seq bl) (= :expr ctx))
-      (wrap-iife))))
+    (str (str/join "" (map #(statement (emit % statement-env)) bl))
+         (emit l ret-env))
+    #_#_(and (seq bl) (= :expr ctx))
+    (wrap-iife)))
 
 (defmethod emit-special 'do [_type env [_ & exprs]]
   (emit-do env exprs))
@@ -597,7 +599,15 @@ break; }"
     (spit out-file transpiled)
     {:out-file out-file}))
 
-(defn compile! [s]
-  #_(let [expr (e/parse-string s)
-        analyzed (ana/analyze (ana/empty-env) expr)]
-    (with-out-str (compiler/emit* analyzed))))
+#_(defn compile! [s]
+  (prn :s s)
+  (let [expr (e/parse-string s {:row-key :line
+                                :col-key :column
+                                :end-location false})
+        compiler-env (ana-api/empty-state)]
+    (prn :expr expr (meta expr))
+    (binding [cljs.env/*compiler* compiler-env
+              ana/*cljs-ns* 'cljs.user]
+     (let [analyzed (ana/analyze (ana/empty-env) expr)]
+        (prn (keys analyzed))
+        (prn (compiler/emit-str analyzed))))))
