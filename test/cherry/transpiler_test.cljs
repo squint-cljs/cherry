@@ -10,6 +10,8 @@
 (aset js/globalThis "keyword" cljs.core/keyword)
 (aset js/globalThis "dissoc" cljs.core/dissoc)
 (aset js/globalThis "get" cljs.core/get)
+(aset js/globalThis "pos_QMARK_" cljs.core/pos?)
+(aset js/globalThis "dec" cljs.core/dec)
 
 (defn jss! [expr]
   (if (string? expr)
@@ -99,3 +101,12 @@
     (is (= {:a 1} (js/eval s))))
   (let [s (jss! "(do (defn f [^js {:keys [a b c]}] (+ a b c)) f)")]
     (is (= 6 ((js/eval s) #js {:a 1 :b 2 :c 3})))))
+
+(deftest loop-test
+  (let [s (jss! '(loop [x 1] (+ 1 2 x)))]
+    (is (= 4 (js/eval s))))
+  (let [s (jss! '(loop [x 10]
+                   (if (pos? x)
+                     (recur (dec x))
+                     x)))]
+    (is (zero? (js/eval s)))))

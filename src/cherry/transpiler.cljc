@@ -207,13 +207,59 @@
 
 (def ^:dynamic *recur-targets* [])
 
-(defmethod emit-special 'loop* [_ env [x bindings & body]]
-  (binding [*recur-targets* bindings]
+(declare emit-do wrap-iife)
+
+(defn emit-let [enc-env bindings body is-loop]
+  (let [context (:context enc-env)
+        env (assoc enc-env :context :expr)
+        partitioned (partition 2 bindings)
+        iife? (= :expr context)
+        upper-var->ident (:var->ident enc-env)
+        [bindings var->ident]
+        (reduce (fn [[acc var->ident] [var-name rhs]]
+                  (let [renamed (gensym var-name)
+                        lhs (str renamed)
+                        rhs (emit rhs (assoc env :var->ident var->ident))
+                        expr (format "let %s = %s;\n" lhs rhs)
+                        var->ident (assoc var->ident var-name renamed)]
+                    [(str acc expr) var->ident]))
+                ["" upper-var->ident]
+                partitioned)
+        enc-env (assoc enc-env :var->ident var->ident)]
+    (cond->> (str
+              #_(let [names renamed]
+                  (statement (str "let " (str/join ", " names))))
+              bindings #_(apply str (interleave
+                                     (map (fn [[name expr]]
+                                            (str (emit name env) " = "
+                                                 (emit expr env)))
+                                          partitioned)
+                                     (repeat statement-separator)))
+              (when is-loop
+                (str "while(true){\n"))
+              (binding [*recur-targets* (map first partitioned)]
+                (emit-do (if iife?
+                           (assoc enc-env :context :return)
+                           enc-env) body))
+              (when is-loop
+                ;; TODO: not sure why I had to insert the ; here, but else
+                ;; (loop [x 1] (+ 1 2 x)) breaks
+                (str ";break;\n}\n")))
+      (= :expr context)
+      (wrap-iife))))
+
+(defmethod emit-special 'let* [_type enc-env [_let bindings & body]]
+  (emit-let enc-env bindings body false))
+
+(defmethod emit-special 'loop* [_ env [_ bindings & body]]
+  (emit-let env bindings body true))
+
+#_(binding [*recur-targets* bindings]
     (format "while (true) {
 %s
 
 break; }"
-            (emit (list* 'let bindings body) env))))
+            (emit (list* 'let bindings body) env)))
 
 (defmethod emit-special 'recur [_ env [_ & exprs]]
   (let [bindings *recur-targets*
@@ -228,7 +274,7 @@ break; }"
      (str/join "\n"
                (map (fn [binding temp]
                       (statement (format "%s = %s"
-                                         binding temp)))
+                                         (emit binding env) temp)))
                     bindings temps)
                )
      "continue;\n")))
@@ -249,38 +295,6 @@ break; }"
 (defn wrap-iife [s]
   (cond-> (format "(%sfunction () {\n %s\n})()" (if *async* "async " "") s)
     *async* (wrap-await)))
-
-(defmethod emit-special 'let* [_type enc-env [_let bindings & more]]
-  (let [context (:context enc-env)
-        env (assoc enc-env :context :expr)
-        partitioned (partition 2 bindings)
-        iife? (= :expr context)
-        upper-var->ident (:var->ident enc-env)
-        [bindings var->ident]
-        (reduce (fn [[acc var->ident] [var-name rhs]]
-                  (let [renamed (gensym var-name)
-                        lhs (str renamed)
-                        rhs (emit rhs (assoc env :var->ident var->ident))
-                        expr (format "let %s = %s;\n" lhs rhs)
-                        var->ident (assoc var->ident var-name renamed)]
-                    [(str acc expr) var->ident]))
-                ["" upper-var->ident]
-                partitioned)
-        enc-env (assoc enc-env :var->ident var->ident)]
-    (cond->> (str
-              #_(let [names renamed]
-                (statement (str "let " (str/join ", " names))))
-              bindings #_(apply str (interleave
-                                     (map (fn [[name expr]]
-                                            (str (emit name env) " = "
-                                                 (emit expr env)))
-                                          partitioned)
-                                     (repeat statement-separator)))
-              (emit-do (if iife?
-                         (assoc enc-env :context :return)
-                         enc-env) more))
-      (= :expr context)
-      (wrap-iife))))
 
 (defmethod emit-special 'let [type env [_let bindings & more]]
   (emit (core-let bindings more) env)
