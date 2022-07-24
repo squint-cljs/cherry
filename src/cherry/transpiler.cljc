@@ -568,23 +568,28 @@ break; }"
                 next-js (some-> next-t not-empty (statement))]
             (recur (str transpiled next-js))))))))
 
-(defn transpile-string [s]
-  (let [core-vars (atom #{})
-        public-vars (atom #{})]
-    (binding [*imported-core-vars* core-vars
-              *public-vars* public-vars]
-      (let [transpiled (transpile-string* s)
-            transpiled (if-let [core-vars (seq @core-vars)]
-                         (str (format "import { %s } from 'cherry-cljs/cljs.core.js'\n"
-                                      (str/join ", " core-vars))
-                              transpiled)
-                         transpiled)
-            transpiled (str transpiled
-                            (format "\nexport { %s }\n"
-                                    (str/join ", " (disj @public-vars "default$")))
-                            (when (contains? @public-vars "default$")
-                              "export default default$\n"))]
-        transpiled))))
+(defn transpile-string
+  ([s] (transpile-string s nil))
+  ([s {:keys [elide-exports
+              elide-imports]}]
+   (let [core-vars (atom #{})
+         public-vars (atom #{})]
+     (binding [*imported-core-vars* core-vars
+               *public-vars* public-vars]
+       (let [transpiled (transpile-string* s)
+             transpiled (if-let [core-vars (and (not elide-imports)
+                                                (seq @core-vars))]
+                          (str (format "import { %s } from 'cherry-cljs/cljs.core.js'\n"
+                                       (str/join ", " core-vars))
+                               transpiled)
+                          transpiled)
+             transpiled (str transpiled
+                             (when-not elide-exports
+                               (str (format "\nexport { %s }\n"
+                                            (str/join ", " (disj @public-vars "default$")))
+                                    (when (contains? @public-vars "default$")
+                                      "export default default$\n"))))]
+         transpiled)))))
 
 #?(:cljs
    (defn slurp [f]
