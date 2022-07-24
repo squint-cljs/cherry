@@ -26,6 +26,7 @@
     (is (not (str/includes? s "function"))))
   (let [[v s] (js! '(do (def x (do 4 5 6))
                         x))]
+    (prn :do s)
     (is (= 6 v))
     (is (str/includes? s "function")))
   (let [[v s] (js! '(let [x (do 4 5 6)]
@@ -49,4 +50,21 @@
     (is (= 1 ((js/eval s) 1))))
   (let [s (jss! '(let [f (fn [x] 1 2 x)]
                    f))]
+    (is (= 1 ((js/eval s) 1))))
+  (let [s (jss! '(let [f (fn [x] 1 2 (+ 1 x))]
+                   f))]
+    (is (= 2 ((js/eval s) 1))))
+  (let [s (jss! '(let [f (fn [x] 1 2 (do 1 x))]
+                   f))]
     (is (= 1 ((js/eval s) 1)))))
+
+(deftest defn-test
+  (let [s (jss! '(do (defn f [x] x) f))]
+    (prn :s s)
+    (is (= 1 ((js/eval s) 1))))
+  (let [s (jss! '(do (defn f [x] (let [y 1] (+ x y))) f))]
+    (prn :s s)
+    (is (= 2 ((js/eval s) 1))))
+  #_(let [s (jss! "(do (defn f [^js {:keys [a b c]}] (+ a b c)) f)")]
+    (prn s)
+    (is (= 1 ((js/eval s) #js {:a 1 :b 2 :c 3})))))
