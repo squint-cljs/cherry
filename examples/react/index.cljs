@@ -5,7 +5,7 @@
    ["https://cdn.skypack.dev/react-dom" :as rdom]))
 
 (defn $
-  "out of lack of varargs in cherry right now, we pass children as a vector"
+  "Out of lack of varargs in cherry right now, we pass children as a vector"
   [elt props children]
   (let [props (clj->js props)
         elt (if (keyword? elt)
