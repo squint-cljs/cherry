@@ -337,10 +337,16 @@ break; }"
   #_(prn (core-let bindings more)))
 
 (defn process-require-clause [[libname & {:keys [refer as]}]]
-  (str (when as
-         (statement (format "import * as %s from '%s'" as libname)))
-       (when refer
-         (statement (format "import { %s } from '%s'"  (str/join ", " refer) libname)))))
+  (let [[libname suffix] (.split libname "$" 2)
+        [p & _props] (when suffix
+                       (.split suffix "."))]
+    (str
+     (when (and as (= "default" p))
+       (statement (format "import %s from '%s'" as libname)))
+     (when (and as (not p))
+       (statement (format "import * as %s from '%s'" as libname)))
+     (when refer
+       (statement (format "import { %s } from '%s'"  (str/join ", " refer) libname))))))
 
 (defmethod emit-special 'ns [_type _env [_ns _name & clauses]]
   (reduce (fn [acc [k & exprs]]
