@@ -95,10 +95,11 @@
   (emit-wrap env (str (format "keyword(%s)" (pr-str (subs (str expr) 1))))))
 
 (defn munge* [expr]
-  (let [munged (str (munge expr))]
+  (let [munged (str (munge expr))
+        keep #{"import" "await"}]
     (cond-> munged
       (and (str/ends-with? munged "$")
-           (not= (str expr) "default"))
+           (contains? keep (str expr)))
       (str/replace #"\$$" ""))))
 
 (declare core-vars)
