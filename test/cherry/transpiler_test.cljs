@@ -29,6 +29,7 @@
 (aset js/globalThis "map" cljs.core/map)
 (aset js/globalThis "re_seq" cljs.core/re-seq)
 (aset js/globalThis "str" cljs.core/str)
+(aset js/globalThis "symbol" cljs.core/symbol)
 
 (defn jss! [expr]
   (if (string? expr)
