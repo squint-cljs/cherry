@@ -447,5 +447,5 @@
       :else
       `(let [~esym ~e]
          (cond
-           ~@(mapcat (fn [[m c]] `((cljs.= ~m ~esym) ~c)) pairs)
+           ~@(mapcat (fn [[m c]] `((cljs.core/= ~m ~esym) ~c)) pairs)
            :else ~default)))))
