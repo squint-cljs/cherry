@@ -34,6 +34,7 @@
 (aset js/globalThis "_EQ_" cljs.core/=)
 (aset js/globalThis "keyword_QMARK_" cljs.core/keyword?)
 (aset js/globalThis "subs" cljs.core/subs)
+(aset js/globalThis "alength" cljs.core/alength)
 
 (defn jss! [expr]
   (if (string? expr)

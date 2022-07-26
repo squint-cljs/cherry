@@ -73,9 +73,15 @@
         (cons 'fn* new-sigs))
       (meta &form))))
 
+(defn core-js-arguments []
+  (list 'js* "arguments"))
+
+(defn core-unchecked-get [obj key]
+  (list 'js* "(~{}[~{}])" obj key))
+
 (defn- multi-arity-fn [name meta fdecl emit-var?]
   (letfn [(dest-args [c]
-            (map (fn [n] `(unchecked-get (js-arguments) ~n))
+            (map (fn [n] (core-unchecked-get (core-js-arguments) n))
                  (range c)))
           (fixed-arity [rname sig]
             (let [c (count sig)]
@@ -135,7 +141,7 @@
       `(do
          (def ~name
            (fn [~'var_args]
-             (case (alength (js-arguments))
+             (case (alength ~(core-js-arguments))
                ~@(mapcat #(fixed-arity rname %) sigs)
                ~(if variadic?
                   `(let [args-arr# (array)]
@@ -148,9 +154,9 @@
                            argseq#))))
                   (if (:macro meta)
                     `(throw (js/Error.
-                             (str "Invalid arity: " (- (alength (js-arguments)) 2))))
+                             (str "Invalid arity: " (- (alength ~(core-js-arguments)) 2))))
                     `(throw (js/Error.
-                             (str "Invalid arity: " (alength (js-arguments))))))))))
+                             (str "Invalid arity: " (alength ~(core-js-arguments))))))))))
          ~@(map #(fn-method name %) fdecl)
          ;; optimization properties
          (set! (. ~name ~'-cljs$lang$maxFixedArity) ~maxfa)
