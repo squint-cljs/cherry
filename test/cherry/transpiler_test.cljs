@@ -30,6 +30,7 @@
 (aset js/globalThis "re_seq" cljs.core/re-seq)
 (aset js/globalThis "str" cljs.core/str)
 (aset js/globalThis "symbol" cljs.core/symbol)
+(aset js/globalThis "list" cljs.core/list)
 
 (defn jss! [expr]
   (if (string? expr)
@@ -200,3 +201,7 @@
 
 (deftest new-test
   (is (= "hello" (jsv! '(str (js/String. "hello"))))))
+
+(deftest quote-test
+  (is (= '{x 1} (jsv! (list 'quote '{x 1}))))
+  (is (= '(def x 1) (jsv! (list 'quote '(def x 1))))))
