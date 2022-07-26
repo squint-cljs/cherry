@@ -152,6 +152,14 @@
                      (quux 1)))]
     (is (= 1 (js/eval s)))))
 
+(deftest defn-multi-arity-test
+  (is (= 1 (jsv! '(do
+                   (defn foo ([x] x) ([x y] y))
+                   (foo 1)))))
+  (is (= 2 (jsv! '(do
+                    (defn foo ([x] 1) ([x y] y))
+                    (foo 1 2))))))
+
 (deftest defn-recur-test
   (let [s (jss! '(do (defn quux [x]
                        (if (pos? x)

@@ -91,9 +91,8 @@
                       ~@(dest-args c)))]))
           (fn-method [name [sig & body :as method]]
             (if
-                ;; TODO
-                false #_(some '#{&} sig)
-                #_(variadic-fn* name method false)
+                (some '#{&} sig)
+                nil #_(variadic-fn* name method false)
                 ;; fix up individual :fn-method meta for
                 ;; cljs.analyzer/parse 'set! :top-fn handling
                 `(set!
