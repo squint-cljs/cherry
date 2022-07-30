@@ -109,6 +109,8 @@
                            (map count sigs)
                            [(- (count (first var-sigs)) 2)]))
           mfa      (cond-> maxfa macro? (- 2))
+          ;; problematic
+          ;; _ (prn (doall (map meta arglists)))
           meta     (assoc meta
                           :top-fn
                           {:variadic? variadic?
@@ -116,7 +118,7 @@
                            :max-fixed-arity mfa
                            :method-params (cond-> sigs #_#_macro? elide-implicit-macro-args)
                            :arglists (cond-> arglists #_#_macro? elide-implicit-macro-args)
-                           :arglists-meta (doall (map meta arglists))})
+                           :arglists-meta (doall (map clojure.core/meta arglists))})
           args-sym (gensym "args")
           param-counts (map count arglists)
           name     (with-meta name meta)
@@ -150,7 +152,8 @@
          ~@(map #(fn-method name %) fdecl)
          ;; optimization properties
          (set! (. ~name ~'-cljs$lang$maxFixedArity) ~maxfa)
-         ~(when emit-var? `(var ~name))))))
+         ~(when emit-var? `(var ~name))
+         ~name))))
 
 (defn core-fn
   [&form &env & sigs]
@@ -312,12 +315,10 @@
     (cond
       ;; multi arity fn
       (< 1 (count fdecl))
-      (do
-        (prn :fdecl fdecl)
-        (multi-arity-fn name
-                        (if false #_(comp/checking-types?)
-                            (update-in m [:jsdoc] conj "@param {...*} var_args")
-                            m) fdecl (:def-emits-var &env)))
+      (multi-arity-fn name
+                      (if false #_(comp/checking-types?)
+                          (update-in m [:jsdoc] conj "@param {...*} var_args")
+                          m) fdecl (:def-emits-var &env))
 
       (variadic-fn? fdecl)
       (variadic-fn name

@@ -547,7 +547,6 @@ break;}" body)
         (str (emit-function env nil signature body))))))
 
 (defmethod emit-special 'fn* [_type env [_fn & sigs :as expr]]
-  (prn :expr expr)
   (let [async? (:async (meta expr))]
     (binding [*async* async?]
       (emit-function* env sigs))))

@@ -136,6 +136,10 @@
                    f))]
     (is (= 1 ((js/eval s) 1)))))
 
+(deftest fn-multi-arity-test
+  (is (= 1 (jsv! '(let [f (fn foo ([x] x) ([x y] y))] (f 1)))))
+  (is (= 2 (jsv! '(let [f (fn foo ([x] x) ([x y] y))] (f 1 2))))))
+
 (deftest defn-test
   (let [s (jss! '(do (defn f [x] x) f))]
     (is (= 1 ((js/eval s) 1))))
