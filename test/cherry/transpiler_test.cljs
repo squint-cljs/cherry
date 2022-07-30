@@ -156,8 +156,8 @@
 
 (deftest defn-multi-arity-test
   (is (= 1 (jsv! '(do
-                   (defn foo ([x] x) ([x y] y))
-                   (foo 1)))))
+                    (defn foo ([x] x) ([x y] y))
+                    (foo 1)))))
   (is (= 2 (jsv! '(do
                     (defn foo ([x] 1) ([x y] y))
                     (foo 1 2))))))
@@ -259,5 +259,14 @@
   (let [s (jss! "(.. #js {:foo #js {:bar 2}} -foo -bar)")]
     (is (= 2 (js/eval s)))))
 
+#_(js-delete js/require.cache (js/require.resolve "/tmp/debug.js"))
+#_(js/require "/tmp/debug.js")
+(js/eval
+ (jss! '(do (defn foo
+              ([x] x)
+              ([x y & args]
+               (js/console.log x y (str args)) args))
+            (foo 1 2 3))))
+
 (defn init []
-  (cljs.test/run-tests 'cherry.transpiler-test))
+  #_(cljs.test/run-tests 'cherry.transpiler-test))
