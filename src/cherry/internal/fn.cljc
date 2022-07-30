@@ -155,6 +155,49 @@
          ~(when emit-var? `(var ~name))
          ~name))))
 
+(defn- variadic-fn? [fdecl]
+  (and (= 1 (count fdecl))
+       (some '#{&} (ffirst fdecl))))
+
+(defn- elide-implicit-macro-args [arglists]
+  (map (fn [arglist]
+         (if (vector? arglist)
+           (subvec arglist 2)
+           (drop 2 arglist)))
+       arglists))
+
+(defn- variadic-fn [name meta [[arglist & body :as method] :as fdecl] emit-var?]
+  (letfn [(dest-args [c]
+            (map (fn [n] (core-unchecked-get (core-js-arguments) n))
+                 (range c)))]
+    (let [rname (symbol #_(str nil #_ana/*cljs-ns*) (str name))
+          sig   (remove '#{&} arglist)
+          c-1   (dec (count sig))
+          macro? (:macro meta)
+          mfa   (cond-> c-1 macro? (- 2))
+          meta  (assoc meta
+                       :top-fn
+                       {:variadic? true
+                        :fixed-arity mfa
+                        :max-fixed-arity mfa
+                        :method-params (cond-> [sig] macro? elide-implicit-macro-args)
+                        :arglists (cond-> (list arglist) macro? elide-implicit-macro-args)
+                        :arglists-meta (doall (map clojure.core/meta [arglist]))})
+          name  (with-meta name meta)
+          args-sym (gensym "args")]
+      `(do
+         (def ~name
+           (fn [~'var_args]
+             (let [~args-sym (array)]
+               ~(core-copy-arguments args-sym)
+               (let [argseq# (when (< ~c-1 (alength ~args-sym))
+                               (new ^:ana/no-resolve cljs.core/IndexedSeq
+                                    (.slice ~args-sym ~c-1) 0 nil))]
+                 (. ~rname (~'cljs$core$IFn$_invoke$arity$variadic ~@(dest-args c-1) argseq#))))))
+         ~(variadic-fn* name method)
+         ~(when emit-var? `(var ~name))
+         ~name))))
+
 (defn core-fn
   [&form &env & sigs]
   (let [name (if (symbol? (first sigs)) (first sigs) nil)
@@ -210,54 +253,17 @@
                       (if false #_(comp/checking-types?)
                           (update-in m [:jsdoc] conj "@param {...*} var_args")
                           m) sigs (:def-emits-var &env))
+      (variadic-fn? sigs)
+      (variadic-fn name
+                   (if false #_(comp/checking-types?)
+                       (update-in m [:jsdoc] conj "@param {...*} var_args")
+                       m) sigs (:def-emits-var &env))
       :else
       (with-meta
         (if name
           (list* 'fn* name new-sigs)
           (cons 'fn* new-sigs))
         (meta &form)))))
-
-(defn- variadic-fn? [fdecl]
-  (and (= 1 (count fdecl))
-       (some '#{&} (ffirst fdecl))))
-
-(defn- elide-implicit-macro-args [arglists]
-  (map (fn [arglist]
-         (if (vector? arglist)
-           (subvec arglist 2)
-           (drop 2 arglist)))
-       arglists))
-
-(defn- variadic-fn [name meta [[arglist & body :as method] :as fdecl] emit-var?]
-  (letfn [(dest-args [c]
-            (map (fn [n] (core-unchecked-get (core-js-arguments) n))
-                 (range c)))]
-    (let [rname (symbol #_(str nil #_ana/*cljs-ns*) (str name))
-          sig   (remove '#{&} arglist)
-          c-1   (dec (count sig))
-          macro? (:macro meta)
-          mfa   (cond-> c-1 macro? (- 2))
-          meta  (assoc meta
-                       :top-fn
-                       {:variadic? true
-                        :fixed-arity mfa
-                        :max-fixed-arity mfa
-                        :method-params (cond-> [sig] macro? elide-implicit-macro-args)
-                        :arglists (cond-> (list arglist) macro? elide-implicit-macro-args)
-                        :arglists-meta (doall (map meta [arglist]))})
-          name  (with-meta name meta)
-          args-sym (gensym "args")]
-      `(do
-         (def ~name
-           (fn [~'var_args]
-             (let [~args-sym (array)]
-               ~(core-copy-arguments args-sym)
-               (let [argseq# (when (< ~c-1 (alength ~args-sym))
-                               (new ^:ana/no-resolve cljs.core/IndexedSeq
-                                    (.slice ~args-sym ~c-1) 0 nil))]
-                 (. ~rname (~'cljs$core$IFn$_invoke$arity$variadic ~@(dest-args c-1) argseq#))))))
-         ~(variadic-fn* name method)
-         ~(when emit-var? `(var ~name))))))
 
 (defn
   ^{:doc "Same as (def name (core/fn [params* ] exprs*)) or (def
