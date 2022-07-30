@@ -91,7 +91,8 @@
                    ~(symbol (str "-cljs$core$IFn$_invoke$arity$"
                                  (count sig))))
                 (fn ~method))))]
-    (let [rname    (symbol
+    (let [name (or name (gensym "f"))
+          rname    (symbol
                     ;; TODO:
                     #_(str  ana/*cljs-ns*) (str name))
           arglists (map first fdecl)
@@ -320,7 +321,7 @@
         m (conj (if (meta name) (meta name) {}) m)]
     (cond
       ;; multi arity fn
-      (< 1 (count fdecl))
+      #_#_#_#_(< 1 (count fdecl))
       (multi-arity-fn name
                       (if false #_(comp/checking-types?)
                           (update-in m [:jsdoc] conj "@param {...*} var_args")
