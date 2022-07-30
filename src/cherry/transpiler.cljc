@@ -251,7 +251,10 @@
         upper-var->ident (:var->ident enc-env)
         [bindings var->ident]
         (reduce (fn [[acc var->ident] [var-name rhs]]
-                  (let [renamed (munge (gensym var-name))
+                  (let [vm (meta var-name)
+                        rename? (not (:cherry.compiler/no-rename vm))
+                        renamed (if rename? (munge (gensym var-name))
+                                    var-name)
                         lhs (str renamed)
                         rhs (emit rhs (assoc env :var->ident var->ident))
                         expr (format "let %s = %s;\n" lhs rhs)
