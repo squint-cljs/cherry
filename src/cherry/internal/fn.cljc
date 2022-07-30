@@ -19,60 +19,6 @@
           (let ~lets
             ~@body))))))
 
-(defn core-fn
-  [&form sigs]
-  (let [name (if (symbol? (first sigs)) (first sigs) nil)
-        sigs (if name (next sigs) sigs)
-        sigs (if (vector? (first sigs))
-               (list sigs)
-               (if (seq? (first sigs))
-                 sigs
-                 ;; Assume single arity syntax
-                 (throw (Exception.
-                         (if (seq sigs)
-                           (str "Parameter declaration "
-                                (first sigs)
-                                " should be a vector")
-                           (str "Parameter declaration missing"))))))
-        psig (fn* [sig]
-                  ;; Ensure correct type before destructuring sig
-                  (when (not (seq? sig))
-                    (throw (Exception.
-                            (str "Invalid signature " sig
-                                 " should be a list"))))
-                  (let [[params & body] sig
-                        _ (when (not (vector? params))
-                            (throw (Exception.
-                                    (if (seq? (first sigs))
-                                      (str "Parameter declaration " params
-                                           " should be a vector")
-                                      (str "Invalid signature " sig
-                                           " should be a list")))))
-                        conds (when (and (next body) (map? (first body)))
-                                (first body))
-                        body (if conds (next body) body)
-                        conds (or conds (meta params))
-                        pre (:pre conds)
-                        post (:post conds)
-                        body (if post
-                               `((let [~'% ~(if (< 1 (count body))
-                                              `(do ~@body)
-                                              (first body))]
-                                   ~@(map (fn* [c] `(assert ~c)) post)
-                                   ~'%))
-                               body)
-                        body (if pre
-                               (concat (map (fn* [c] `(assert ~c)) pre)
-                                       body)
-                               body)]
-                    (maybe-destructured params body)))
-        new-sigs (map psig sigs)]
-    (with-meta
-      (if name
-        (list* 'fn* name new-sigs)
-        (cons 'fn* new-sigs))
-      (meta &form))))
-
 (defn core-js-arguments []
   (list 'js* "arguments"))
 
@@ -206,6 +152,68 @@
          (set! (. ~name ~'-cljs$lang$maxFixedArity) ~maxfa)
          ~(when emit-var? `(var ~name))))))
 
+(defn core-fn
+  [&form &env & sigs]
+  (let [name (if (symbol? (first sigs)) (first sigs) nil)
+        sigs (if name (next sigs) sigs)
+        sigs (if (vector? (first sigs))
+               (list sigs)
+               (if (seq? (first sigs))
+                 sigs
+                 ;; Assume single arity syntax
+                 (throw (Exception.
+                         (if (seq sigs)
+                           (str "Parameter declaration "
+                                (first sigs)
+                                " should be a vector")
+                           (str "Parameter declaration missing"))))))
+        psig (fn* [sig]
+                  ;; Ensure correct type before destructuring sig
+                  (when (not (seq? sig))
+                    (throw (Exception.
+                            (str "Invalid signature " sig
+                                 " should be a list"))))
+                  (let [[params & body] sig
+                        _ (when (not (vector? params))
+                            (throw (Exception.
+                                    (if (seq? (first sigs))
+                                      (str "Parameter declaration " params
+                                           " should be a vector")
+                                      (str "Invalid signature " sig
+                                           " should be a list")))))
+                        conds (when (and (next body) (map? (first body)))
+                                (first body))
+                        body (if conds (next body) body)
+                        conds (or conds (meta params))
+                        pre (:pre conds)
+                        post (:post conds)
+                        body (if post
+                               `((let [~'% ~(if (< 1 (count body))
+                                              `(do ~@body)
+                                              (first body))]
+                                   ~@(map (fn* [c] `(assert ~c)) post)
+                                   ~'%))
+                               body)
+                        body (if pre
+                               (concat (map (fn* [c] `(assert ~c)) pre)
+                                       body)
+                               body)]
+                    (maybe-destructured params body)))
+        m (meta name)
+        new-sigs (map psig sigs)]
+    (cond
+      (< 1 (count sigs))
+      (multi-arity-fn name
+                      (if false #_(comp/checking-types?)
+                          (update-in m [:jsdoc] conj "@param {...*} var_args")
+                          m) sigs (:def-emits-var &env))
+      :else
+      (with-meta
+        (if name
+          (list* 'fn* name new-sigs)
+          (cons 'fn* new-sigs))
+        (meta &form)))))
+
 (defn- variadic-fn? [fdecl]
   (and (= 1 (count fdecl))
        (some '#{&} (ffirst fdecl))))
@@ -304,10 +312,12 @@
     (cond
       ;; multi arity fn
       (< 1 (count fdecl))
-      (multi-arity-fn name
-                      (if false #_(comp/checking-types?)
-                          (update-in m [:jsdoc] conj "@param {...*} var_args")
-                          m) fdecl (:def-emits-var &env))
+      (do
+        (prn :fdecl fdecl)
+        (multi-arity-fn name
+                        (if false #_(comp/checking-types?)
+                            (update-in m [:jsdoc] conj "@param {...*} var_args")
+                            m) fdecl (:def-emits-var &env)))
 
       (variadic-fn? fdecl)
       (variadic-fn name

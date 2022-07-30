@@ -284,30 +284,6 @@
 (defmethod emit-special 'loop* [_ env [_ bindings & body]]
   (emit-let env bindings body true))
 
-#_(defmethod emit* :case
-    [{v :test :keys [nodes default env]}]
-    (when (= (:context env) :expr)
-      (emitln "(function(){"))
-    (let [gs (gensym "caseval__")]
-      (when (= :expr (:context env))
-        (emitln "var " gs ";"))
-      (emitln "switch (" v ") {")
-      (doseq [{ts :tests {:keys [then]} :then} nodes]
-        (doseq [test (map :test ts)]
-          (emitln "case " test ":"))
-        (if (= :expr (:context env))
-          (emitln gs "=" then)
-          (emitln then))
-        (emitln "break;"))
-      (when default
-        (emitln "default:")
-        (if (= :expr (:context env))
-          (emitln gs "=" default)
-          (emitln default)))
-      (emitln "}")
-      (when (= :expr (:context env))
-        (emitln "return " gs ";})()"))))
-
 (defmethod emit-special 'case* [_ env [_ v tests thens default]]
   (let [expr? (= :expr (:context env))
         gs (gensym "caseval__")
@@ -571,12 +547,13 @@ break;}" body)
         (str (emit-function env nil signature body))))))
 
 (defmethod emit-special 'fn* [_type env [_fn & sigs :as expr]]
+  (prn :expr expr)
   (let [async? (:async (meta expr))]
     (binding [*async* async?]
       (emit-function* env sigs))))
 
 (defmethod emit-special 'fn [_type env [fn & sigs :as expr]]
-  (let [expanded (core-fn expr sigs)]
+  (let [expanded (apply core-fn expr {} sigs)]
     (emit expanded env)))
 
 (defmethod emit-special 'defn [_type env [fn name & args :as expr]]
