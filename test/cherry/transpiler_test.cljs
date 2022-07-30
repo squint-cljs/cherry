@@ -174,6 +174,15 @@
   (let [s (jss! '(do (defn foo [x & args] args) (foo 1 2 3)))]
     (is (= '(2 3) (js/eval s)))))
 
+(deftest defn-multi-varargs-test
+  (is (= [1 [1 2 '(3 4)]]
+         (js/eval
+          (jss! '(do (defn foo
+                       ([x] x)
+                       ([x y & args]
+                        [x y args]))
+                     [(foo 1) (foo 1 2 3 4)]))))))
+
 (deftest loop-test
   (let [s (jss! '(loop [x 1] (+ 1 2 x)))]
     (is (= 4 (js/eval s))))
@@ -261,12 +270,6 @@
 
 #_(js-delete js/require.cache (js/require.resolve "/tmp/debug.js"))
 #_(js/require "/tmp/debug.js")
-(js/eval
- (jss! '(do (defn foo
-              ([x] x)
-              ([x y & args]
-               (js/console.log x y (str args)) args))
-            (foo 1 2 3))))
 
 (defn init []
   #_(cljs.test/run-tests 'cherry.transpiler-test))

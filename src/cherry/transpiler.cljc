@@ -322,7 +322,7 @@
                                       (str (str "case " (emit test eenv) ":\n")
                                            (if expr?
                                              (str gs " = " then)
-                                             (emit-wrap env (emit then eenv)))
+                                             (emit then env))
                                            "\nbreak;\n"))
                                     test)))
                             tests thens))
