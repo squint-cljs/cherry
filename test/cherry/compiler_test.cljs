@@ -140,14 +140,17 @@
     (is (= 1 ((js/eval s) 1)))))
 
 (deftest fn-varargs-test
-  (is (= '(3 4) (jsv! '(let [f (fn foo [x y & zs] zs)] (f 1 2 3 4))))))
+  (is (= '(3 4) (jsv! '(let [f (fn foo [x y & zs] zs)] (f 1 2 3 4)))))
+  (is (nil? (jsv! '(let [f (fn foo [x y & zs] zs)] (f 1 2))))))
 
 (deftest fn-multi-arity-test
   (is (= 1 (jsv! '(let [f (fn foo ([x] x) ([x y] y))] (f 1)))))
   (is (= 2 (jsv! '(let [f (fn foo ([x] x) ([x y] y))] (f 1 2))))))
 
 (deftest fn-multi-varargs-test
-  (is (= '(3 4) (jsv! '(let [f (fn foo ([x] x) ([x y & zs] zs))] (f 1 2 3 4))))))
+  (is (= 1 (jsv! '(let [f (fn foo ([x] x) ([x y & zs] zs))] (f 1)))))
+  (is (= '(3 4) (jsv! '(let [f (fn foo ([x] x) ([x y & zs] zs))] (f 1 2 3 4)))))
+  (is (nil? (jsv! '(let [f (fn foo ([x] x) ([x y & zs] zs))] (f 1 2))))))
 
 (deftest defn-test
   (let [s (jss! '(do (defn f [x] x) f))]
@@ -288,4 +291,5 @@
   (is (= '(assoc {} :foo :bar) (jsv! "`(assoc {} :foo :bar)"))))
 
 (defn init []
+
   (cljs.test/run-tests 'cherry.compiler-test))

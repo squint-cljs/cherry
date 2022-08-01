@@ -182,7 +182,8 @@
                       'exists? macros/core-exists?
                       'case macros/core-case
                       '.. macros/core-dotdot
-                      'defmacro core-defmacro})
+                      'defmacro core-defmacro
+                      'this-as macros/core-this-as})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
@@ -643,8 +644,9 @@ break;}" body)
                                (second expr)
                                (symbol (subs head-str 1))
                                (nnext expr)))
-          (contains? built-in-macros head) (let [macro (built-in-macros head)]
-                                             (emit (apply macro expr {} (rest expr)) env))
+          (contains? built-in-macros head) (let [macro (built-in-macros head)
+                                                 new-expr (apply macro expr {} (rest expr))]
+                                             (emit new-expr env))
           (and (> (count head-str) 1)
                (str/ends-with? head-str "."))
           (emit (list* 'new (symbol (subs head-str 0 (dec (count head-str)))) (rest expr))
