@@ -124,7 +124,8 @@
                (emit (list 'cljs.core/symbol
                            (str expr))))
     (let [expr (if-let [sym-ns (namespace expr)]
-                 (or (when (= "cljs.core" (namespace expr))
+                 (or (when (or (= "cljs.core" sym-ns)
+                               (= "clojure.core" sym-ns))
                        (maybe-core-var (symbol (name expr))))
                      (when (= "js" sym-ns)
                        (symbol (name expr)))
@@ -707,13 +708,13 @@ break;}" body)
 (defn transpile-string* [s]
   (let [rdr (e/reader s)
         opts cherry-parse-opts]
-    (loop [transpiled ""]s
-          (let [next-form (e/parse-next rdr opts)]
-            (if (= ::e/eof next-form)
-              transpiled
-              (let [next-t (transpile-form next-form)
-                    next-js (some-> next-t not-empty (statement))]
-                (recur (str transpiled next-js))))))))
+    (loop [transpiled ""]
+      (let [next-form (e/parse-next rdr opts)]
+        (if (= ::e/eof next-form)
+          transpiled
+          (let [next-t (transpile-form next-form)
+                next-js (some-> next-t not-empty (statement))]
+            (recur (str transpiled next-js))))))))
 
 (defn transpile-string
   ([s] (transpile-string s nil))

@@ -37,6 +37,9 @@
 (aset js/globalThis "subs" cljs.core/subs)
 (aset js/globalThis "alength" cljs.core/alength)
 (aset js/globalThis "array" cljs.core/array)
+(aset js/globalThis "sequence" cljs.core/sequence)
+(aset js/globalThis "apply" cljs.core/apply)
+(aset js/globalThis "array_map" cljs.core/array-map)
 
 (defn jss! [expr]
   (if (string? expr)
@@ -280,6 +283,9 @@
 
 #_(js-delete js/require.cache (js/require.resolve "/tmp/debug.js"))
 #_(js/require "/tmp/debug.js")
+
+(deftest backtick-test
+  (is (= '(assoc {} :foo :bar) (jsv! "`(assoc {} :foo :bar)"))))
 
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test))
