@@ -7,9 +7,12 @@
 
 (defn compile-files
   [files]
-  (reduce (fn [_prev f]
-            (println "[cherry] Compiling CLJS file:" f)
-            (-> (t/transpile-file {:in-file f})
+  (reduce (fn [prev f]
+            (-> (js/Promise.resolve prev)
+                (.then
+                 #(do
+                    (println "[cherry] Compiling CLJS file:" f)
+                    (t/transpile-file {:in-file f})))
                 (.then (fn [{:keys [out-file]}]
                          (println "[cherry] Wrote JS file:" out-file)
                          out-file))))
@@ -43,9 +46,11 @@ help                      Print this help"))
       (compile-files rest-cmds))))
 
 (defn run [{:keys [opts]}]
-  (let [{:keys [file]} opts
-        {:keys [out-file]} (t/transpile-file {:in-file file})]
-    (esm/dynamic-import (str (js/process.cwd) "/" out-file))))
+  (let [{:keys [file]} opts]
+    (println "[cherry] Running" file)
+    (.then (t/transpile-file {:in-file file})
+           (fn [{:keys [out-file]}]
+             (esm/dynamic-import (str (js/process.cwd) "/" out-file))))))
 
 #_(defn compile-form [{:keys [opts]}]
     (let [e (:e opts)]

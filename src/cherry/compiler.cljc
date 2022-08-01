@@ -33,7 +33,7 @@
    #?(:cljs [goog.string :as gstring])
    #?(:clj [cherry.resource :as resource])
    [cherry.internal.destructure :refer [core-let]]
-   [cherry.internal.fn :refer [core-defn core-fn]]
+   [cherry.internal.fn :refer [core-defn core-fn core-defmacro]]
    [cherry.internal.loop :as loop]
    [cherry.internal.macros :as macros]
    [clojure.string :as str]
@@ -180,7 +180,8 @@
                       'defonce macros/core-defonce
                       'exists? macros/core-exists?
                       'case macros/core-case
-                      '.. macros/core-dotdot})
+                      '.. macros/core-dotdot
+                      'defmacro core-defmacro})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
@@ -529,7 +530,8 @@ break;}" body)
                  body)]
       (str (when-not elide-function?
              (str (when *async*
-                    "async ") "function ")) (comma-list sig) " {\n"
+                    "async ") "function "))
+           (comma-list (map munge sig)) " {\n"
            body "\n}"))))
 
 (defn emit-function* [env expr]
@@ -706,12 +708,12 @@ break;}" body)
   (let [rdr (e/reader s)
         opts cherry-parse-opts]
     (loop [transpiled ""]s
-      (let [next-form (e/parse-next rdr opts)]
-        (if (= ::e/eof next-form)
-          transpiled
-          (let [next-t (transpile-form next-form)
-                next-js (some-> next-t not-empty (statement))]
-            (recur (str transpiled next-js))))))))
+          (let [next-form (e/parse-next rdr opts)]
+            (if (= ::e/eof next-form)
+              transpiled
+              (let [next-t (transpile-form next-form)
+                    next-js (some-> next-t not-empty (statement))]
+                (recur (str transpiled next-js))))))))
 
 (defn transpile-string
   ([s] (transpile-string s nil))
@@ -758,20 +760,32 @@ break;}" body)
 #?(:cljs
    (defn scan-macros [file]
      (let [s (slurp file)
-           [_ns _name {:keys [require-macros]}] (e/parse-next (e/reader s) cherry-parse-opts)]
-       (when require-macros
-         (let [[f & {:keys [refer]}] require-macros
-               f (resolve-file file f)
-               macros (-> (dyn-import f)
-                          (.then (fn [macros]
-                                   (zipmap
-                                    refer
-                                    (map #(aget macros (munge %)) refer)))))]
-           (.then macros
-            (fn [macros]
-              (set! built-in-macros
-                    ;; hack
-                    (merge built-in-macros macros)))))))))
+           maybe-ns (e/parse-next (e/reader s) cherry-parse-opts)]
+       (when (and (seq? maybe-ns)
+                  (= 'ns (first maybe-ns)))
+         (let [[_ns _name & clauses] maybe-ns
+               require-macros (some #(when (and (seq? %)
+                                                (= :require-macros (first %)))
+                                       (rest %))
+                                    clauses)]
+           (when require-macros
+             (reduce (fn [prev require-macros]
+                       (.then prev
+                              (fn [_]
+                                (let [[f & {:keys [refer]}] require-macros
+                                      f (resolve-file file f)
+                                      macros (-> (dyn-import f)
+                                                 (.then (fn [macros]
+                                                          (zipmap
+                                                           refer
+                                                           (map #(aget macros (munge %)) refer)))))]
+                                  (.then macros
+                                         (fn [macros]
+                                           (set! built-in-macros
+                                                 ;; hack
+                                                 (merge built-in-macros macros))))))))
+                     (js/Promise.resolve nil)
+                     require-macros)))))))
 
 (defn transpile-file [{:keys [in-file out-file]}]
   (let [out-file (or out-file

@@ -282,4 +282,4 @@
 #_(js/require "/tmp/debug.js")
 
 (defn init []
-  #_(cljs.test/run-tests 'cherry.transpiler-test))
+  (cljs.test/run-tests 'cherry.compiler-test))
