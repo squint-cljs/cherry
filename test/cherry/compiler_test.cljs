@@ -291,5 +291,4 @@
   (is (= '(assoc {} :foo :bar) (jsv! "`(assoc {} :foo :bar)"))))
 
 (defn init []
-
   (cljs.test/run-tests 'cherry.compiler-test))

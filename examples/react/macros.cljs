@@ -5,8 +5,7 @@
   ([elt]
    `($ ~elt nil))
   ([elt props & children]
-   (prn :children props children)
    (let [elt (if (keyword? elt) (name elt) elt)]
      (if (map? props)
-       `(react/createElement ~elt (clj->js ~props) ~children)
-       `(react/createElement ~elt nil ~props ~children)))))
+       `(react/createElement ~elt (clj->js ~props) ~@children)
+       `(react/createElement ~elt nil ~props ~@children)))))

@@ -60,7 +60,8 @@
                        (. self# (~(get-delegate) (seq ~restarg))))))))]
        `(do
           (set! (. ~sym ~(get-delegate-prop))
-                (fn (~(vec sig) ~@body)))
+                (fn (~(vec sig)
+                     ~@body)))
           ~@(when solo
               `[(set! (. ~sym ~'-cljs$lang$maxFixedArity)
                       ~(dec (count sig)))])
@@ -144,7 +145,7 @@
                            (. ~rname
                               (~'cljs$core$IFn$_invoke$arity$variadic
                                ~@(dest-args maxfa)
-                               argseq#))))
+                               (seq argseq#)))))
                       (if (:macro meta)
                         `(throw (js/Error.
                                  (str "Invalid arity: " (- (alength ~(core-js-arguments)) 2))))

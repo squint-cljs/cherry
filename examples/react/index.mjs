@@ -10,11 +10,11 @@ return confetti();
 let vec__2831 = react.useState(0);
 let count32 = nth(vec__2831, 0, null);
 let setCount33 = nth(vec__2831, 1, null);
-return react.createElement("div", null, react.createElement("p", null, "You clicked ", count32(" times!")), react.createElement("button", clj__GT_js(arrayMap(keyword("onClick"), function () {
+return react.createElement("div", null, react.createElement("p", null, "You clicked ", count32, " times!"), react.createElement("button", clj__GT_js(arrayMap(keyword("onClick"), function () {
 confetti();
 return setCount33((count32 + 1));
-})), "Click me"())());
+})), "Click me"));
 };
-rdom.render(react.createElement(App, null, null, ()), document.getElementById("app"));
+rdom.render(react.createElement(App, null, null), document.getElementById("app"));
 
 export { App }
