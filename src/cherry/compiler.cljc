@@ -695,13 +695,17 @@ break;}" body)
 (defn transpile-form [f]
   (emit f {:context :statement}))
 
+(def cherry-parse-opts
+  (e/normalize-opts
+   {:all true
+    :end-location false
+    :location? seq?
+    :readers {'js #(vary-meta % assoc ::js true)}}))
+
 (defn transpile-string* [s]
   (let [rdr (e/reader s)
-        opts (e/normalize-opts {:all true
-                                :end-location false
-                                :location? seq?
-                                :readers {'js #(vary-meta % assoc ::js true)}})]
-    (loop [transpiled ""]
+        opts cherry-parse-opts]
+    (loop [transpiled ""]s
       (let [next-form (e/parse-next rdr opts)]
         (if (= ::e/eof next-form)
           transpiled
@@ -740,12 +744,43 @@ break;}" body)
    (defn spit [f s]
      (fs/writeFileSync f s "utf-8")))
 
+#?(:cljs
+   (defn resolve-file [prefix suffix]
+     (if (str/starts-with? suffix "./")
+       (str/join "/" (concat [(js/process.cwd)]
+                             (butlast (str/split prefix "/"))
+                             [(subs suffix 2)]))
+       suffix)))
+
+#?(:cljs
+   (def dyn-import (js/eval "(x) => { return import(x) }")))
+
+#?(:cljs
+   (defn scan-macros [file]
+     (let [s (slurp file)
+           [_ns _name {:keys [require-macros]}] (e/parse-next (e/reader s) cherry-parse-opts)]
+       (when require-macros
+         (let [[f & {:keys [refer]}] require-macros
+               f (resolve-file file f)
+               macros (-> (dyn-import f)
+                          (.then (fn [macros]
+                                   (zipmap
+                                    refer
+                                    (map #(aget macros (munge %)) refer)))))]
+           (.then macros
+            (fn [macros]
+              (set! built-in-macros
+                    ;; hack
+                    (merge built-in-macros macros)))))))))
+
 (defn transpile-file [{:keys [in-file out-file]}]
   (let [out-file (or out-file
-                     (str/replace in-file #".cljs$" ".mjs"))
-        transpiled (transpile-string (slurp in-file))]
-    (spit out-file transpiled)
-    {:out-file out-file}))
+                     (str/replace in-file #".cljs$" ".mjs"))]
+    (-> #?(:cljs (js/Promise.resolve (scan-macros in-file)))
+        (.then #(transpile-string (slurp in-file)))
+        (.then (fn [transpiled]
+                 (spit out-file transpiled)
+                 {:out-file out-file})))))
 
 #_(defn compile! [s]
     (prn :s s)
