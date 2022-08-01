@@ -1,4 +1,5 @@
 (ns macros)
 
 (defn do-twice [_f _e x]
-  `(do ~x ~x))
+  `(try (do ~x ~x)
+        (finally (prn :done))))
