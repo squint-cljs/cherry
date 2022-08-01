@@ -5,20 +5,24 @@
    [cherry.compiler :as t]
    [shadow.esm :as esm]))
 
-(defn transpile-files
+(defn compile-files
   [files]
-  (doseq [f files]
-    (println "Transpiling CLJS file:" f)
-    (let [{:keys [out-file]} (t/transpile-file {:in-file f})]
-      (println "Wrote JS file:" out-file))))
+  (reduce (fn [_prev f]
+            (println "[cherry] Compiling CLJS file:" f)
+            (-> (t/transpile-file {:in-file f})
+                (.then (fn [{:keys [out-file]}]
+                         (println "[cherry] Wrote JS file:" out-file)
+                         out-file))))
+          nil
+          files))
 
 (defn print-help []
   (println "Cherry v0.0.0
 
 Usage:
 
-run       <file.cljs>     Transpile and run a file
-transpile <file.cljs> ... Transpile file(s)
+run       <file.cljs>     Compile and run a file
+compile   <file.cljs> ... Compile file(s)
 help                      Print this help"))
 
 (defn fallback [{:keys [rest-cmds opts]}]
@@ -31,12 +35,12 @@ help                      Print this help"))
         (println res))
       (-> (esm/dynamic-import (str (js/process.cwd) "/" f))
           (.finally (fn [_]
-                   (fs/rmSync dir #js {:force true :recursive true})))))
+                      (fs/rmSync dir #js {:force true :recursive true})))))
     (if (or (:help opts)
             (= "help" (first rest-cmds))
             (empty? rest-cmds))
       (print-help)
-      (transpile-files rest-cmds))))
+      (compile-files rest-cmds))))
 
 (defn run [{:keys [opts]}]
   (let [{:keys [file]} opts
@@ -44,14 +48,13 @@ help                      Print this help"))
     (esm/dynamic-import (str (js/process.cwd) "/" out-file))))
 
 #_(defn compile-form [{:keys [opts]}]
-  (let [e (:e opts)]
-    (println (t/compile! e))))
+    (let [e (:e opts)]
+      (println (t/compile! e))))
 
 (def table
   [{:cmds ["run"]        :fn run :cmds-opts [:file]}
-   {:cmds ["transpile"]  :fn (fn [{:keys [rest-cmds]}]
-                               (transpile-files rest-cmds))}
-   #_{:cmds ["compile"]    :fn compile-form}
+   {:cmds ["compile"]    :fn (fn [{:keys [rest-cmds]}]
+                             (compile-files rest-cmds))}
    {:cmds []             :fn fallback}])
 
 (defn init []
