@@ -26,7 +26,7 @@
 
 (ns #^{:author "Allen Rohner"
        :doc "A library for generating javascript from Clojure."}
-    cherry.transpiler
+    cherry.compiler
   (:require
    #?(:cljs ["fs" :as fs])
    #?(:cljs [goog.string.format])

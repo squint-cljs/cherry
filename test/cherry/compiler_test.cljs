@@ -1,6 +1,6 @@
-(ns cherry.transpiler-test
+(ns cherry.compiler-test
   (:require
-   [cherry.transpiler :as cherry]
+   [cherry.compiler :as cherry]
    [clojure.string :as str]
    [clojure.test :as t :refer [deftest is]]))
 

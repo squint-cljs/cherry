@@ -2,7 +2,7 @@
   (:require
    ["fs" :as fs]
    [babashka.cli :as cli]
-   [cherry.transpiler :as t]
+   [cherry.compiler :as t]
    [shadow.esm :as esm]))
 
 (defn transpile-files
