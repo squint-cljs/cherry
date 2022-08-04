@@ -41,6 +41,8 @@
 (aset js/globalThis "apply" cljs.core/apply)
 (aset js/globalThis "array_map" cljs.core/array-map)
 (aset js/globalThis "boolean$" cljs.core/boolean)
+(aset js/globalThis "not" cljs.core/not)
+(aset js/globalThis "nil_QMARK_" cljs.core/nil?)
 
 (defn jss! [expr]
   (if (string? expr)
@@ -295,6 +297,9 @@
 
 (deftest munged-core-name-test
   (is (jsv! '(boolean 1))))
+
+(deftest defprotocol-extend-type-string-test
+  (is (= :foo (jsv! '(do (defprotocol IFoo (foo [_])) (extend-type string IFoo (foo [_] :foo)) (foo "bar"))))))
 
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test))
