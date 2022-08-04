@@ -314,5 +314,8 @@
 (deftest defprotocol-extend-type-string-test
   (is (= :foo (jsv! '(do (defprotocol IFoo (foo [_])) (extend-type string IFoo (foo [_] :foo)) (foo "bar"))))))
 
+(deftest deftype-test
+  (is (= 1 (jsv! '(do (deftype Foo [x]) (.-x (->Foo 1)))))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test))
