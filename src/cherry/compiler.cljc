@@ -18,6 +18,7 @@
    [cherry.internal.fn :refer [core-defn core-fn core-defmacro]]
    [cherry.internal.loop :as loop]
    [cherry.internal.macros :as macros]
+   [cherry.internal.protocols :refer [core-defprotocol]]
    [clojure.string :as str]
    [com.reasonr.string :as rstr]
    [edamame.core :as e])
@@ -161,7 +162,9 @@
                       'case macros/core-case
                       '.. macros/core-dotdot
                       'defmacro core-defmacro
-                      'this-as macros/core-this-as})
+                      'this-as macros/core-this-as
+                      'unchecked-get macros/core-unchecked-get
+                      'defprotocol core-defprotocol})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
