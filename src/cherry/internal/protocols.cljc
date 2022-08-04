@@ -189,5 +189,212 @@
                     (def ~psym (~'js* "function(){}"))
                     ~@(map method methods)
                     #_(set! ~'*unchecked-if* false))]
-    (prn ret)
     ret))
+
+(core/defn- ->impl-map [impls]
+  (core/loop [ret {} s impls]
+    (if (seq s)
+      (recur (assoc ret (first s) (take-while seq? (next s)))
+             (drop-while seq? (next s)))
+      ret)))
+
+(core/defn- type-hint-first-arg
+  [type-sym argv]
+  (assoc argv 0 (vary-meta (argv 0) assoc :tag type-sym)))
+
+(core/defn- type-hint-single-arity-sig
+  [type-sym sig]
+  (list* (first sig) (type-hint-first-arg type-sym (second sig)) (nnext sig)))
+
+(core/defn- type-hint-multi-arity-sig
+  [type-sym sig]
+  (list* (type-hint-first-arg type-sym (first sig)) (next sig)))
+
+(core/defn- type-hint-multi-arity-sigs
+  [type-sym sigs]
+  (list* (first sigs) (map (partial type-hint-multi-arity-sig type-sym) (rest sigs))))
+
+(core/defn- type-hint-sigs
+  [type-sym sig]
+  (if (vector? (second sig))
+    (type-hint-single-arity-sig type-sym sig)
+    (type-hint-multi-arity-sigs type-sym sig)))
+
+(core/defn- type-hint-impl-map
+  [type-sym impl-map]
+  (reduce-kv (core/fn [m proto sigs]
+               (assoc m proto (map (partial type-hint-sigs type-sym) sigs)))
+             {} impl-map))
+
+(def ^:private base-type
+  {nil "null"
+   'object "object"
+   'string "string"
+   'number "number"
+   'array "array"
+   'function "function"
+   'boolean "boolean"
+   'default "_"})
+
+(def ^:private js-base-type
+  {'js/Boolean "boolean"
+   'js/String "string"
+   'js/Array "array"
+   'js/Object "object"
+   'js/Number "number"
+   'js/Function "function"})
+
+(core/defn- base-assign-impls [env resolve tsym type [p sigs]]
+  #_(update-protocol-var p tsym env)
+  (core/let [psym       (resolve p)
+             pfn-prefix (subs (core/str psym) 0
+                              (clojure.core/inc (.indexOf (core/str psym) "/")))]
+    (cons `(unchecked-set ~psym ~type true)
+          (map (core/fn [[f & meths :as form]]
+                 `(unchecked-set ~(symbol (core/str pfn-prefix f))
+                                 ~type ~(with-meta `(fn ~@meths) (meta form))))
+               sigs))))
+
+(core/defmulti ^:private extend-prefix (core/fn [tsym sym] (core/-> tsym meta :extend)))
+
+
+(core/defn- to-property [sym]
+  (symbol (core/str "-" sym)))
+
+(core/defmethod extend-prefix :instance
+  [tsym sym] `(.. ~tsym ~(to-property sym)))
+
+(core/defmethod extend-prefix :default
+  [tsym sym]
+  (with-meta `(.. ~tsym ~'-prototype ~(to-property sym)) {:extend-type true}))
+
+
+(core/defn- adapt-obj-params [type [[this & args :as sig] & body]]
+  (core/list (vec args)
+             (list* 'this-as (vary-meta this assoc :tag type) body)))
+
+(core/defn- add-obj-methods [type type-sym sigs]
+  (map (core/fn [[f & meths :as form]]
+         (core/let [[f meths] (if (vector? (first meths))
+                                [f [(rest form)]]
+                                [f meths])]
+           `(set! ~(extend-prefix type-sym f)
+                  ~(with-meta `(fn ~@(map #(adapt-obj-params type %) meths)) (meta form)))))
+       sigs))
+
+(core/defn- adapt-ifn-invoke-params [type [[this & args :as sig] & body]]
+  `(~(vec args)
+     (this-as ~(vary-meta this assoc :tag type)
+       ~@body)))
+
+(core/defn- adapt-ifn-params [type [[this & args :as sig] & body]]
+  (core/let [self-sym (with-meta 'self__ {:tag type})]
+    `(~(vec (cons self-sym args))
+      (this-as ~self-sym
+        (let [~this ~self-sym]
+          ~@body)))))
+
+(core/defn- adapt-proto-params [type [[this & args :as sig] & body]]
+  (core/let [this' (vary-meta this assoc :tag type)]
+    `(~(vec (cons this' args))
+      (this-as ~this'
+        ~@body))))
+
+(core/defn- ifn-invoke-methods [type type-sym [f & meths :as form]]
+  (map
+    (core/fn [meth]
+      (core/let [arity (count (first meth))]
+        `(set! ~(extend-prefix type-sym (symbol (core/str "cljs$core$IFn$_invoke$arity$" arity)))
+           ~(with-meta `(fn ~meth) (meta form)))))
+    (map #(adapt-ifn-invoke-params type %) meths)))
+
+(core/defn- add-ifn-methods [type type-sym [f & meths :as form]]
+  (core/let [meths    (map #(adapt-ifn-params type %) meths)
+             this-sym (with-meta 'self__ {:tag type})
+             argsym   (gensym "args")
+             max-ifn-arity 20]
+    (concat
+     [`(set! ~(extend-prefix type-sym 'call) ~(with-meta `(fn ~@meths) (meta form)))
+      `(set! ~(extend-prefix type-sym 'apply)
+             ~(with-meta
+                `(fn ~[this-sym argsym]
+                   (this-as ~this-sym
+                     (let [args# (cljs.core/aclone ~argsym)]
+                       (.apply (.-call ~this-sym) ~this-sym
+                               (.concat (array ~this-sym)
+                                        (if (> (.-length args#) ~max-ifn-arity)
+                                          (doto (.slice args# 0 ~max-ifn-arity)
+                                            (.push (.slice args# ~max-ifn-arity)))
+                                          args#))))))
+                (meta form)))]
+     (ifn-invoke-methods type type-sym form))))
+
+
+(core/defn- add-proto-methods* [pprefix type type-sym [f & meths :as form]]
+  (core/let [pf (core/str pprefix (munge (name f)))]
+    (if (vector? (first meths))
+      ;; single method case
+      (core/let [meth meths]
+        [`(set! ~(extend-prefix type-sym (core/str pf "$arity$" (count (first meth))))
+                ~(with-meta `(fn ~@(adapt-proto-params type meth)) (meta form)))])
+      (map (core/fn [[sig & body :as meth]]
+             `(set! ~(extend-prefix type-sym (core/str pf "$arity$" (count sig)))
+                    ~(with-meta `(fn ~(adapt-proto-params type meth)) (meta form))))
+           meths))))
+
+(core/defn- proto-assign-impls [env resolve type-sym type [p sigs]]
+  #_(update-protocol-var p type env)
+  (core/let [psym      (resolve p)
+             pprefix   (protocol-prefix psym)
+             skip-flag (set (core/-> type-sym meta :skip-protocol-flag))]
+    (if (= p 'Object)
+      (add-obj-methods type type-sym sigs)
+      (concat
+       (core/when-not (skip-flag psym)
+         [`(set! ~(extend-prefix type-sym pprefix) cljs.core/PROTOCOL_SENTINEL)])
+       (mapcat
+        (core/fn [sig]
+          (if (= psym 'cljs.core/IFn)
+            (add-ifn-methods type type-sym sig)
+            (add-proto-methods* pprefix type type-sym sig)))
+        sigs)))))
+
+(core/defmacro core-extend-type
+  "Extend a type to a series of protocols. Useful when you are
+  supplying the definitions explicitly inline. Propagates the
+  type as a type hint on the first argument of all fns.
+  type-sym may be
+   * default, meaning the definitions will apply for any value,
+     unless an extend-type exists for one of the more specific
+     cases below.
+   * nil, meaning the definitions will apply for the nil value.
+   * any of object, boolean, number, string, array, or function,
+     indicating the definitions will apply for values of the
+     associated base JavaScript types. Note that, for example,
+     string should be used instead of js/String.
+   * a JavaScript type not covered by the previous list, such
+     as js/RegExp.
+   * a type defined by deftype or defrecord.
+  (extend-type MyType
+    ICounted
+    (-count [c] ...)
+    Foo
+    (bar [x y] ...)
+    (baz ([x] ...) ([x y] ...) ...)"
+  [type-sym & impls]
+  (core/let [env &env
+             ;; _ (validate-impls env impls)
+             resolve identity #_(partial resolve-var env)
+             impl-map (->impl-map impls)
+             impl-map (if ('#{boolean number} type-sym)
+                        (type-hint-impl-map type-sym impl-map)
+                        impl-map)
+             [type assign-impls] (core/if-let [type (base-type type-sym)]
+                                   [type base-assign-impls]
+                                   [(resolve type-sym) proto-assign-impls])]
+    (core/when true #_(core/and (:extending-base-js-type cljs.analyzer/*cljs-warnings*)
+            (js-base-type type-sym))
+      #_(cljs.analyzer/warning :extending-base-js-type env
+        {:current-symbol type-sym :suggested-symbol (js-base-type type-sym)}))
+    `(do ~@(mapcat #(assign-impls env resolve type-sym type %) impl-map))))
+

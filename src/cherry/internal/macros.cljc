@@ -486,3 +486,10 @@
   static analysis."
   [_ _ obj key]
   (list 'js* "(~{}[~{}])" obj key))
+
+(defn core-unchecked-set
+  "INTERNAL. Compiles to JavaScript property access using bracket notation. Does
+  not distinguish between object and array types and not subject to compiler
+  static analysis."
+  [_ _ obj key val]
+  (list 'js* "(~{}[~{}] = ~{})" obj key val))
