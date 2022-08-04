@@ -4,6 +4,18 @@
    [clojure.string :as str]
    [clojure.test :as t :refer [deftest is]]))
 
+(def old-fail (get-method t/report [:cljs.test/default :fail]))
+
+(defmethod t/report [:cljs.test/default :fail] [m]
+  (set! js/process.exitCode 1)
+  (old-fail m))
+
+(def old-error (get-method t/report [:cljs.test/default :fail]))
+
+(defmethod t/report [:cljs.test/default :error] [m]
+  (set! js/process.exitCode 1)
+  (old-error m))
+
 (aset js/globalThis "__destructure_map" cljs.core/--destructure-map)
 (aset js/globalThis "vector" cljs.core/vector)
 (aset js/globalThis "arrayMap" cljs.core/array-map)
