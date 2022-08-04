@@ -171,7 +171,7 @@
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
-(def core-vars (:vars core-config))
+(def core-vars (conj (:vars core-config) 'goog_typeOf))
 
 (def prefix-unary-operators (set ['!]))
 

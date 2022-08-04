@@ -55,6 +55,7 @@
 (aset js/globalThis "boolean$" cljs.core/boolean)
 (aset js/globalThis "not" cljs.core/not)
 (aset js/globalThis "nil_QMARK_" cljs.core/nil?)
+(aset js/globalThis "goog_typeOf" goog/typeOf)
 
 (defn jss! [expr]
   (if (string? expr)
