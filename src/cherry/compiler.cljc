@@ -272,17 +272,23 @@
 (defmethod emit-special 'let* [_type enc-env [_let bindings & body]]
   (emit-let enc-env bindings body false))
 
-(defmethod emit-special 'deftype* [_ env [_ t fields pmasks protocols]]
+(defmethod emit-special 'deftype* [_ env [_ t fields pmasks body]]
   (let [fields (map munge fields)]
     (str "var " (munge t) " = " (format "function %s {
+%s
+%s
 %s
 }"
                                  (comma-list fields)
                                  (str/join "\n"
                                            (map (fn [fld]
                                                   (str "this." fld " = " fld ";"))
-                                                fields)))
-         )))
+                                                fields))
+                                 (str/join "\n"
+                                           (map (fn [[pno pmask]]
+                                                  (str "this.cljs$lang$protocol_mask$partition" pno "$ = " pmask ";"))
+                                                pmasks))
+                                 (emit body env)))))
 
 
 #_(defmethod emit* :deftype
