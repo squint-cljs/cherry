@@ -42,6 +42,8 @@ const nth = (coll, idx) => {
   return null;
 };
 
+const _nth = nth;
+
 const IndexedSeq = List;
 
 const alength = (x) => {
@@ -57,7 +59,6 @@ const concat = (x, ...xs) => {
 };
 
 const first = (coll) => {
-  console.log(coll);
   return coll.first();
 };
 
@@ -70,6 +71,7 @@ const map_QMARK_ = (coll) => {
 const name = (x) => x;
 
 const seq = (coll) => {
+  if (null === coll) return null;
   if (coll.size === 0)
     return null;
   else
@@ -93,6 +95,23 @@ const symbol = (x) => x;
 
 const truth_ = (x) => x;
 
+const inc = (x) => x + 1;
+
+const chunk_first = (x) => {
+  return x;
+};
+
+const chunk_rest = (x) => {
+  return x;
+};
+
+const chunked_seq_QMARK_ = (x) => false;
+
+const count = (x) => x.size();
+
+const unchecked_inc = inc;
+
 export { map, filter, vector, prn, str, arrayMap, assoc, keyword, nth, keyword_QMARK_
          , IndexedSeq, alength, array, concat, first, list, map_QMARK_, name, next, seq
-         , sequence, symbol, truth_ }
+         , sequence, symbol, truth_, inc, _nth, chunk_first, chunk_rest, chunked_seq_QMARK_
+         , count, unchecked_inc }
