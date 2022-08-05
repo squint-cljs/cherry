@@ -2,7 +2,8 @@
   (:require
    [cherry.compiler :as cherry]
    [clojure.string :as str]
-   [clojure.test :as t :refer [deftest is]]))
+   [clojure.test :as t :refer [deftest is]]
+   ["cherry/core.js" :as core]))
 
 (def old-fail (get-method t/report [:cljs.test/default :fail]))
 
@@ -17,7 +18,7 @@
   (old-error m))
 
 (aset js/globalThis "__destructure_map" cljs.core/--destructure-map)
-(aset js/globalThis "vector" cljs.core/vector)
+(aset js/globalThis "vector" core/vector)
 (aset js/globalThis "arrayMap" cljs.core/array-map)
 (aset js/globalThis "keyword" cljs.core/keyword)
 (aset js/globalThis "dissoc" cljs.core/dissoc)

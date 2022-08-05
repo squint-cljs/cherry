@@ -752,7 +752,7 @@ break;}" body)
        (let [transpiled (transpile-string* s)
              transpiled (if-let [core-vars (and (not elide-imports)
                                                 (seq @core-vars))]
-                          (str (format "import { %s } from 'cherry-cljs/cljs.core.js'\n"
+                          (str (format "import { %s } from 'cherry-cljs/core.js'\n"
                                        (str/join ", " core-vars))
                                transpiled)
                           transpiled)

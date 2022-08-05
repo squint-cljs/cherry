@@ -7,7 +7,8 @@
     "cljs.core.js",
     "lib",
     "node_cli.js",
-    "index.js"
+    "index.js",
+    "core.js"
   ],
   "bin": {
     "cherry": "node_cli.js"
@@ -18,5 +19,8 @@
     "cherry-cljs": ".",
     "esbuild": "^0.14.49",
     "source-maps": "^1.0.12"
+  },
+  "dependencies": {
+    "immutable": "^4.1.0"
   }
 }
