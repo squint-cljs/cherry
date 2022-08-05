@@ -34,4 +34,16 @@
     :cli {:depends-on #{:compiler}
           :init-fn cherry.internal.cli/init}}
    :build-hooks [(shadow.cljs.build-report/hook
+                  {:output-to "report.html"})]}
+  :scratch
+  {:js-options {;; don't bundle any npm libs
+                :js-provider :import}
+   :compiler-options {:infer-externs :auto}
+   :target :esm
+   :runtime :node
+   :output-dir "scratch"
+   :modules
+   ;; note: this is overriden in bb build-cherry
+   {:main {:init-fn cherry.scratch/init}}
+   :build-hooks [(shadow.cljs.build-report/hook
                   {:output-to "report.html"})]}}}

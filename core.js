@@ -29,7 +29,7 @@ const arrayMap = Map;
 const keyword = (x) => x;
 
 const keyword_QMARK_ = (x) => {
-  return x instanceof string;
+  return x instanceof String;
 };
 
 const nth = (coll, idx) => {
@@ -111,7 +111,11 @@ const count = (x) => x.size();
 
 const unchecked_inc = inc;
 
+const subs = (s, start, end) => {
+  return s.substring(start, end);
+};
+
 export { map, filter, vector, prn, str, arrayMap, assoc, keyword, nth, keyword_QMARK_
          , IndexedSeq, alength, array, concat, first, list, map_QMARK_, name, next, seq
          , sequence, symbol, truth_, inc, _nth, chunk_first, chunk_rest, chunked_seq_QMARK_
-         , count, unchecked_inc }
+         , count, unchecked_inc, subs }

@@ -18,7 +18,8 @@
     "chalk": "^5.0.1",
     "cherry-cljs": ".",
     "esbuild": "^0.14.49",
-    "source-maps": "^1.0.12"
+    "source-maps": "^1.0.12",
+    "webpack-cli": "^4.10.0"
   },
   "dependencies": {
     "immutable": "^4.1.0"
