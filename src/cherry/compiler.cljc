@@ -106,7 +106,8 @@
   (if (:quote env)
     (emit-wrap env
                (emit (list 'cljs.core/symbol
-                           (str expr))))
+                           (str expr))
+                     (dissoc env :quote)))
     (let [expr (if-let [sym-ns (namespace expr)]
                  (or (when (or (= "cljs.core" sym-ns)
                                (= "clojure.core" sym-ns))
@@ -123,14 +124,13 @@
                       (munge* (name expr))))]
       (emit-wrap env (str expr)))))
 
-;; #?(:clj (defmethod emit #?(:clj java.util.regex.Pattern) [expr _env]
-;;           (str \/ expr \/)))
+#?(:clj (defmethod emit #?(:clj java.util.regex.Pattern) [expr _env]
+          (str \/ expr \/)))
 
-#?(:cljs
-   (defmethod emit :default [expr env]
-     ;; RegExp case moved here:
-     ;; References to the global RegExp object prevents optimization of regular expressions.
-     (emit-wrap env (str expr))))
+(defmethod emit :default [expr env]
+  ;; RegExp case moved here:
+  ;; References to the global RegExp object prevents optimization of regular expressions.
+  (emit-wrap env (str expr)))
 
 (def special-forms (set ['var '. 'if 'funcall 'fn 'fn* 'quote 'set!
                          'return 'delete 'new 'do 'aget 'while
@@ -682,9 +682,10 @@ break;}" body)
                                (second expr)
                                (symbol (subs head-str 1))
                                (nnext expr)))
-          (contains? built-in-macros head) (let [macro (built-in-macros head)
-                                                 new-expr (apply macro expr {} (rest expr))]
-                                             (emit new-expr env))
+          (contains? built-in-macros head)
+          (let [macro (built-in-macros head)
+                new-expr (apply macro expr {} (rest expr))]
+            (emit new-expr env))
           (and (> (count head-str) 1)
                (str/ends-with? head-str "."))
           (emit (list* 'new (symbol (subs head-str 0 (dec (count head-str)))) (rest expr))
