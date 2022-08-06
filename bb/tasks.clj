@@ -34,12 +34,12 @@
    (shadow-extra-config)
    test-config))
 
-(defn build-cherry-npm-package []
+(defn build-cherry-npm-package [& args]
   (fs/create-dirs ".work")
   (fs/delete-tree "lib")
   (fs/delete-tree ".shadow-cljs")
   (spit ".work/config-merge.edn" (shadow-extra-config))
-  (shell "npx shadow-cljs --config-merge .work/config-merge.edn release cherry"))
+  (apply shell "npx shadow-cljs --config-merge .work/config-merge.edn release cherry" args))
 
 (defn publish []
   (build-cherry-npm-package)

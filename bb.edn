@@ -1,7 +1,7 @@
 {:min-bb-version "0.9.161"
  :paths ["src" "resources" "bb"]
  :tasks {:requires ([tasks :as t])
-         build (t/build-cherry-npm-package)
+         build tasks/build-cherry-npm-package
          publish (t/publish)
          watch (t/watch-cherry)
          test {:doc "Run tests"
