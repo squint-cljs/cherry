@@ -271,7 +271,7 @@
 
 (core/defn- adapt-obj-params [type [[this & args :as sig] & body]]
   (core/list (vec args)
-             (list* 'this-as (vary-meta this assoc :tag type) body)))
+             (list* 'cljs.core/this-as (vary-meta this assoc :tag type) body)))
 
 (core/defn- add-obj-methods [type type-sym sigs]
   (map (core/fn [[f & meths :as form]]
@@ -284,20 +284,20 @@
 
 (core/defn- adapt-ifn-invoke-params [type [[this & args :as sig] & body]]
   `(~(vec args)
-     (this-as ~(vary-meta this assoc :tag type)
+     (cljs.core/this-as ~(vary-meta this assoc :tag type)
        ~@body)))
 
 (core/defn- adapt-ifn-params [type [[this & args :as sig] & body]]
   (core/let [self-sym (with-meta 'self__ {:tag type})]
     `(~(vec (cons self-sym args))
-      (this-as ~self-sym
+      (cljs.core/this-as ~self-sym
         (let [~this ~self-sym]
           ~@body)))))
 
 (core/defn- adapt-proto-params [type [[this & args :as sig] & body]]
   (core/let [this' (vary-meta this assoc :tag type)]
     `(~(vec (cons this' args))
-      (this-as ~this'
+      (cljs.core/this-as ~this'
         ~@body))))
 
 (core/defn- ifn-invoke-methods [type type-sym [f & meths :as form]]
