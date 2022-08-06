@@ -10,7 +10,7 @@
 (defn core-unchecked-get [obj key]
   (list 'js* "(~{}[~{}])" obj key))
 
-(core/defmacro core-defprotocol
+(core/defn core-defprotocol
   "A protocol is a named set of named methods and their signatures:
   (defprotocol AProtocolName
     ;optional doc string
@@ -43,7 +43,7 @@
         (bar-me [this] x)
         (bar-me [this y] x))))
   => 17"
-  [psym & doc+methods]
+  [&env _ psym & doc+methods]
   (core/let [p psym #_(:name (cljs.analyzer/resolve-var (dissoc &env :locals) psym))
              [opts methods]
              (core/loop [opts {:protocol-symbol true}
@@ -359,7 +359,7 @@
             (add-proto-methods* pprefix type type-sym sig)))
         sigs)))))
 
-(core/defmacro core-extend-type
+(core/defn core-extend-type
   "Extend a type to a series of protocols. Useful when you are
   supplying the definitions explicitly inline. Propagates the
   type as a type hint on the first argument of all fns.
@@ -381,7 +381,7 @@
     Foo
     (bar [x y] ...)
     (baz ([x] ...) ([x y] ...) ...)"
-  [type-sym & impls]
+  [&env _&form type-sym & impls]
   (core/let [env &env
              ;; _ (validate-impls env impls)
              resolve identity #_(partial resolve-var env)

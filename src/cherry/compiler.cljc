@@ -14,12 +14,12 @@
    #?(:cljs [goog.string.format])
    #?(:cljs [goog.string :as gstring])
    #?(:clj [cherry.resource :as resource])
+   [cherry.internal.deftype :as deftype]
    [cherry.internal.destructure :refer [core-let]]
-   [cherry.internal.fn :refer [core-defn core-fn core-defmacro]]
+   [cherry.internal.fn :refer [core-defmacro core-defn core-fn]]
    [cherry.internal.loop :as loop]
    [cherry.internal.macros :as macros]
    [cherry.internal.protocols :as protocols]
-   [cherry.internal.deftype :as deftype]
    [clojure.string :as str]
    [com.reasonr.string :as rstr]
    [edamame.core :as e])
@@ -69,7 +69,11 @@
 (defmethod emit nil [_ env]
   (emit-wrap env "null"))
 
-(defmethod emit #?(:clj java.lang.Integer :cljs js/Number) [expr env]
+#?(:clj (derive #?(:clj java.lang.Integer) ::number))
+#?(:clj (derive #?(:clj java.lang.Long) ::number))
+#?(:cljs (derive js/Number ::number))
+
+(defmethod emit ::number [expr env]
   (->> (str expr)
        (emit-wrap env)))
 
