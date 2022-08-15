@@ -8,7 +8,7 @@ Reducing friction between ClojureScript and JS tooling.
 > production. It currently has many bugs and will undergo many breaking changes.
 
 Also check out [ClavaScript](https://github.com/clavascript/clavascript) which
-is only a CLJS _syntax_ to JS compiler.
+is a CLJS _syntax_ to JS compiler.
 
 ## Quickstart
 
