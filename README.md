@@ -7,6 +7,9 @@ Reducing friction between ClojureScript and JS tooling.
 > :warning: This project is an experiment and not recommended to be used in
 > production. It currently has many bugs and will undergo many breaking changes.
 
+Also check out [ClavaScript](https://github.com/clavascript/clavascript) which
+is only a CLJS _syntax_ to JS compiler.
+
 ## Quickstart
 
 Although it's early days and far from complete, you're welcome to try out cherry and submit issues.
