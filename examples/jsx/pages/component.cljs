@@ -15,6 +15,9 @@
           [:p "Paragraph" x]
           [:code "(+ 1 2 3)"]
           [:a {:href "foo"} "Link"]
+          (if (odd? 2)
+            #jsx [:div "Yoo"]
+            #jsx [:div "Dude"])
           (my-func x 1 2 3)
           [Comp2 {:x "value"}
            [:pre "Child1"]

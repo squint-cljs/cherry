@@ -2,7 +2,7 @@
   "name": "app",
   "version": "0.0.57",
   "dependencies": {
-    "cherry-cljs": "^0.0.0-alpha.50",
+    "cherry-cljs": "../..",
     "next": "12.2.3",
     "react": "^18",
     "react-dom": "^18",
