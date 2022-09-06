@@ -1,6 +1,7 @@
 (ns cherry.compiler-test
   (:require
-   [cherry.test-utils :refer [jss! jsv! js!]]
+   [cherry.jsx-test]
+   [cherry.test-utils :refer [js! jss! jsv!]]
    [clojure.string :as str]
    [clojure.test :as t :refer [async deftest is]]))
 
@@ -314,4 +315,4 @@
   (is (jsv! '(do (deftype Foo []) (instance? Foo (->Foo))))))
 
 (defn init []
-  (cljs.test/run-tests 'cherry.compiler-test))
+  (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test))

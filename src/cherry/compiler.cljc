@@ -799,7 +799,9 @@ break;}" body)
 
 (defmethod emit #?(:clj clojure.lang.IPersistentMap
                    :cljs ::map) [expr env]
-  (let [expr-env (assoc env :context :expr)
+  (let [env* env
+        env (dissoc env :jsx)
+        expr-env (assoc env :context :expr)
         map-fn
         (when-not (::js (meta expr))
           (if (<= (count expr) 8)
@@ -812,10 +814,10 @@ break;}" body)
         keys (str/join ", " (map mk-pair (seq expr)))]
     (when map-fn
       (swap! *imported-core-vars* conj map-fn))
-    (->> (if map-fn
-           (format "%s(%s)" map-fn keys)
-           (format "({ %s })" keys))
-         (emit-wrap env))))
+    (escape-jsx env* (->> (if map-fn
+                            (format "%s(%s)" map-fn keys)
+                            (format "({ %s })" keys))
+                          (emit-wrap env)))))
 
 (defmethod emit #?(:clj clojure.lang.PersistentHashSet
                    :cljs PersistentHashSet)
