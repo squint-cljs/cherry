@@ -194,7 +194,8 @@
                       'deftype deftype/core-deftype
                       'defn core-defn
                       'defn- core-defn
-                      'time macros/core-time})
+                      'time macros/core-time
+                      'declare macros/core-declare})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
