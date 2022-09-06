@@ -318,5 +318,12 @@
   (is (= 2 (jsv! '(do (defn foo [a b] (and a b)) (foo 1 2)))))
   (is (= 1 (jsv! '(do (defn foo [a b] (or a b)) (foo 1 2))))))
 
+(deftest multiple-arity-infix
+  (is (true? (jsv! '(> 5 4 3 2 1))))
+  (is (true? (jsv! '(> 5 4 3))))
+  (is (true? (jsv! '(> 5 4))))
+  ;; I would say this is undefined in clava for now:
+  #_(is (true? (jsv! '(> 5)))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test))
