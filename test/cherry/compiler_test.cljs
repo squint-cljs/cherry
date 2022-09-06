@@ -325,5 +325,8 @@
   ;; I would say this is undefined in clava for now:
   #_(is (true? (jsv! '(> 5)))))
 
+(deftest double-names-in-sig-test
+  (is (= 2 (jsv! '(do (defn foo [x x] x) (foo 1 2))))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test))
