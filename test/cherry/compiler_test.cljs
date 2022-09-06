@@ -1,8 +1,9 @@
 (ns cherry.compiler-test
   (:require
+   ["cherry-cljs/cljs.core.js" :as cl]
    [cherry.compiler :as cherry]
    [clojure.string :as str]
-   [clojure.test :as t :refer [deftest is async]]))
+   [clojure.test :as t :refer [async deftest is]]))
 
 (def old-fail (get-method t/report [:cljs.test/default :fail]))
 
@@ -15,6 +16,9 @@
 (defmethod t/report [:cljs.test/default :error] [m]
   (set! js/process.exitCode 1)
   (old-error m))
+
+(doseq [k (js/Object.keys cl)]
+  (aset js/globalThis k (aget cl k)))
 
 (aset js/globalThis "__destructure_map" cljs.core/--destructure-map)
 (aset js/globalThis "vector" cljs.core/vector)
