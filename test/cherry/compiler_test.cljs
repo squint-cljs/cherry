@@ -382,5 +382,8 @@
 (deftest plus-hof-test
   (is (= 6 (jsv! "(apply + [1 2 3])"))))
 
+(deftest instance?-test
+  (is (jsv! '(do (deftype Foo []) (instance? Foo (->Foo))))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test))
