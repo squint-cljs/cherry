@@ -1,80 +1,8 @@
 (ns cherry.compiler-test
   (:require
-   ["cherry-cljs/cljs.core.js" :as cl]
-   [cherry.compiler :as cherry]
+   [cherry.test-utils :refer [jss! jsv! js!]]
    [clojure.string :as str]
    [clojure.test :as t :refer [async deftest is]]))
-
-(def old-fail (get-method t/report [:cljs.test/default :fail]))
-
-(defmethod t/report [:cljs.test/default :fail] [m]
-  (set! js/process.exitCode 1)
-  (old-fail m))
-
-(def old-error (get-method t/report [:cljs.test/default :fail]))
-
-(defmethod t/report [:cljs.test/default :error] [m]
-  (set! js/process.exitCode 1)
-  (old-error m))
-
-(doseq [k (js/Object.keys cl)]
-  (aset js/globalThis k (aget cl k)))
-
-(aset js/globalThis "__destructure_map" cljs.core/--destructure-map)
-(aset js/globalThis "vector" cljs.core/vector)
-(aset js/globalThis "arrayMap" cljs.core/array-map)
-(aset js/globalThis "keyword" cljs.core/keyword)
-(aset js/globalThis "dissoc" cljs.core/dissoc)
-(aset js/globalThis "get" cljs.core/get)
-(aset js/globalThis "pos_QMARK_" cljs.core/pos?)
-(aset js/globalThis "dec" cljs.core/dec)
-(aset js/globalThis "seq" cljs.core/seq)
-(aset js/globalThis "chunked_seq_QMARK_" cljs.core/chunked-seq?)
-(aset js/globalThis "first" cljs.core/first)
-(aset js/globalThis "prn" cljs.core/prn)
-(aset js/globalThis "next" cljs.core/next)
-(aset js/globalThis "truth_" cljs.core/truth_)
-(aset js/globalThis "atom" cljs.core/atom)
-(aset js/globalThis "swap_BANG_" cljs.core/swap!)
-(aset js/globalThis "conj" cljs.core/conj)
-(aset js/globalThis "deref" cljs.core/deref)
-(aset js/globalThis "cons" cljs.core/cons)
-(aset js/globalThis "rest" cljs.core/rest)
-(aset js/globalThis "concat" cljs.core/concat)
-(aset js/globalThis "LazySeq" cljs.core/LazySeq)
-(aset js/globalThis "IndexedSeq" cljs.core/IndexedSeq)
-(aset js/globalThis "map" cljs.core/map)
-(aset js/globalThis "re_seq" cljs.core/re-seq)
-(aset js/globalThis "str" cljs.core/str)
-(aset js/globalThis "symbol" cljs.core/symbol)
-(aset js/globalThis "list" cljs.core/list)
-(aset js/globalThis "_EQ_" cljs.core/=)
-(aset js/globalThis "keyword_QMARK_" cljs.core/keyword?)
-(aset js/globalThis "subs" cljs.core/subs)
-(aset js/globalThis "alength" cljs.core/alength)
-(aset js/globalThis "array" cljs.core/array)
-(aset js/globalThis "sequence" cljs.core/sequence)
-(aset js/globalThis "apply" cljs.core/apply)
-(aset js/globalThis "array_map" cljs.core/array-map)
-(aset js/globalThis "boolean$" cljs.core/boolean)
-(aset js/globalThis "not" cljs.core/not)
-(aset js/globalThis "nil_QMARK_" cljs.core/nil?)
-(aset js/globalThis "goog_typeOf" goog/typeOf)
-(aset js/globalThis "PROTOCOL_SENTINEL" PROTOCOL_SENTINEL)
-(aset js/globalThis "into" into)
-(aset js/globalThis "hash_set" hash-set)
-
-(defn jss! [expr]
-  (if (string? expr)
-    (:body (cherry/compile-string* expr))
-    (cherry/transpile-form expr)))
-
-(defn js! [expr]
-  (let [js (jss! expr)]
-    [(js/eval js) js]))
-
-(defn jsv! [expr]
-  (first (js! expr)))
 
 (deftest return-test
   (is (str/includes? (jss! '(do (def x (do 1 2 nil))))
