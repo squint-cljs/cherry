@@ -47,6 +47,7 @@
   (shell "npm publish"))
 
 (defn watch-cherry []
+  (fs/delete-tree ".shadow-cljs/builds/clava/dev/ana/cherry")
   (fs/create-dirs ".work")
   (spit ".work/config-merge.edn" (shadow-extra-test-config))
   (shell "npx shadow-cljs --config-merge .work/config-merge.edn watch cherry"))

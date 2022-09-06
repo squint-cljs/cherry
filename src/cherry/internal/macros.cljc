@@ -493,3 +493,13 @@
   static analysis."
   [_ _ obj key val]
   (list 'js* "(~{}[~{}] = ~{})" obj key val))
+
+(defn core-time
+  "Evaluates expr and prints the time it took. Returns the value of expr."
+  [_ _ expr]
+  `(let [start# (system-time)
+         ret# ~expr]
+     (prn (cljs.core/str "Elapsed time: "
+                         (.toFixed (- (system-time) start#) 6)
+                         " msecs"))
+     ret#))

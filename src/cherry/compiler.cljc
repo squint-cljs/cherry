@@ -193,7 +193,8 @@
                       'extend-type protocols/core-extend-type
                       'deftype deftype/core-deftype
                       'defn core-defn
-                      'defn- core-defn})
+                      'defn- core-defn
+                      'time macros/core-time})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
