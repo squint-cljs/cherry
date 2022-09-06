@@ -54,5 +54,6 @@
 (defn test-cherry []
   (fs/create-dirs ".work")
   (spit ".work/config-merge.edn" (shadow-extra-test-config))
+  (shell "npm install")
   (shell "npx shadow-cljs --config-merge .work/config-merge.edn release cherry")
   (shell "node lib/cherry_tests.js"))
