@@ -55,7 +55,7 @@
 ;; TODO: move to context argument
 (def ^:dynamic *aliases* (atom {}))
 (def ^:dynamic *async* false)
-(def ^:dynamic *imported-core-vars* (atom #{}))
+(def ^:dynamic *imported-vars* (atom {}))
 (def ^:dynamic *public-vars* (atom #{}))
 
 (defn statement [expr]
@@ -84,7 +84,7 @@
     (emit-wrap env (pr-str expr))))
 
 (defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr env]
-  (swap! *imported-core-vars* conj 'keyword)
+  (swap! *imported-vars* update "cherry/core.js" (fnil conj #{}) 'keyword)
   (emit-wrap env (str (format "keyword(%s)" (pr-str (subs (str expr) 1))))))
 
 (defn munge* [expr]
@@ -99,9 +99,8 @@
 
 (defn maybe-core-var [sym]
   (if (contains? core-vars sym)
-    (let [sym (symbol (munge* sym))
-          ]
-      (swap! *imported-core-vars* conj sym)
+    (let [sym (symbol (munge* sym))]
+      (swap! *imported-vars* update "cherry/core.js" (fnil conj #{}) sym)
       sym)
     sym))
 
@@ -436,8 +435,15 @@
   (emit (core-let bindings more) env)
   #_(prn (core-let bindings more)))
 
+
+(defn resolve-ns [alias]
+  (case alias
+    (cherry.string clojure.string) "cherry/string.js"
+    alias))
+
 (defn process-require-clause [[libname & {:keys [refer as]}]]
-  (let [[libname suffix] (.split libname "$" 2)
+  (let [libname (resolve-ns libname)
+        [libname suffix] (.split libname "$" 2)
         [p & _props] (when suffix
                        (.split suffix "."))]
     (str
@@ -456,10 +462,11 @@
                   (when (= :require k) exprs)))
                (reduce
                 (fn [aliases [full as alias]]
-                  (case as
-                    (:as :as-alias)
-                    (assoc aliases alias full)
-                    aliases))
+                  (let [full (resolve-ns full)]
+                    (case as
+                      (:as :as-alias)
+                      (assoc aliases alias full)
+                      aliases)))
                 {:current name})))
   (reduce (fn [acc [k & exprs]]
             (if (= :require k)
@@ -507,7 +514,7 @@
       (emit-method env obj (symbol method-str) args))) #_(emit-method env obj method args))
 
 (defmethod emit-special 'if [_type env [_if test then else]]
-  (swap! *imported-core-vars* conj 'truth_)
+  (swap! *imported-vars* conj 'truth_)
   (if (= :expr (:context env))
     (->> (let [env (assoc env :context :expr)]
            (format "(%s) ? (%s) : (%s)"
@@ -751,7 +758,7 @@ break;}" body)
    (let [env (dissoc env :jsx)]
      (if (:quote env)
        (do
-         (swap! *imported-core-vars* conj 'list)
+         (swap! *imported-vars* update "cherry/core.js" (fnil conj #{}) 'list)
          (format "list(%s)"
                  (str/join ", " (emit-args env expr))))
        (cond (symbol? (first expr))
@@ -831,7 +838,7 @@ break;}" body)
     (if (::js (meta expr))
       (emit-wrap env (format "[%s]"
                              (str/join ", " (emit-args env expr))))
-      (do (swap! *imported-core-vars* conj 'vector)
+      (do (swap! *imported-vars* conj 'vector)
           (emit-wrap env (format "vector(%s)"
                                  (str/join ", " (emit-args env expr))))))))
 
@@ -854,7 +861,7 @@ break;}" body)
                                 (emit (val pair) expr-env)))
         keys (str/join ", " (map mk-pair (seq expr)))]
     (when map-fn
-      (swap! *imported-core-vars* conj map-fn))
+      (swap! *imported-vars* conj map-fn))
     (escape-jsx env* (->> (if map-fn
                             (format "%s(%s)" map-fn keys)
                             (format "({ %s })" keys))
@@ -863,7 +870,7 @@ break;}" body)
 (defmethod emit #?(:clj clojure.lang.PersistentHashSet
                    :cljs PersistentHashSet)
   [expr env]
-  (swap! *imported-core-vars* conj 'hash_set)
+  (swap! *imported-vars* conj 'hash_set)
   (emit-wrap env
              (format "%s%s" "hash_set"
                      (comma-list (emit-args env expr)))))
@@ -907,18 +914,22 @@ break;}" body)
   ([s] (compile-string* s nil))
   ([s {:keys [elide-exports
               elide-imports]}]
-   (let [core-vars (atom #{})
+   (let [imported-vars (atom {})
          public-vars (atom #{})
          aliases (atom {})]
-     (binding [*imported-core-vars* core-vars
+     (binding [imported-vars core-vars
                *public-vars* public-vars
                *aliases* aliases
                *jsx* false]
        (let [transpiled (transpile-string* s)
-             imports (when-let [core-vars (and (not elide-imports)
-                                               (seq @core-vars))]
-                       (str (format "import { %s } from 'cherry-cljs/cljs.core.js'\n"
-                                    (str/join ", " core-vars))))
+             imports (when-not elide-imports
+                       (reduce (fn [acc [k v]]
+                                 (str acc
+                                      (format "import { %s } from '%s'\n"
+                                              (str/join ", " v)
+                                              k)))
+                               ""
+                               @imported-vars))
              exports (when-not elide-exports
                        (str (when-let [vars (disj @public-vars "default$")]
                               (when (seq vars)
