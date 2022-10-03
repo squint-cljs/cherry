@@ -122,20 +122,24 @@
             fname (symbol fname)]
         (escape-jsx env (str (emit fname (dissoc (expr-env env) :jsx))
                              "." path)))
-      (let [expr (if-let [sym-ns (namespace expr)]
+      (let [munged-name (delay (munge* (name expr)))
+            expr (if-let [sym-ns (namespace expr)]
                    (or (when (or (= "cljs.core" sym-ns)
                                  (= "clojure.core" sym-ns))
                          (maybe-core-var (symbol (name expr))))
                        (when (= "js" sym-ns)
                          (symbol (name expr)))
+                       (when-let [resolved-ns (get @*aliases* (symbol sym-ns))]
+                         (swap! *imported-vars* update resolved-ns (fnil conj #{}) @munged-name)
+                         nil)
                        expr)
                    (maybe-core-var expr))
-            expr-ns (namespace expr)
+            #_#_expr-ns (namespace expr)
             expr (if-let [renamed (get (:var->ident env) expr)]
                    (str renamed)
-                   (str expr-ns (when expr-ns
+                   (str #_#_expr-ns (when #_#_expr-ns
                                   ".")
-                        (munge* (name expr))))]
+                        @munged-name))]
         (emit-wrap env
                    (escape-jsx env
                                (str expr)))))))
@@ -396,14 +400,12 @@
                (map (fn [temp expr]
                       (statement (format "let %s = %s"
                                          temp (emit expr eenv))))
-                    temps exprs)
-               )
+                    temps exprs))
      (str/join ""
                (map (fn [binding temp]
                       (statement (format "%s = %s"
                                          binding temp)))
-                    bindings temps)
-               )
+                    bindings temps))
      "continue;\n")))
 
 (defn emit-var [more env]
@@ -449,7 +451,7 @@
     (str
      (when (and as (= "default" p))
        (statement (format "import %s from '%s'" as libname)))
-     (when (and as (not p))
+     #_(when (and as (not p))
        (statement (format "import * as %s from '%s'" as libname)))
      (when refer
        (statement (format "import { %s } from '%s'"  (str/join ", " refer) libname))))))
@@ -473,8 +475,7 @@
               (str acc (str/join "" (map process-require-clause exprs)))
               acc))
           ""
-          clauses
-          ))
+          clauses))
 
 (defmethod emit-special 'funcall [_type env [fname & args :as _expr]]
   (let [interop? (and (symbol? fname)
@@ -649,27 +650,27 @@ break;}" body)
              body "\n}")))))
 
 #_(defn emit-function [env name sig body & [elide-function?]]
-  (assert (or (symbol? name) (nil? name)))
-  (assert (vector? sig))
-  (binding [*recur-targets* sig]
-    (let [recur? (volatile! nil)
-          env (assoc env :recur-callback
-                     (fn [coll]
-                       (when (identical? sig coll)
-                         (vreset! recur? true))))
-          body (emit-do (assoc env :context :return) body)
-          body (if @recur?
-                 (format "while(true){
+    (assert (or (symbol? name) (nil? name)))
+    (assert (vector? sig))
+    (binding [*recur-targets* sig]
+      (let [recur? (volatile! nil)
+            env (assoc env :recur-callback
+                       (fn [coll]
+                         (when (identical? sig coll)
+                           (vreset! recur? true))))
+            body (emit-do (assoc env :context :return) body)
+            body (if @recur?
+                   (format "while(true){
 %s
 break;}" body)
-                 body)]
-      (str (when-not elide-function?
-             (str (when *async*
-                    "async ") "function "))
-           (comma-list (map munge sig)) " {\n"
-           (when (:type env)
-             (str "var self__ = this;"))
-           body "\n}"))))
+                   body)]
+        (str (when-not elide-function?
+               (str (when *async*
+                      "async ") "function "))
+             (comma-list (map munge sig)) " {\n"
+             (when (:type env)
+               (str "var self__ = this;"))
+             body "\n}"))))
 
 (defn emit-function* [env expr]
   (let [name (when (symbol? (first expr)) (first expr))
@@ -934,8 +935,7 @@ break;}" body)
                        (str (when-let [vars (disj @public-vars "default$")]
                               (when (seq vars)
                                 (str (format "\nexport { %s }\n"
-                                             (str/join ", " vars))
-                                     )))
+                                             (str/join ", " vars)))))
                             (when (contains? @public-vars "default$")
                               "export default default$\n")))]
          {:imports imports
