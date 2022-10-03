@@ -1,5 +1,6 @@
 (ns cherry.compiler-test
-  (:require
+  (:require 
+   [cherry.compiler :as compiler]
    [cherry.jsx-test]
    [cherry.test-utils :refer [js! jss! jsv!]]
    [clojure.string :as str]
@@ -328,5 +329,12 @@
 (deftest double-names-in-sig-test
   (is (= 2 (jsv! '(do (defn foo [x x] x) (foo 1 2))))))
 
+(deftest ns-test
+  (is (str/includes? (compiler/compile-string (pr-str '(ns foo (:require ["./popup.css"]))))
+                     "import './popup.css'"))
+  (is (re-find #"import.*'./popup.css'"
+               (compiler/compile-string (pr-str '(ns foo (:require ["./popup.css" :as pop])))))))
+
+#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test))
