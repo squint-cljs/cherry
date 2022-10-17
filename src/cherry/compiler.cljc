@@ -11,7 +11,6 @@
 (ns cherry.compiler
   (:require
    #?(:cljs [goog.string.format])
-   #?(:cljs [goog.string :as gstring])
    #?(:clj [cherry.resource :as resource])
    [cherry.internal.deftype :as deftype]
    [cherry.internal.destructure :refer [core-let]]
@@ -20,37 +19,14 @@
    [cherry.internal.macros :as macros]
    [cherry.internal.protocols :as protocols]
    [clojure.string :as str]
+   [edamame.core :as e]
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
-                                          *aliases* *async* *cljs-ns* *excluded-core-vars* *imported-vars* *public-vars*
-                                          *repl* comma-list emit emit-repl emit-special emit-wrap expr-env statement
-                                          statement-separator escape-jsx]]
-   [edamame.core :as e])
+                                          *aliases* *async* *public-vars* comma-list emit emit-special emit-wrap escape-jsx
+                                          expr-env statement statement-separator]])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
 
-
-;; (defmulti emit-special (fn [disp _env & _args] disp))
-;; (defmethod emit-special 'js* [_ env [_js* template & substitutions]]
-;;   (reduce (fn [template substitution]
-;;             (str/replace-first template "~{}" (emit substitution env)))
-;;           template
-;;           substitutions))
-
 (def ^:dynamic *imported-core-vars* (atom #{}))
-
-;; #?(:clj (derive #?(:clj java.lang.Integer) ::number))
-;; #?(:clj (derive #?(:clj java.lang.Long) ::number))
-;; #?(:cljs (derive js/Number ::number))
-
-;; (defmethod emit ::number [expr env]
-;;   (->> (str expr)
-;;        (emit-wrap env)))
-
-;; (defmethod emit #?(:clj java.lang.String :cljs js/String) [^String expr env]
-;;   (if (and (:jsx env)
-;;            (not (:jsx-attr env)))
-;;     expr
-;;     (emit-wrap env (pr-str expr))))
 
 (defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr env]
   (swap! *imported-core-vars* conj 'keyword)
