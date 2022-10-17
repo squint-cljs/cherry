@@ -35,4 +35,7 @@ jobs:
 
     - name: Run tests
       run: |
+        cd ..
+        git clone https://github.com/squint-cljs/compiler-common.git
+        cd -
         bb test
