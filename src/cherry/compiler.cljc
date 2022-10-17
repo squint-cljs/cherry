@@ -23,8 +23,12 @@
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
                                           *aliases* *async* *public-vars* comma-list emit emit-special emit-wrap escape-jsx
-                                          expr-env statement statement-separator munge*]])
+                                          expr-env statement statement-separator munge*
+                                          emit-args emit-infix
+                                          suffix-unary? prefix-unary? infix-operator?]])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
+
+(set! cc/infix-operators (disj cc/infix-operators "="))
 
 (def ^:dynamic *imported-core-vars* (atom #{}))
 
@@ -125,54 +129,14 @@
 
 (def core-vars (conj (:vars core-config) 'goog_typeOf))
 
-(def prefix-unary-operators (set ['!]))
-
-(def suffix-unary-operators (set ['++ '--]))
-
-(def infix-operators (set ['+ '+= '- '-= '/ '* '% '== '=== '< '> '<= '>= '!=
-                           '<< '>> '<<< '>>> '!== '& '| '&& '|| 'not= 'instanceof]))
-
-(def chainable-infix-operators (set ['+ '- '* '/ '& '| '&& '||]))
-
-
 (defn special-form? [expr]
   (contains? special-forms expr))
-
-(defn infix-operator? [expr]
-  (contains? infix-operators expr))
-
-(defn prefix-unary? [expr]
-  (contains? prefix-unary-operators expr))
-
-(defn suffix-unary? [expr]
-  (contains? suffix-unary-operators expr))
 
 (defn emit-prefix-unary [_type [operator arg]]
   (str operator (emit arg)))
 
 (defn emit-suffix-unary [_type [operator arg]]
   (str (emit arg) operator))
-
-(defn emit-args [env args]
-  (let [env (assoc env :context :expr)]
-    (map #(emit % env) args)))
-
-(defn emit-infix [_type enc-env [operator & args]]
-  (let [env (assoc enc-env :context :expr)
-        acount (count args)]
-    (if (and (not (chainable-infix-operators operator)) (> acount 2))
-      (emit (list 'cljs.core/and
-                  (list operator (first args) (second args))
-                  (list* operator (rest args))))
-      (if (and (= '- operator)
-               (= 1 acount))
-        (str "-" (emit (first args) env))
-        (-> (let [substitutions {'= "===" == "===" '!= "!=="
-                                 'not= "!=="
-                                 '+ "+"}]
-              (str "(" (str/join (str " " (or (substitutions operator) operator) " ")
-                                 (emit-args env args)) ")"))
-            (emit-wrap enc-env))))))
 
 (def ^{:dynamic true} var-declarations nil)
 
