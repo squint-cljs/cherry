@@ -23,7 +23,7 @@
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
                                           *aliases* *async* *public-vars* comma-list emit emit-special emit-wrap escape-jsx
-                                          expr-env statement statement-separator]])
+                                          expr-env statement statement-separator munge*]])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
 
 (def ^:dynamic *imported-core-vars* (atom #{}))
@@ -31,14 +31,6 @@
 (defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr env]
   (swap! *imported-core-vars* conj 'keyword)
   (emit-wrap (str (format "keyword(%s)" (pr-str (subs (str expr) 1)))) env))
-
-(defn munge* [expr]
-  (let [munged (str (munge expr))
-        keep #{"import" "await"}]
-    (cond-> munged
-      (and (str/ends-with? munged "$")
-           (contains? keep (str expr)))
-      (str/replace #"\$$" ""))))
 
 (declare core-vars)
 
