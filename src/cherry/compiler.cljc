@@ -48,17 +48,17 @@
 
 (defmethod emit #?(:clj clojure.lang.Symbol :cljs Symbol) [expr env]
   (if (:quote env)
-    (emit-wrap (escape-jsx env
-                           (emit (list 'cljs.core/symbol
+    (emit-wrap (escape-jsx (emit (list 'cljs.core/symbol
                                        (str expr))
-                                 (dissoc env :quote)))
+                                 (dissoc env :quote))
+                           env)
                env)
     (if (and (simple-symbol? expr)
              (str/includes? (str expr) "."))
       (let [[fname path] (str/split (str expr) #"\." 2)
             fname (symbol fname)]
-        (escape-jsx env (str (emit fname (dissoc (expr-env env) :jsx))
-                             "." path)))
+        (escape-jsx (str (emit fname (dissoc (expr-env env) :jsx))
+                         "." path) env))
       (let [expr (if-let [sym-ns (namespace expr)]
                    (or (when (or (= "cljs.core" sym-ns)
                                  (= "clojure.core" sym-ns))
@@ -73,8 +73,7 @@
                    (str expr-ns (when expr-ns
                                   ".")
                         (munge* (name expr))))]
-        (emit-wrap (escape-jsx env
-                               (str expr))
+        (emit-wrap (escape-jsx (str expr) env)
                    env)))))
 
 (def special-forms (set ['var '. 'if 'funcall 'fn 'fn* 'quote 'set!
@@ -636,7 +635,6 @@ break;}" body)
 
 (defmethod emit ::list [expr env]
   (escape-jsx
-   env
    (let [env (dissoc env :jsx)]
      (if (:quote env)
        (do
@@ -676,7 +674,8 @@ break;}" body)
              (list? expr)
              (emit-special 'funcall env expr)
              :else
-             (throw (new Exception (str "invalid form: " expr))))))))
+             (throw (new Exception (str "invalid form: " expr))))))
+   env))
 
 #?(:cljs (derive PersistentVector ::vector))
 
@@ -744,10 +743,10 @@ break;}" body)
         keys (str/join ", " (map mk-pair (seq expr)))]
     (when map-fn
       (swap! *imported-core-vars* conj map-fn))
-    (escape-jsx env* (-> (if map-fn
-                           (format "%s(%s)" map-fn keys)
-                           (format "({ %s })" keys))
-                         (emit-wrap env)))))
+    (escape-jsx (-> (if map-fn
+                      (format "%s(%s)" map-fn keys)
+                      (format "({ %s })" keys))
+                    (emit-wrap env)) env*)))
 
 (defmethod emit #?(:clj clojure.lang.PersistentHashSet
                    :cljs PersistentHashSet)
