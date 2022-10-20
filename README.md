@@ -7,7 +7,7 @@ Reducing friction between ClojureScript and JS tooling.
 > :warning: This project is an experiment and not recommended to be used in
 > production. It currently has many bugs and will undergo many breaking changes.
 
-Also check out [ClavaScript](https://github.com/clavascript/clavascript) which
+Also check out [Squint](https://github.com/squint-cljs/squint) which
 is a CLJS _syntax_ to JS compiler.
 
 ## Quickstart
@@ -49,9 +49,9 @@ Run `npx cherry --help` to see all command line options.
 
 A few examples of currenly working projects compiled by cherry:
 
-- [playground](https://clavascript.github.io/cherry/)
-- [wordle](https://clavascript.github.io/cherry/examples/wordle/index.html)
-- [react](https://clavascript.github.io/cherry/examples/react/index.html)
+- [playground](https://squint-cljs.github.io/cherry/)
+- [wordle](https://squint-cljs.github.io/cherry/examples/wordle/index.html)
+- [react](https://squint-cljs.github.io/cherry/examples/react/index.html)
 - [vite](examples/vite)
 - [cherry-action-example](https://github.com/borkdude/cherry-action-example)
 
@@ -95,9 +95,9 @@ to be of value.
 Depending on interest both from people working on this and the broader
 community, the above goals may or may not be pursued. If you are interested in
 maturing cherry, please submit
-[issues](https://github.com/clavascript/cherry/issues) for bug reports or share
+[issues](https://github.com/squint-cljs/cherry/issues) for bug reports or share
 your thoughts on [Github
-Discussions](https://github.com/clavascript/cherry/discussions).
+Discussions](https://github.com/squint-cljs/cherry/discussions).
 
 Cherry started out as a fork of
 [Scriptjure](https://github.com/arohner/scriptjure). Currently it's being
