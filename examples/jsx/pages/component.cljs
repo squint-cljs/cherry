@@ -1,27 +1,17 @@
-(ns pages.component)
+(ns pages.component
+  (:require ["react" :refer [useState]]))
 
-(defn my-func [a b c d]
-  (* a b c d))
-
-(defn Comp2 [^:js {:keys [x] :as props}]
-  #jsx [:<>
-        [:p "The prop:" x]
-        [:p "Children"]
-        (.-children props)])
+(defn Counter [^:js {:keys [init]}]
+  (let [[counter setCount] (useState init)]
+    #jsx [:div
+          "Count:" (.join (into-array (range counter)) " " )
+          [:div
+           [:button
+            {:onClick (fn []
+                        (setCount (inc counter)))}
+            "Click me"]]]))
 
 (defn MyComponent []
-  (let [x 1337]
-    #jsx [:<>
-          [:p "Paragraph" x]
-          [:code "(+ 1 2 3)"]
-          [:a {:href "foo"} "Link"]
-          (if (odd? 2)
-            #jsx [:div "Yoo"]
-            #jsx [:div "Dude"])
-          (my-func x 1 2 3)
-          [Comp2 {:x "value"}
-           [:pre "Child1"]
-           [:pre "Child2"]]
-          [:pre [:code (pr-str {:x 1})]]
-          [:pre (let [x 1] x)]
-          [:<> 1 2 3 4]]))
+  #jsx [Counter #js {:init 10}])
+
+(def default MyComponent)
