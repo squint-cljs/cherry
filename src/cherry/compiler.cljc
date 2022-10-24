@@ -22,7 +22,8 @@
    [edamame.core :as e]
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
-                                          *aliases* *async* *public-vars* comma-list emit emit-special emit-wrap escape-jsx
+                                          *aliases* *async* *public-vars* *repl* *imported-vars*
+                                          comma-list emit emit-special emit-wrap escape-jsx
                                           expr-env statement statement-separator munge*
                                           emit-args emit-infix
                                           suffix-unary? prefix-unary? infix-operator?]])
@@ -30,51 +31,9 @@
 
 (set! cc/infix-operators (disj cc/infix-operators "="))
 
-(def ^:dynamic *imported-core-vars* (atom #{}))
-
 (defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr env]
-  (swap! *imported-core-vars* conj 'keyword)
+  (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'keyword)
   (emit-wrap (str (format "keyword(%s)" (pr-str (subs (str expr) 1)))) env))
-
-(declare core-vars)
-
-(defn maybe-core-var [sym]
-  (if (contains? core-vars sym)
-    (let [sym (symbol (munge* sym))
-          ]
-      (swap! *imported-core-vars* conj sym)
-      sym)
-    sym))
-
-(defmethod emit #?(:clj clojure.lang.Symbol :cljs Symbol) [expr env]
-  (if (:quote env)
-    (emit-wrap (escape-jsx (emit (list 'cljs.core/symbol
-                                       (str expr))
-                                 (dissoc env :quote))
-                           env)
-               env)
-    (if (and (simple-symbol? expr)
-             (str/includes? (str expr) "."))
-      (let [[fname path] (str/split (str expr) #"\." 2)
-            fname (symbol fname)]
-        (escape-jsx (str (emit fname (dissoc (expr-env env) :jsx))
-                         "." path) env))
-      (let [expr (if-let [sym-ns (namespace expr)]
-                   (or (when (or (= "cljs.core" sym-ns)
-                                 (= "clojure.core" sym-ns))
-                         (maybe-core-var (symbol (name expr))))
-                       (when (= "js" sym-ns)
-                         (symbol (name expr)))
-                       expr)
-                   (maybe-core-var expr))
-            expr-ns (namespace expr)
-            expr (if-let [renamed (get (:var->ident env) expr)]
-                   (str renamed)
-                   (str expr-ns (when expr-ns
-                                  ".")
-                        (munge* (name expr))))]
-        (emit-wrap (escape-jsx (str expr) env)
-                   env)))))
 
 (def special-forms (set ['var '. 'if 'funcall 'fn 'fn* 'quote 'set!
                          'return 'delete 'new 'do 'aget 'while
@@ -127,6 +86,8 @@
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
 (def core-vars (conj (:vars core-config) 'goog_typeOf))
+
+(reset! cc/core-vars core-vars)
 
 (defn special-form? [expr]
   (contains? special-forms expr))
@@ -323,6 +284,33 @@
   (emit (core-let bindings more) env)
   #_(prn (core-let bindings more)))
 
+(defn resolve-ns [alias]
+  (case alias
+    ;; (squint.string clojure.string) "squint-cljs/string.js"
+    alias))
+
+(defn process-require-clause [[libname & {:keys [refer as]}]]
+  (let [libname (resolve-ns libname)
+        [libname suffix] (str/split libname #"\$" 2)
+        [p & _props] (when suffix
+                       (str/split suffix #"\."))]
+    (str
+     (when-not *repl*
+       (when (and as (= "default" p))
+         (statement (format "import %s from '%s'" as libname))))
+     (when (and (not as) (not p) (not refer))
+       ;; import presumably for side effects
+       (statement (format "import '%s'" libname)))
+     (when as
+       (swap! *imported-vars* update libname (fnil identity #{}))
+       (when *repl*
+         (if (str/ends-with? libname "$default")
+           (statement (format "import %s from '%s'" as (str/replace libname "$default" "")))
+           (statement (format "import * as %s from '%s'"  as libname)))))
+     (when refer
+       (statement (format "import { %s } from '%s'"  (str/join ", " refer) libname))))))
+
+#_
 (defn process-require-clause [[libname & {:keys [refer as]}]]
   (let [[libname suffix] (.split libname "$" 2)
         [p & _props] (when suffix
@@ -395,7 +383,7 @@
       (emit-method env obj (symbol method-str) args))) #_(emit-method env obj method args))
 
 (defmethod emit-special 'if [_type env [_if test then else]]
-  (swap! *imported-core-vars* conj 'truth_)
+  (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'truth_)
   (if (= :expr (:context env))
     (-> (let [env (assoc env :context :expr)]
           (format "(%s) ? (%s) : (%s)"
@@ -638,7 +626,7 @@ break;}" body)
    (let [env (dissoc env :jsx)]
      (if (:quote env)
        (do
-         (swap! *imported-core-vars* conj 'list)
+         (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'list)
          (format "list(%s)"
                  (str/join ", " (emit-args env expr))))
        (cond (symbol? (first expr))
@@ -719,7 +707,7 @@ break;}" body)
     (if (::js (meta expr))
       (emit-wrap (format "[%s]"
                          (str/join ", " (emit-args env expr))) env)
-      (do (swap! *imported-core-vars* conj 'vector)
+      (do (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'vector)
           (emit-wrap (format "vector(%s)"
                              (str/join ", " (emit-args env expr))) env)))))
 
@@ -742,7 +730,7 @@ break;}" body)
                                 (emit (val pair) expr-env)))
         keys (str/join ", " (map mk-pair (seq expr)))]
     (when map-fn
-      (swap! *imported-core-vars* conj map-fn))
+      (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) map-fn))
     (escape-jsx (-> (if map-fn
                       (format "%s(%s)" map-fn keys)
                       (format "({ %s })" keys))
@@ -751,7 +739,7 @@ break;}" body)
 (defmethod emit #?(:clj clojure.lang.PersistentHashSet
                    :cljs PersistentHashSet)
   [expr env]
-  (swap! *imported-core-vars* conj 'hash_set)
+  (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'hash_set)
   (emit-wrap (format "%s%s" "hash_set"
                      (comma-list (emit-args env expr))) env))
 
@@ -794,16 +782,33 @@ break;}" body)
   ([s] (compile-string* s nil))
   ([s {:keys [elide-exports
               elide-imports]}]
-   (let [core-vars (atom #{})
+   (let [imported-vars (atom {})
          public-vars (atom #{})
          aliases (atom {})]
-     (binding [*imported-core-vars* core-vars
+     (binding [*imported-vars* imported-vars
                *public-vars* public-vars
                *aliases* aliases
-               *jsx* false]
+               *jsx* false
+               cc/*core-package* "cherry-cljs/lib/cljs_core.js"]
        (let [transpiled (transpile-string* s)
-             imports (when-let [core-vars (and (not elide-imports)
-                                               (seq @core-vars))]
+             imports (when-not elide-imports
+                       (let [ns->alias (zipmap (vals @aliases)
+                                               (keys @aliases))]
+                         (reduce (fn [acc [k v]]
+                                   (let [alias (get ns->alias k)
+                                         symbols (if alias
+                                                   (map #(str % " as " (str alias "_" %)) v)
+                                                   v)]
+                                     (str acc
+                                          (when (or (not *repl*)
+                                                    (seq symbols))
+                                            (format "import { %s } from '%s'\n"
+                                                    (str/join ", " symbols)
+                                                    k)))))
+                                 ""
+                                 @imported-vars)))
+             #_#_imports (when-let [core-vars (and (not elide-imports)
+                                               (seq @imported-vars))]
                        (str (format "import { %s } from 'cherry-cljs/cljs.core.js'\n"
                                     (str/join ", " core-vars))))
              exports (when-not elide-exports
