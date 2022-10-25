@@ -35,7 +35,10 @@ jobs:
 
     - name: Run tests
       run: |
-        cd ..
+        pushd ..
         git clone https://github.com/squint-cljs/compiler-common.git
-        cd -
+        pushd compiler-common
+        git checkout iteration2
+        popd
+        popd
         bb test
