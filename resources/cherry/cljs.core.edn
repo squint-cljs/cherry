@@ -1,148 +1,147 @@
-;; (sort (keys (ns-publics 'cljs.core)))
-{:vars #{+ - < > <= =>
-         =
-         ->LazySeq
+;; (sort (map munge (keys (ns-publics 'cljs.core))))
+{:vars #{IndexedSeq
          LazySeq
-         ->IndexedSeq
-         IndexedSeq
          PROTOCOL_SENTINEL
-
+         _
+         _EQ_
+         _EQ__GT_
+         _GT_
+         _LT_
+         _LT__EQ_
+         _PLUS_
+         __GT_IndexedSeq
+         __GT_LazySeq
+         __destructure_map
+         _nth
          aclone
-         ;; add-tap
-         ;; add-to-string-hash-cache
-         add-watch
+         add_watch
          aget
          alength
-         alter-meta!
+         alter_meta_BANG_
          ancestors
-         any?
+         any_QMARK_
          apply
-         apply-to
+         apply_to
          array
-         array-chunk
-         array-index-of
-         array-iter
-         array-list
-         array-map
-         array-seq
-         array?
+         array_QMARK_
+         array_chunk
+         array_index_of
+         array_iter
+         array_list
+         array_map
+         array_seq
          aset
          assoc
-         assoc!
-         assoc-in
-         associative?
+         assoc_BANG_
+         assoc_in
+         associative_QMARK_
          atom
-         bit-and
-         bit-and-not
-         bit-clear
-         bit-count
-         bit-flip
-         bit-not
-         bit-or
-         bit-set
-         bit-shift-left
-         bit-shift-right
-         bit-shift-right-zero-fill
-         bit-test
-         bit-xor
-         boolean
-         boolean?
+         bit_and
+         bit_and_not
+         bit_clear
+         bit_count
+         bit_flip
+         bit_not
+         bit_or
+         bit_set
+         bit_shift_left
+         bit_shift_right
+         bit_shift_right_zero_fill
+         bit_test
+         bit_xor
+         boolean$
+         boolean_QMARK_
          booleans
-         bounded-count
+         bounded_count
          butlast
-         byte
+         byte$
          bytes
          cat
-         char
-         char?
+         char$
+         char_QMARK_
          chars
          chunk
-         chunk-append
-         chunk-buffer
-         chunk-cons
-         chunk-first
-         chunk-next
-         chunk-rest
-         chunked-seq
-         chunked-seq?
-         clj->js
+         chunk_append
+         chunk_buffer
+         chunk_cons
+         chunk_first
+         chunk_next
+         chunk_rest
+         chunked_seq
+         chunked_seq_QMARK_
+         clj__GT_js
          clone
-         cloneable?
-         coll?
+         cloneable_QMARK_
+         coll_QMARK_
          comp
          comparator
          compare
-         compare-and-set!
+         compare_and_set_BANG_
          complement
          completing
          concat
          conj
-         conj!
+         conj_BANG_
          cons
          constantly
-         contains?
+         contains_QMARK_
          count
-         counted?
-         ;;create-ns
+         counted_QMARK_
          cycle
          dec
          dedupe
-         default-dispatch-val
-         delay?
+         default_dispatch_val
+         delay_QMARK_
          demunge
          deref
          derive
          descendants
          disj
-         disj!
-         dispatch-fn
+         disj_BANG_
+         dispatch_fn
          dissoc
-         dissoc!
+         dissoc_BANG_
          distinct
-         distinct?
+         distinct_QMARK_
          divide
          doall
          dorun
-         double
-         double-array
-         double?
+         double$
+         double_QMARK_
+         double_array
          doubles
          drop
-         drop-last
-         drop-while
+         drop_last
+         drop_while
          eduction
          empty
-         empty?
-         enable-console-print!
-         ensure-reduced
-         equiv-map
-         es6-entries-iterator
-         es6-iterator
-         es6-iterator-seq
-         es6-set-entries-iterator
-         ;; eval
-         even?
-         every-pred
-         every?
-         ex-cause
-         ex-data
-         ex-info
-         ex-message
-         false?
+         empty_QMARK_
+         enable_console_print_BANG_
+         ensure_reduced
+         equiv_map
+         es6_entries_iterator
+         es6_iterator
+         es6_iterator_seq
+         es6_set_entries_iterator
+         even_QMARK_
+         every_QMARK_
+         every_pred
+         ex_cause
+         ex_data
+         ex_info
+         ex_message
+         false_QMARK_
          ffirst
          filter
          filterv
          find
-         ;;find-macros-ns
-         ;;find-ns
-         ;;find-ns-obj
          first
          flatten
-         float
-         float?
+         float$
+         float_QMARK_
          floats
          flush
-         fn?
+         fn_QMARK_
          fnext
          fnil
          force
@@ -150,314 +149,305 @@
          gensym
          gensym_counter
          get
-         get-in
-         get-method
-         get-validator
-         group-by
-         halt-when
+         get_in
+         get_method
+         get_validator
+         group_by
+         halt_when
          hash
-         hash-combine
-         hash-keyword
-         hash-map
-         hash-ordered-coll
-         hash-set
-         hash-string
-         hash-string*
-         hash-unordered-coll
-         ident?
-         identical?
+         hash_combine
+         hash_keyword
+         hash_map
+         hash_ordered_coll
+         hash_set
+         hash_string
+         hash_string_STAR_
+         hash_unordered_coll
+         ident_QMARK_
+         identical_QMARK_
          identity
-         ifind?
-         ifn?
+         ifind_QMARK_
+         ifn_QMARK_
          imul
          inc
-         indexed?
-         infinite?
-         inst-ms
-         inst-ms*
-         inst?
-         instance?
-         int
-         int-array
-         int-rotate-left
-         int?
-         integer?
+         indexed_QMARK_
+         infinite_QMARK_
+         inst_QMARK_
+         inst_ms
+         inst_ms_STAR_
+         instance_QMARK_
+         int$
+         int_QMARK_
+         int_array
+         int_rotate_left
+         integer_QMARK_
          interleave
          interpose
          into
-         into-array
+         into_array
          ints
          is_proto_
-         isa?
+         isa_QMARK_
          iter
-         iterable?
+         iterable_QMARK_
          iterate
-         js->clj
-         js-delete
-         js-invoke
-         js-iterable?
-         js-keys
-         js-mod
-         keyword
-         js-obj
-         js-reserved
-         js-symbol?
+         js__GT_clj
+         js_delete
+         js_invoke
+         js_iterable_QMARK_
+         js_keys
+         js_mod
+         js_obj
+         js_reserved
+         js_symbol_QMARK_
          juxt
          keep
-         keep-indexed
+         keep_indexed
          key
-         key->js
-         key-test
+         key__GT_js
+         key_test
          keys
-         keyword-identical?
-         keyword?
+         keyword
+         keyword_QMARK_
+         keyword_identical_QMARK_
          last
          list
-         list*
-         list?
-         long
-         long-array
+         list_QMARK_
+         list_STAR_
+         long$
+         long_array
          longs
-         make-array
-         make-hierarchy
+         make_array
+         make_hierarchy
          map
-         map-entry?
-         map-indexed
-         map?
+         map_QMARK_
+         map_entry_QMARK_
+         map_indexed
          mapcat
          mapv
          max
-         max-key
+         max_key
          memoize
          merge
-         merge-with
+         merge_with
          meta
-         methods
+         methods$
          min
-         min-key
-         missing-protocol
-         mix-collection-hash
-         mk-bound-fn
+         min_key
+         missing_protocol
+         mix_collection_hash
+         mk_bound_fn
          mod
          munge
          name
          namespace
-         nat-int?
-         native-satisfies?
-         neg-int?
-         neg?
+         nat_int_QMARK_
+         native_satisfies_QMARK_
+         neg_QMARK_
+         neg_int_QMARK_
          newline
          next
          nfirst
-         nil-iter
-         nil?
+         nil_QMARK_
+         nil_iter
          nnext
          not
-         not-any?
-         not-empty
-         not-every?
-         not-native
-         not=
-         ;; ns-interns*
-         ;; ns-name
-         -nth
+         not_EQ_
+         not_any_QMARK_
+         not_empty
+         not_every_QMARK_
+         not_native
          nth
          nthnext
          nthrest
-         number?
-         rest
-         obj-map
-         object-array
-         object?
-         odd?
+         number_QMARK_
+         obj_map
+         object_QMARK_
+         object_array
+         odd_QMARK_
          parents
          partial
          partition
-         partition-all
-         partition-by
+         partition_all
+         partition_by
          peek
-         persistent!
-         persistent-array-map-seq
+         persistent_BANG_
+         persistent_array_map_seq
          pop
-         pop!
-         pos-int?
-         pos?
+         pop_BANG_
+         pos_QMARK_
+         pos_int_QMARK_
          pr
-         pr-seq-writer
-         pr-sequential-writer
-         pr-str
-         pr-str*
-         pr-str-with-opts
-         prefer-method
+         pr_seq_writer
+         pr_sequential_writer
+         pr_str
+         pr_str_STAR_
+         pr_str_with_opts
+         prefer_method
          prefers
-         prim-seq
+         prim_seq
          print
-         print-map
-         print-meta?
-         print-prefix-map
-         print-str
+         print_map
+         print_meta_QMARK_
+         print_prefix_map
+         print_str
          println
-         println-str
+         println_str
          prn
-         prn-str
-         prn-str-with-opts
-         qualified-ident?
-         qualified-keyword?
-         qualified-symbol?
+         prn_str
+         prn_str_with_opts
+         qualified_ident_QMARK_
+         qualified_keyword_QMARK_
+         qualified_symbol_QMARK_
          quot
          rand
-         rand-int
-         rand-nth
-         random-sample
-         random-uuid
+         rand_int
+         rand_nth
+         random_sample
+         random_uuid
          range
-         ranged-iterator
-         re-find
-         re-matches
-         re-pattern
-         re-seq
-         realized?
-         record?
+         ranged_iterator
+         re_find
+         re_matches
+         re_pattern
+         re_seq
+         realized_QMARK_
+         record_QMARK_
          reduce
-         reduce-kv
-         reduceable?
+         reduce_kv
+         reduceable_QMARK_
          reduced
-         reduced?
+         reduced_QMARK_
          reductions
-         regexp?
+         regexp_QMARK_
          rem
          remove
-         remove-all-methods
-         remove-method
-         remove-tap
-         remove-watch
+         remove_all_methods
+         remove_method
+         remove_tap
+         remove_watch
          repeat
          repeatedly
          replace
          replicate
-         reset!
-         reset-meta!
-         reset-vals!
+         reset_BANG_
+         reset_meta_BANG_
+         reset_vals_BANG_
+         rest
          reverse
-         reversible?
+         reversible_QMARK_
          rseq
-         seq
-         str
          rsubseq
-         run!
+         run_BANG_
          second
-         select-keys
-         seq-iter
-         seq?
-         seqable?
+         select_keys
+         seq
+         seq_QMARK_
+         seq_iter
+         seqable_QMARK_
          sequence
-         sequential?
+         sequential_QMARK_
          set
-         set-from-indexed-seq
-         set-print-err-fn!
-         set-print-fn!
-         set-validator!
-         set?
-         short
+         set_QMARK_
+         set_from_indexed_seq
+         set_print_err_fn_BANG_
+         set_print_fn_BANG_
+         set_validator_BANG_
+         short$
          shorts
          shuffle
-         simple-ident?
-         simple-keyword?
-         simple-symbol?
+         simple_ident_QMARK_
+         simple_keyword_QMARK_
+         simple_symbol_QMARK_
          some
-         some-fn
-         some?
+         some_QMARK_
+         some_fn
          sort
-         sort-by
-         sorted-map
-         sorted-map-by
-         sorted-set
-         sorted-set-by
-         sorted?
-         special-symbol?
-         split-at
-         split-with
+         sort_by
+         sorted_QMARK_
+         sorted_map
+         sorted_map_by
+         sorted_set
+         sorted_set_by
+         special_symbol_QMARK_
+         split_at
+         split_with
          spread
-         string-hash-cache
-         string-hash-cache-count
-         string-iter
-         string-print
-         string?
+         str
+         string_QMARK_
+         string_hash_cache
+         string_hash_cache_count
+         string_iter
+         string_print
          subs
          subseq
          subvec
-         swap!
-         swap-vals!
+         swap_BANG_
+         swap_vals_BANG_
          symbol
-         symbol-identical?
-         symbol?
-         ;; system-time
-         ;; t_cljs$core11484
-         ;; t_cljs$core9897
-         tagged-literal
-         tagged-literal?
+         symbol_QMARK_
+         symbol_identical_QMARK_
+         system_time
+         tagged_literal
+         tagged_literal_QMARK_
          take
-         take-last
-         take-nth
-         take-while
-         tap>
+         take_last
+         take_nth
+         take_while
+         tap_GT_
          test
-         to-array
-         to-array-2d
+         to_array
+         to_array_2d
          trampoline
          transduce
-         transformer-iterator
-         transient
-         tree-seq
-         true?
+         transformer_iterator
+         transient$
+         tree_seq
+         true_QMARK_
          truth_
          type
-         type->str
-         unchecked-add
-         unchecked-add-int
-         unchecked-byte
-         unchecked-char
-         unchecked-dec
-         unchecked-dec-int
-         unchecked-divide-int
-         unchecked-double
-         unchecked-float
-         unchecked-inc
-         unchecked-inc-int
-         unchecked-int
-         unchecked-long
-         unchecked-multiply
-         unchecked-multiply-int
-         unchecked-negate
-         unchecked-negate-int
-         unchecked-remainder-int
-         unchecked-short
-         unchecked-subtract
-         unchecked-subtract-int
-         undefined?
+         type__GT_str
+         unchecked_add
+         unchecked_add_int
+         unchecked_byte
+         unchecked_char
+         unchecked_dec
+         unchecked_dec_int
+         unchecked_divide_int
+         unchecked_double
+         unchecked_float
+         unchecked_inc
+         unchecked_inc_int
+         unchecked_int
+         unchecked_long
+         unchecked_multiply
+         unchecked_multiply_int
+         unchecked_negate
+         unchecked_negate_int
+         unchecked_remainder_int
+         unchecked_short
+         unchecked_subtract
+         unchecked_subtract_int
+         undefined_QMARK_
          underive
          unreduced
-         unsigned-bit-shift-right
+         unsigned_bit_shift_right
          update
-         update-in
-         uri?
+         update_in
+         uri_QMARK_
          uuid
-         uuid?
+         uuid_QMARK_
          val
          vals
-         var?
-         vary-meta
+         var_QMARK_
+         vary_meta
          vec
          vector
-         vector?
-         volatile!
-         volatile?
-         vreset!
-         with-meta
-         write-all
-         zero?
-         zipmap
-         ;; manually added:
-         --destructure-map
-         system-time
-         }}
+         vector_QMARK_
+         volatile_BANG_
+         volatile_QMARK_
+         vreset_BANG_
+         with_meta
+         write_all
+         zero_QMARK_
+         zipmap}}
