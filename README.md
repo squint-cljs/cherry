@@ -92,6 +92,8 @@ code with the CLJS compiler may become challenging. However, some results of
 this experiment may end up as improvements in the CLJS compiler if they turn out
 to be of value.
 
+See [slides](https://www.dropbox.com/s/955jgzy6hgpx67r/dcd2022-cljs-reimagined.pdf?dl=0) of a presentation given at Dutch Clojure Days 2022 about cherry and squint.
+
 Depending on interest both from people working on this and the broader
 community, the above goals may or may not be pursued. If you are interested in
 maturing cherry, please submit
