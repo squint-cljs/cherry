@@ -15,10 +15,6 @@ is a CLJS _syntax_ to JS compiler.
 Although it's early days and far from complete, you're welcome to try out cherry and submit issues.
 
 ``` shell
-$ git clone git@github.com:squint-cljs/cherry.git --recursive
-```
-
-``` shell
 $ mkdir cherry-test && cd cherry-test
 $ npm init -y
 $ npm install cherry-cljs@latest
@@ -114,6 +110,14 @@ reworked to meet the above goals.
 
 <!-- - [Nextjournal](https://nextjournal.com/) -->
 <!-- - The main author's [Github Sponsors](https://github.com/sponsors/borkdude) -->
+
+## Development
+
+``` shell
+$ git clone git@github.com:squint-cljs/cherry.git --recursive
+$ cd cherry
+$ bb dev
+```
 
 License
 =======
