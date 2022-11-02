@@ -77,8 +77,7 @@ Goals of cherry:
 - Light-weight and fast: heavy lifting such as optimizations are expected to be
   done by JS tooling
 - No dependency on Google Closure: this project will use it for bootstrapping
-  itself (by using the CLJS compiler), but users of this project won't see any
-  `goog.*` stuff.
+  itself (by using the CLJS compiler), but users of this project won't use it for compilation
 - Macro support
 - REPL support
 - Async/await support. See [this tweet](https://twitter.com/borkdude/status/1549843802604638209) for a demo.
