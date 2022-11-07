@@ -145,8 +145,10 @@
 
 
 (defmethod emit-special 'funcall [_type env [fname & args :as _expr]]
-  (let [interop? (and (symbol? fname)
-                      (= "js" (namespace fname)))]
+  (let [ns (namespace fname)
+        fname (symbol (munge ns) (name fname))
+        interop? (and (symbol? fname)
+                      (= "js" ns))]
     (emit-wrap (str
                 (emit fname (expr-env env))
                 ;; this is needed when calling keywords, symbols, etc. We could
