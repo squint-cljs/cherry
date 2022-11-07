@@ -159,9 +159,6 @@
                env
                )))
 
-(defmethod emit-special 'str [_type env [_str & args]]
-  (apply clojure.core/str (interpose " + " (emit-args env args))))
-
 (defn emit-method [env obj method args]
   (let [eenv (expr-env env)]
     (emit-wrap (str (emit obj eenv) "."
