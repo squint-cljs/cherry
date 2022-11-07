@@ -37,5 +37,4 @@ jobs:
 
     - name: Run tests
       run: |
-        ls compiler-common
         bb test

@@ -3,7 +3,8 @@
    [babashka.fs :as fs]
    [babashka.process :refer [shell]]
    [clojure.edn :as edn]
-   [clojure.java.io :as io]))
+   [clojure.java.io :as io]
+   [clojure.string :as str]))
 
 (defn munge* [s reserved]
   (let [s (str (munge s))]
@@ -58,3 +59,14 @@
   (shell "npm install")
   (shell "npx shadow-cljs --config-merge .work/config-merge.edn release cherry")
   (shell "node lib/cherry_tests.js"))
+
+(defn bump-compiler-common []
+  (let [{:keys [out]}
+        (shell {:out :string
+                :dir "../squint/compiler-common"} "git rev-parse HEAD")
+        sha (str/trim out)
+        deps (slurp "deps.edn")
+        nodes ((requiring-resolve 'borkdude.rewrite-edn/parse-string) deps)
+        nodes ((requiring-resolve 'borkdude.rewrite-edn/assoc-in) nodes [:deps 'io.github.squint-cljs/compiler-common :git/sha] sha)
+        deps (str nodes)]
+    (spit "deps.edn" deps)))
