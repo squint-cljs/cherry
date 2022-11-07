@@ -22,11 +22,10 @@
    [edamame.core :as e]
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
-                                          *aliases* *async* *public-vars* *repl* *imported-vars*
-                                          comma-list emit emit-special emit-wrap escape-jsx
-                                          expr-env statement statement-separator munge*
-                                          emit-args emit-infix
-                                          suffix-unary? prefix-unary? infix-operator?]])
+                                          *aliases* *async* *imported-vars* *public-vars* *recur-targets* *repl* comma-list
+                                          emit emit-args emit-do emit-infix emit-let emit-special emit-wrap escape-jsx
+                                          expr-env infix-operator? munge* prefix-unary? statement statement-separator
+                                          suffix-unary? wrap-iife]])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
 
 (set! cc/infix-operators (disj cc/infix-operators "="))
@@ -107,53 +106,8 @@
                                 (partition 2 more))
                            (repeat statement-separator))))
 
-(def ^:dynamic *recur-targets* [])
-
-(declare emit-do wrap-iife)
-
 (defmethod emit-special 'quote [_ env [_ form]]
   (emit-wrap (emit form (expr-env (assoc env :quote true))) env))
-
-(defn emit-let [enc-env bindings body is-loop]
-  (let [context (:context enc-env)
-        env (assoc enc-env :context :expr)
-        partitioned (partition 2 bindings)
-        iife? (= :expr context)
-        upper-var->ident (:var->ident enc-env)
-        [bindings var->ident]
-        (reduce (fn [[acc var->ident] [var-name rhs]]
-                  (let [vm (meta var-name)
-                        rename? (not (:cherry.compiler/no-rename vm))
-                        renamed (if rename? (munge (gensym var-name))
-                                    var-name)
-                        lhs (str renamed)
-                        rhs (emit rhs (assoc env :var->ident var->ident))
-                        expr (format "let %s = %s;\n" lhs rhs)
-                        var->ident (assoc var->ident var-name renamed)]
-                    [(str acc expr) var->ident]))
-                ["" upper-var->ident]
-                partitioned)
-        enc-env (assoc enc-env :var->ident var->ident)]
-    (cond->> (str
-              bindings
-              (when is-loop
-                (str "while(true){\n"))
-              ;; TODO: move this to env arg?
-              (binding [*recur-targets*
-                        (if is-loop (map var->ident (map first partitioned))
-                            *recur-targets*)]
-                (emit-do (if iife?
-                           (assoc enc-env :context :return)
-                           enc-env) body))
-              (when is-loop
-                ;; TODO: not sure why I had to insert the ; here, but else
-                ;; (loop [x 1] (+ 1 2 x)) breaks
-                (str ";break;\n}\n")))
-      (= :expr context)
-      (wrap-iife))))
-
-(defmethod emit-special 'let* [_type enc-env [_let bindings & body]]
-  (emit-let enc-env bindings body false))
 
 (defmethod emit-special 'deftype* [_ env [_ t fields pmasks body]]
   (let [fields (map munge fields)]
@@ -268,17 +222,11 @@
     (swap! *public-vars* conj (munge* name))
     (emit-var more env)))
 
-(declare emit-do)
-
 (defn wrap-await [s]
   (format "(%s)" (str "await " s)))
 
 (defmethod emit-special 'js/await [_ env [_await more]]
   (emit-wrap (wrap-await (emit more (expr-env env))) env))
-
-(defn wrap-iife [s]
-  (cond-> (format "(%sfunction () {\n %s\n})()" (if *async* "async " "") s)
-    *async* (wrap-await)))
 
 (defmethod emit-special 'let [type env [_let bindings & more]]
   (emit (core-let bindings more) env)
@@ -443,22 +391,6 @@
 (defmethod emit-special 'or [_type env [_ & more]]
   (emit-wrap (apply str (interpose " || " (emit-args env more))) env))
 
-(defn emit-do [env exprs]
-  (let [bl (butlast exprs)
-        l (last exprs)
-        ctx (:context env)
-        statement-env (assoc env :context :statement)
-        iife? (and (seq bl) (= :expr ctx))
-        s (cond-> (str (str/join "" (map #(statement (emit % statement-env)) bl))
-                       (emit l (assoc env :context
-                                      (if iife? :return
-                                          ctx))))
-            iife?
-            (wrap-iife))]
-    s))
-
-(defmethod emit-special 'do [_type env [_ & exprs]]
-  (emit-do env exprs))
 
 (defmethod emit-special 'while [_type env [_while test & body]]
   (str "while (" (emit test) ") { \n"
