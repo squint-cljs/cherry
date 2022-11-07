@@ -139,19 +139,6 @@
                                                                 fields)))))
                                                (assoc :type true)))))))
 
-(defn emit-var [more env]
-  (apply str
-         (interleave (map (fn [[name expr]]
-                            (str "var " (emit name env) " = "
-                                 (emit expr (assoc env :context :expr))))
-                          (partition 2 more))
-                     (repeat statement-separator))))
-
-(defmethod emit-special 'def [_type env [_const & more]]
-  (let [name (first more)]
-    (swap! *public-vars* conj (munge* name))
-    (emit-var more env)))
-
 (defn wrap-await [s]
   (format "(%s)" (str "await " s)))
 
