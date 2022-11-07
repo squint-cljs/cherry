@@ -157,9 +157,6 @@
       (emitln "});")
       (emit body)))
 
-(defmethod emit-special 'loop* [_ env [_ bindings & body]]
-  (emit-let env bindings body true))
-
 (defmethod emit-special 'case* [_ env [_ v tests thens default]]
   (let [expr? (= :expr (:context env))
         gs (gensym "caseval__")
