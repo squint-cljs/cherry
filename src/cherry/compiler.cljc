@@ -143,22 +143,6 @@
   (emit (core-let bindings more) env)
   #_(prn (core-let bindings more)))
 
-
-(defmethod emit-special 'funcall [_type env [fname & args :as _expr]]
-  (let [interop? (and (symbol? fname)
-                      (= "js" (namespace fname)))]
-    (emit-wrap (str
-                (emit fname (expr-env env))
-                ;; this is needed when calling keywords, symbols, etc. We could
-                ;; optimize this later by inferring that we're not directly
-                ;; calling a `function`.
-                (when-not interop? ".call")
-                (comma-list (emit-args env
-                                       (if interop? args
-                                           (cons nil args)))))
-               env
-               )))
-
 (defmethod emit-special 'if [_type env [_if test then else]]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'truth_)
   (if (= :expr (:context env))
@@ -365,7 +349,8 @@
                *public-vars* public-vars
                *aliases* aliases
                *jsx* false
-               cc/*core-package* "cherry-cljs/lib/cljs_core.js"]
+               cc/*core-package* "cherry-cljs/lib/cljs_core.js"
+               cc/*target* :cherry]
        (let [transpiled (transpile-string* s)
              imports (when-not elide-imports
                        (let [ns->alias (zipmap (vals @aliases)

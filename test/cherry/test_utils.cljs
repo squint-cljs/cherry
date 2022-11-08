@@ -2,6 +2,7 @@
   (:require
    ["cherry-cljs/cljs.core.js" :as cl]
    [cherry.compiler :as cherry]
+   [squint.compiler-common :refer [*target*]]
    [clojure.test :as t]))
 
 (def old-fail (get-method t/report [:cljs.test/default :fail]))
@@ -9,6 +10,11 @@
 (defmethod t/report [:cljs.test/default :fail] [m]
   (set! js/process.exitCode 1)
   (old-fail m))
+
+(defmethod t/report [:cljs.test/default :begin-test-var] [m]
+  (let [var (:var m)
+        name (:name (meta var))]
+    (println "====" name)))
 
 (def old-error (get-method t/report [:cljs.test/default :fail]))
 
@@ -22,7 +28,8 @@
 (defn jss! [expr]
   (if (string? expr)
     (:body (cherry/compile-string* expr))
-    (cherry/transpile-form expr)))
+    (binding [*target* :cherry]
+      (cherry/transpile-form expr))))
 
 (defn js! [expr]
   (let [js (jss! expr)]
