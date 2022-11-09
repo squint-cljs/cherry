@@ -1,4 +1,2 @@
-(ns scratch (:require-macros [scratch-macros :refer [do-twice]]))
-
-(do-twice (prn :foo))
-
+(ns scratch (:require ["foo" :as foo]))
+(defn App [] #jsx [foo/c #js {:x 1}])
