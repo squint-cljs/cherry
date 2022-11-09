@@ -348,6 +348,11 @@
   ;; I would say this is undefined in clava for now:
   #_(is (true? (jsv! '(> 5)))))
 
+(deftest equality-test
+  (is (false? (jsv! "(= 1 2)")))
+  (is (true? (jsv! "(= 1 1)")))
+  (is (true? (jsv! "(= [1 2 3] [1 2 3])"))))
+
 (deftest double-names-in-sig-test
   (is (= 2 (jsv! '(do (defn foo [x x] x) (foo 1 2))))))
 

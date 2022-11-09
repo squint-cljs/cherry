@@ -22,10 +22,9 @@
    [edamame.core :as e]
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
-                                          *aliases* *async* *imported-vars* *public-vars* *recur-targets* *repl* comma-list
-                                          emit emit-args emit-do emit-infix emit-let emit-special emit-wrap escape-jsx
-                                          expr-env infix-operator? munge* prefix-unary? statement statement-separator
-                                          suffix-unary? wrap-iife]])
+                                          *aliases* *imported-vars* *public-vars* *repl* comma-list emit emit-args emit-infix
+                                          emit-special emit-wrap escape-jsx expr-env infix-operator? prefix-unary?
+                                          statement suffix-unary?]])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
 
 (set! cc/infix-operators (disj cc/infix-operators "="))
@@ -84,7 +83,12 @@
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
-(def core-vars (conj (:vars core-config) 'goog_typeOf))
+(def core-vars (conj (:vars core-config) 'goog_typeOf
+                     ;; workaround for https://github.com/thheller/shadow-cljs/issues/1063
+                     ;; and https://github.com/squint-cljs/cherry/issues/79
+                     (symbol "_EQ_")
+                     (symbol "_PLUS_")
+                     (symbol "not_EQ_")))
 
 (reset! cc/core-vars core-vars)
 
