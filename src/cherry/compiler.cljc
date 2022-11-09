@@ -214,6 +214,7 @@
                                       (nnext expr)))
                  (contains? built-in-macros head)
                  (let [macro (built-in-macros head)
+                       #?@(:cljs [macro (or (.-afn ^js macro) macro)])
                        new-expr (apply macro expr {} (rest expr))]
                    (emit new-expr env))
                  (and (> (count head-str) 1)
