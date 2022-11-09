@@ -47,7 +47,8 @@
   ([sym method]
    (variadic-fn* sym method true))
   ([sym [arglist & body :as method] solo]
-   (let [sig (remove '#{&} arglist)
+   (let [async (:async (meta sym))
+         sig (remove '#{&} arglist)
          restarg (gensym "seq")]
      (letfn [(get-delegate []
                'cljs$core$IFn$_invoke$arity$variadic)
@@ -64,14 +65,16 @@
                        (let [~@(mapcat param-bind params)]
                          (this-as self#
                            (. self# (~(get-delegate) ~@params ~restarg)))))))
-                 `(fn
-                    ([~restarg]
-                     (this-as self#
-                       (. self# (~(get-delegate) (seq ~restarg))))))))]
+                 (with-meta `(fn
+                               ([~restarg]
+                                (this-as self#
+                                  (. self# (~(get-delegate) (seq ~restarg))))))
+                   {:async async})))]
        `(do
           (set! (. ~sym ~(get-delegate-prop))
-                (fn (~(vec sig)
-                     ~@body)))
+                ~(with-meta `(fn (~(vec sig)
+                                  ~@body))
+                   {:async async}))
           ~@(when solo
               `[(set! (. ~sym ~'-cljs$lang$maxFixedArity)
                       ~(dec (count sig)))])
@@ -200,13 +203,15 @@
           name  (with-meta name meta)
           args-sym (gensym "args")]
       `(let [~name
-             (fn [~'var_args]
-               (let [~args-sym (array)]
-                 ~(core-copy-arguments args-sym)
-                 (let [argseq# (when (< ~c-1 (alength ~args-sym))
-                                 (new ^:ana/no-resolve cljs.core/IndexedSeq
-                                      (.slice ~args-sym ~c-1) 0 nil))]
-                   (. ~rname (~'cljs$core$IFn$_invoke$arity$variadic ~@(dest-args c-1) argseq#)))))]
+             ~(with-meta
+                `(fn [~'var_args]
+                   (let [~args-sym (array)]
+                     ~(core-copy-arguments args-sym)
+                     (let [argseq# (when (< ~c-1 (alength ~args-sym))
+                                     (new ^:ana/no-resolve cljs.core/IndexedSeq
+                                          (.slice ~args-sym ~c-1) 0 nil))]
+                       (. ~rname (~'cljs$core$IFn$_invoke$arity$variadic ~@(dest-args c-1) argseq#)))))
+                meta)]
          ~(variadic-fn* name method)
          ~name))))
 
@@ -258,6 +263,9 @@
                                body)]
                     (maybe-destructured params body)))
         m (meta name)
+        async? (:async (meta &form))
+        m (cond-> m
+            async? (assoc :async async?))
         new-sigs (map psig sigs)]
     (cond
       (< 1 (count sigs))

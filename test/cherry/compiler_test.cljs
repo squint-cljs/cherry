@@ -290,6 +290,25 @@
                     (is false (.-message err))))
           (.finally #(done)))))
 
+(deftest await-variadic-test
+  (async done
+         (->
+          (.then (jsv! '(do (defn ^:async foo [& xs] (js/await 10))
+                            (defn ^:async bar [x & xs] (js/await 20))
+                            (defn ^:async baz
+                              ([x] (baz x 1 2 3))
+                              ([x & xs]
+                               (let [x (js/await (foo x))
+                                     y (js/await (apply bar xs))]
+                                 (+ x y))))
+
+                            (baz 1)))
+                 (fn [v]
+                   (is (= 30 v))))
+          (.catch (fn [err]
+                    (is false (.-message err))))
+          (.finally #(done)))))
+
 (deftest native-js-array-test
   (let [s (jss! "(let [x 2
                        x #js [1 2 x]]

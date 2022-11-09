@@ -162,7 +162,9 @@
                 "}")))))
 
 (defmethod emit-special 'fn [_type env [_fn & sigs :as expr]]
+  ;; (prn :expr expr)
   (let [expanded (apply core-fn expr {} sigs)]
+    ;; (prn :expanded expanded)
     (emit expanded env)))
 
 #_(defmethod emit-special 'break [_type _env [_break]]
