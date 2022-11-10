@@ -6,16 +6,19 @@
    [cherry.compiler.node :as compiler]
    [shadow.esm :as esm]))
 
+(defn info [& xs]
+  (apply *print-err-fn* xs))
+
 (defn compile-files
   [files]
   (reduce (fn [prev f]
             (-> (js/Promise.resolve prev)
                 (.then
                  #(do
-                    (println "[cherry] Compiling CLJS file:" f)
+                    (info "[cherry] Compiling CLJS file:" f)
                     (compiler/compile-file {:in-file f})))
                 (.then (fn [{:keys [out-file]}]
-                         (println "[cherry] Wrote JS file:" out-file)
+                         (info "[cherry] Wrote JS file:" out-file)
                          out-file))))
           nil
           files))
@@ -48,7 +51,7 @@ help                      Print this help"))
 
 (defn run [{:keys [opts]}]
   (let [{:keys [file]} opts]
-    (println "[cherry] Running" file)
+    (info "[cherry] Running" file)
     (.then (compiler/compile-file {:in-file file})
            (fn [{:keys [out-file]}]
              (esm/dynamic-import (str (js/process.cwd) "/" out-file))))))
