@@ -38,3 +38,4 @@ jobs:
     - name: Run tests
       run: |
         bb test
+        bb integration-tests

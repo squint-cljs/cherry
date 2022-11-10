@@ -7,4 +7,6 @@
          dev (t/watch-cherry)
          test {:doc "Run tests"
                :task (t/test-cherry)}
-         bump-common tasks/bump-compiler-common}}
+         bump-common tasks/bump-compiler-common
+         integration-tests {:doc "Run integration tests"
+                            :task integration-tests/run-tests}}}
