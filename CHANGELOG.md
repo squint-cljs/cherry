@@ -1,5 +1,10 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.0.0-alpha.60
+
+- [#78](https://github.com/squint-cljs/cherry/issues/78): fix macro call with more than 20 arguments
+- [#79](https://github.com/squint-cljs/cherry/issues/79): fix issue with advanced compilation and `_EQ_` symbol
+
 ## 0.0.0-alpha.59
 
 - [#78](https://github.com/squint-cljs/cherry/issues/78): fix macro call with more than 20 arguments
