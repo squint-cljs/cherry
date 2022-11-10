@@ -88,6 +88,8 @@
 
 (reset! cc/core-vars core-vars)
 
+(prn @cc/core-vars)
+
 (defn special-form? [expr]
   (contains? special-forms expr))
 
