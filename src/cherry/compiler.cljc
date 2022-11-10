@@ -83,12 +83,7 @@
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
-(def core-vars (conj (:vars core-config) 'goog_typeOf
-                     ;; workaround for https://github.com/thheller/shadow-cljs/issues/1063
-                     ;; and https://github.com/squint-cljs/cherry/issues/79
-                     (symbol "_EQ_")
-                     (symbol "_PLUS_")
-                     (symbol "not_EQ_")))
+(def core-vars (conj (:vars core-config) 'goog_typeOf))
 
 (reset! cc/core-vars core-vars)
 
