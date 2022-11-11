@@ -115,10 +115,12 @@ reworked to meet the above goals.
 ## Development
 
 ``` shell
-$ git clone git@github.com:squint-cljs/cherry.git --recursive
+$ git clone git@github.com:squint-cljs/cherry.git
 $ cd cherry
 $ bb dev
 ```
+
+For making local changes to [compiler-common](https://github.com/squint-cljs/compiler-common), also clone that repo _inside_ the cherry repository.
 
 License
 =======
