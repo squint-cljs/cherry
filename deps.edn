@@ -1,5 +1,5 @@
 {:paths ["src" "resources"]
  :deps {io.github.squint-cljs/compiler-common-cherry
         {:git/url "https://github.com/squint-cljs/compiler-common"
-         :git/sha "45a6d93d20869183d922041f109124f5625cad39"
+         :git/sha "ca1bea0be718d717babda89cf59e8dc2ca59eb6c"
          :deps/root "cherry"}}}
