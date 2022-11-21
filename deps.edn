@@ -1,4 +1,4 @@
 {:paths ["src" "resources"]
  :deps {io.github.squint-cljs/compiler-common
-        {:git/sha "34b5eee375d043c2f02665d1b57d16cb26abd980"
+        {:git/sha "45a6d93d20869183d922041f109124f5625cad39"
          :deps/root "cherry"}}}
