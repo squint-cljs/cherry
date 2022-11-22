@@ -1,0 +1,28 @@
+{
+  "type": "module",
+  "name": "cherry-cljs",
+  "sideEffects": false,
+  "version": "0.0.0-alpha.60",
+  "files": [
+    "cljs.core.js",
+    "lib",
+    "node_cli.js",
+    "index.js"
+  ],
+  "bin": {
+    "cherry": "node_cli.js"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.19.0",
+    "@vercel/ncc": "^0.34.0",
+    "chalk": "^5.0.1",
+    "cherry-cljs": ".",
+    "esbuild": "^0.14.49",
+    "react": "^18.2.0",
+    "shadow-cljs": "^2.20.1",
+    "source-maps": "^1.0.12"
+  },
+  "dependencies": {
+    "@babel/preset-react": "^7.18.6"
+  }
+}
