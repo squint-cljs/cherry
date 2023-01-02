@@ -1,0 +1,12 @@
+{:min-bb-version "0.9.161"
+ :deps {borkdude/rewrite-edn {:mvn/version "0.3.4"}}
+ :paths ["src" "resources" "bb"]
+ :tasks {:requires ([tasks :as t])
+         build (t/build-cherry-npm-package)
+         publish (t/publish)
+         dev (t/watch-cherry)
+         test {:doc "Run tests"
+               :task (t/test-cherry)}
+         bump-common tasks/bump-compiler-common
+         integration-tests {:doc "Run integration tests"
+                            :task integration-tests/run-tests}}}
