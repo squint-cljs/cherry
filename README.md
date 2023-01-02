@@ -120,8 +120,6 @@ $ cd cherry
 $ bb dev
 ```
 
-For making local changes to [compiler-common](https://github.com/squint-cljs/compiler-common), also clone that repo _inside_ the cherry repository.
-
 License
 =======
 Cherry is licensed under the EPL, the same as Clojure core and [Scriptjure](https://github.com/arohner/scriptjure). See epl-v10.html in the root directory for more information.
