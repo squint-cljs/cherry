@@ -23,15 +23,19 @@
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
                                           *aliases* *imported-vars* *public-vars* *repl* comma-list emit emit-args emit-infix
-                                          emit-special emit-wrap escape-jsx expr-env infix-operator? prefix-unary?
+                                          emit-special emit-return escape-jsx expr-env infix-operator? prefix-unary?
                                           statement suffix-unary?]])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
 
-(set! cc/infix-operators (disj cc/infix-operators "="))
+#?(:clj (defmacro set-var! [the-var value]
+          `(alter-var-root (var ~the-var) (constantly ~value))))
+
+(#?(:clj set-var!
+    :cljs set!) cc/infix-operators (disj cc/infix-operators "="))
 
 (defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr env]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'keyword)
-  (emit-wrap (str (format "keyword(%s)" (pr-str (subs (str expr) 1)))) env))
+  (emit-return (str (format "keyword(%s)" (pr-str (subs (str expr) 1)))) env))
 
 (def special-forms (set ['var '. 'if 'funcall 'fn 'fn* 'quote 'set!
                          'return 'delete 'new 'do 'aget 'while
@@ -106,7 +110,7 @@
                            (repeat statement-separator))))
 
 (defmethod emit-special 'quote [_ env [_ form]]
-  (emit-wrap (emit form (expr-env (assoc env :quote true))) env))
+  (emit-return (emit form (expr-env (assoc env :quote true))) env))
 
 (defmethod emit-special 'deftype* [_ env [_ t fields pmasks body]]
   (let [fields (map munge fields)]
@@ -150,7 +154,7 @@
                   (emit test env)
                   (emit then env)
                   (emit else env)))
-        (emit-wrap env))
+        (emit-return env))
     (str (format "if (truth_(%s)) {\n"
                  (emit test (assoc env :context :expr)))
          (emit then env)
@@ -262,17 +266,17 @@
                      (symbol "")
                      tag-name)
           tag-name (emit tag-name (expr-env (dissoc env :jsx)))]
-      (emit-wrap (format "<%s%s>%s</%s>"
+      (emit-return (format "<%s%s>%s</%s>"
                          tag-name
                          (jsx-attrs attrs env)
                          (let [env (expr-env env)]
                            (str/join " " (map #(emit % env) elts)))
                          tag-name) env))
     (if (::js (meta expr))
-      (emit-wrap (format "[%s]"
+      (emit-return (format "[%s]"
                          (str/join ", " (emit-args env expr))) env)
       (do (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'vector)
-          (emit-wrap (format "vector(%s)"
+          (emit-return (format "vector(%s)"
                              (str/join ", " (emit-args env expr))) env)))))
 
 #?(:cljs (derive PersistentArrayMap ::map))
@@ -298,13 +302,13 @@
     (escape-jsx (-> (if map-fn
                       (format "%s(%s)" map-fn keys)
                       (format "({ %s })" keys))
-                    (emit-wrap env)) env*)))
+                    (emit-return env)) env*)))
 
 (defmethod emit #?(:clj clojure.lang.PersistentHashSet
                    :cljs PersistentHashSet)
   [expr env]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'hash_set)
-  (emit-wrap (format "%s%s" "hash_set"
+  (emit-return (format "%s%s" "hash_set"
                      (comma-list (emit-args env expr))) env))
 
 (defn transpile-form [f]

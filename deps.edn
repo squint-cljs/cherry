@@ -3,8 +3,8 @@
         babashka/process {:mvn/version "0.1.7"}
         org.babashka/cli {:mvn/version "0.3.32"}
         org.babashka/sci {:mvn/version "0.3.32"}
-        io.github.squint-cljs/compiler-common
-        {:git/sha "34b5eee375d043c2f02665d1b57d16cb26abd980"}}
+        io.github.squint-cljs/squint
+        {:git/sha "840cbc599575e48b46502d207835b1e269dddb2a"}}
  :aliases
  {:dev {:extra-deps {io.github.squint-cljs/compiler-common
                      {:local/root "compiler-common"}}}

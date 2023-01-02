@@ -9,6 +9,7 @@
 ;;   software.
 
 (ns cherry.internal.loop
+  (:refer-clojure :exclude [destructure])
   (:require [cherry.internal.destructure :refer [destructure]]))
 
 (defn core-loop
