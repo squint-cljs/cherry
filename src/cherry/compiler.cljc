@@ -311,8 +311,10 @@
   (emit-return (format "%s%s" "hash_set"
                      (comma-list (emit-args env expr))) env))
 
-(defn transpile-form [f]
-  (emit f {:context :statement}))
+(defn transpile-form
+  ([f] (transpile-form f nil))
+  ([f opts]
+   (emit f (merge {:context :statement} opts))))
 
 (def ^:dynamic *jsx* false)
 
@@ -334,7 +336,7 @@
     :read-cond :allow
     :features #{:cljc}}))
 
-(defn transpile-string* [s]
+(defn transpile-string* [s compiler-opts]
   (let [rdr (e/reader s)
         opts cherry-parse-opts]
     (loop [transpiled ""]
@@ -342,24 +344,25 @@
             next-form (e/parse-next rdr opts)]
         (if (= ::e/eof next-form)
           transpiled
-          (let [next-t (transpile-form next-form)
+          (let [next-t (transpile-form next-form compiler-opts)
                 next-js (some-> next-t not-empty (statement))]
             (recur (str transpiled next-js))))))))
 
 (defn compile-string*
   ([s] (compile-string* s nil))
   ([s {:keys [elide-exports
-              elide-imports]}]
+              elide-imports
+              core-alias]}]
    (let [imported-vars (atom {})
          public-vars (atom #{})
-         aliases (atom {})]
+         aliases (atom {core-alias cc/*core-package*})]
      (binding [*imported-vars* imported-vars
                *public-vars* public-vars
                *aliases* aliases
                *jsx* false
                cc/*core-package* "cherry-cljs/lib/cljs_core.js"
                cc/*target* :cherry]
-       (let [transpiled (transpile-string* s)
+       (let [transpiled (transpile-string* s {:core-alias core-alias})
              imports (when-not elide-imports
                        (let [ns->alias (zipmap (vals @aliases)
                                                (keys @aliases))]
