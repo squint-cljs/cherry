@@ -35,7 +35,7 @@
 
 (defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr env]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'keyword)
-  (emit-return (str (format "keyword(%s)" (pr-str (subs (str expr) 1)))) env))
+  (emit-return (str (format "clerk.cljs_core.keyword(%s)" (pr-str (subs (str expr) 1)))) env))
 
 (def special-forms (set ['var '. 'if 'funcall 'fn 'fn* 'quote 'set!
                          'return 'delete 'new 'do 'aget 'while
@@ -276,7 +276,7 @@
       (emit-return (format "[%s]"
                          (str/join ", " (emit-args env expr))) env)
       (do (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'vector)
-          (emit-return (format "vector(%s)"
+          (emit-return (format "clerk.cljs_core.vector(%s)"
                              (str/join ", " (emit-args env expr))) env)))))
 
 #?(:cljs (derive PersistentArrayMap ::map))
