@@ -355,7 +355,7 @@
   ([s] (compile-string* s nil))
   ([s {:keys [elide-exports
               elide-imports
-              core-alias]}]
+              core-alias] :as opts}]
    (let [imported-vars (atom {})
          public-vars (atom #{})
          aliases (atom {core-alias cc/*core-package*})]
@@ -365,7 +365,7 @@
                *jsx* false
                cc/*core-package* "cherry-cljs/lib/cljs_core.js"
                cc/*target* :cherry]
-       (let [transpiled (transpile-string* s {:core-alias core-alias})
+       (let [transpiled (transpile-string* s (assoc opts :core-alias core-alias))
              imports (when-not elide-imports
                        (let [ns->alias (zipmap (vals @aliases)
                                                (keys @aliases))]
