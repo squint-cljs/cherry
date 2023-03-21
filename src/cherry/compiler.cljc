@@ -155,7 +155,10 @@
                   (emit then env)
                   (emit else env)))
         (emit-return env))
-    (str (format "if (truth_(%s)) {\n"
+    (str (format "if (%struth_(%s)) {\n"
+                 (if-let [ca (:core-alias env)]
+                   (str ca ".")
+                   "")
                  (emit test (assoc env :context :expr)))
          (emit then env)
          "}"
