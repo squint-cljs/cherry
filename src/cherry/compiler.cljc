@@ -303,7 +303,8 @@
     (when map-fn
       (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) map-fn))
     (escape-jsx (-> (if map-fn
-                      (format "%s(%s)" map-fn keys)
+                      (format "%s%s(%s)" (when-let [ca (:core-alias env)]
+                                           (str ca ".")) map-fn keys)
                       (format "({ %s })" keys))
                     (emit-return env)) env*)))
 
