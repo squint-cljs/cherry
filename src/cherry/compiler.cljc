@@ -293,8 +293,8 @@
         map-fn
         (when-not (::js (meta expr))
           (if (<= (count expr) 8)
-            'arrayMap
-            'hashMap))
+            'array_map
+            'hash_map))
         key-fn (if-not map-fn
                  name identity)
         mk-pair (fn [pair] (str (emit (key-fn (key pair)) expr-env) (if map-fn ", " ": ")
