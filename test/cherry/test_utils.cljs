@@ -27,7 +27,9 @@
 
 (defn jss! [expr]
   (if (string? expr)
-    (:body (cherry/compile-string* expr))
+    (:body (cherry/compile-string* expr
+                                   {:elide-imports true
+                                    :core-alias nil}))
     (binding [*target* :cherry]
       (cherry/transpile-form expr))))
 

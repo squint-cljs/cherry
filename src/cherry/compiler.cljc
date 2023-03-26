@@ -10,8 +10,8 @@
 
 (ns cherry.compiler
   (:require
-   #?(:cljs [goog.string.format])
    #?(:clj [cherry.resource :as resource])
+   #?(:cljs [goog.string.format])
    [cherry.internal.deftype :as deftype]
    [cherry.internal.destructure :refer [core-let]]
    [cherry.internal.fn :refer [core-defmacro core-defn core-fn]]
@@ -35,7 +35,11 @@
 
 (defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr env]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'keyword)
-  (emit-return (str (format "keyword(%s)" (pr-str (subs (str expr) 1)))) env))
+  (emit-return (str (format "%skeyword(%s)"
+                            (if-let [core-alias (:core-alias env)]
+                              (str core-alias ".")
+                              "")
+                            (pr-str (subs (str expr) 1)))) env))
 
 (def special-forms (set ['var '. 'if 'funcall 'fn 'fn* 'quote 'set!
                          'return 'delete 'new 'do 'aget 'while
@@ -155,7 +159,10 @@
                   (emit then env)
                   (emit else env)))
         (emit-return env))
-    (str (format "if (truth_(%s)) {\n"
+    (str (format "if (%struth_(%s)) {\n"
+                 (if-let [ca (:core-alias env)]
+                   (str ca ".")
+                   "")
                  (emit test (assoc env :context :expr)))
          (emit then env)
          "}"
@@ -267,17 +274,20 @@
                      tag-name)
           tag-name (emit tag-name (expr-env (dissoc env :jsx)))]
       (emit-return (format "<%s%s>%s</%s>"
-                         tag-name
-                         (jsx-attrs attrs env)
-                         (let [env (expr-env env)]
-                           (str/join " " (map #(emit % env) elts)))
-                         tag-name) env))
+                           tag-name
+                           (jsx-attrs attrs env)
+                           (let [env (expr-env env)]
+                             (str/join " " (map #(emit % env) elts)))
+                           tag-name) env))
     (if (::js (meta expr))
       (emit-return (format "[%s]"
-                         (str/join ", " (emit-args env expr))) env)
+                           (str/join ", " (emit-args env expr))) env)
       (do (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'vector)
-          (emit-return (format "vector(%s)"
-                             (str/join ", " (emit-args env expr))) env)))))
+          (emit-return (format "%svector(%s)"
+                               (if-let [core-alias (:core-alias env)]
+                                 (str core-alias ".")
+                                 "")
+                               (str/join ", " (emit-args env expr))) env)))))
 
 #?(:cljs (derive PersistentArrayMap ::map))
 #?(:cljs (derive PersistentHashMap ::map))
@@ -290,8 +300,8 @@
         map-fn
         (when-not (::js (meta expr))
           (if (<= (count expr) 8)
-            'arrayMap
-            'hashMap))
+            'array_map
+            'hash_map))
         key-fn (if-not map-fn
                  name identity)
         mk-pair (fn [pair] (str (emit (key-fn (key pair)) expr-env) (if map-fn ", " ": ")
@@ -300,7 +310,11 @@
     (when map-fn
       (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) map-fn))
     (escape-jsx (-> (if map-fn
-                      (format "%s(%s)" map-fn keys)
+                      (format "%s%s(%s)"
+                              (if-let [ca (:core-alias env)]
+                                (str ca ".")
+                                "")
+                              map-fn keys)
                       (format "({ %s })" keys))
                     (emit-return env)) env*)))
 
@@ -309,10 +323,12 @@
   [expr env]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'hash_set)
   (emit-return (format "%s%s" "hash_set"
-                     (comma-list (emit-args env expr))) env))
+                       (comma-list (emit-args env expr))) env))
 
-(defn transpile-form [f]
-  (emit f {:context :statement}))
+(defn transpile-form
+  ([f] (transpile-form f nil))
+  ([f opts]
+   (emit f (merge {:context :statement} opts))))
 
 (def ^:dynamic *jsx* false)
 
@@ -334,7 +350,7 @@
     :read-cond :allow
     :features #{:cljc}}))
 
-(defn transpile-string* [s]
+(defn transpile-string* [s compiler-opts]
   (let [rdr (e/reader s)
         opts cherry-parse-opts]
     (loop [transpiled ""]
@@ -342,57 +358,44 @@
             next-form (e/parse-next rdr opts)]
         (if (= ::e/eof next-form)
           transpiled
-          (let [next-t (transpile-form next-form)
+          (let [next-t (transpile-form next-form compiler-opts)
                 next-js (some-> next-t not-empty (statement))]
             (recur (str transpiled next-js))))))))
 
 (defn compile-string*
   ([s] (compile-string* s nil))
   ([s {:keys [elide-exports
-              elide-imports]}]
-   (let [imported-vars (atom {})
-         public-vars (atom #{})
-         aliases (atom {})]
-     (binding [*imported-vars* imported-vars
-               *public-vars* public-vars
-               *aliases* aliases
-               *jsx* false
-               cc/*core-package* "cherry-cljs/lib/cljs_core.js"
-               cc/*target* :cherry]
-       (let [transpiled (transpile-string* s)
-             imports (when-not elide-imports
-                       (let [ns->alias (zipmap (vals @aliases)
-                                               (keys @aliases))]
-                         (reduce (fn [acc [k v]]
-                                   (let [alias (get ns->alias k)
-                                         symbols (if alias
-                                                   (map #(str % " as " (str alias "_" %)) v)
-                                                   v)]
-                                     (str acc
-                                          (when (or (not *repl*)
-                                                    (seq symbols))
-                                            (format "import { %s } from '%s'\n"
-                                                    (str/join ", " symbols)
-                                                    k)))))
-                                 ""
-                                 @imported-vars)))
-             #_#_imports (when-let [core-vars (and (not elide-imports)
-                                               (seq @imported-vars))]
-                       (str (format "import { %s } from 'cherry-cljs/cljs.core.js'\n"
-                                    (str/join ", " core-vars))))
-             exports (when-not elide-exports
-                       (str (when-let [vars (disj @public-vars "default$")]
-                              (when (seq vars)
-                                (str (format "\nexport { %s }\n"
-                                             (str/join ", " vars))
-                                     )))
-                            (when (contains? @public-vars "default$")
-                              "export default default$\n")))]
-         {:imports imports
-          :exports exports
-          :body transpiled
-          :javascript (str imports transpiled exports)
-          :jsx *jsx*})))))
+              elide-imports
+              core-alias]
+       :or {core-alias "cherry_core"}
+       :as opts}]
+   (binding [cc/*core-package* "cherry-cljs/lib/cljs_core.js"
+             cc/*target* :cherry
+             *jsx* false]
+     (let [imported-vars (atom {})
+           public-vars (atom #{})
+           aliases (atom {core-alias cc/*core-package*})
+           imports (atom (format "import * as %s from '%s';\n"
+                                 core-alias cc/*core-package*))]
+       (binding [*imported-vars* imported-vars
+                 *public-vars* public-vars
+                 *aliases* aliases]
+         (let [transpiled (transpile-string* s (assoc opts
+                                                      :core-alias core-alias
+                                                      :imports imports))
+               imports (when-not elide-imports @imports)
+               exports (when-not elide-exports
+                         (str (when-let [vars (disj @public-vars "default$")]
+                                (when (seq vars)
+                                  (str (format "\nexport { %s }\n"
+                                               (str/join ", " vars)))))
+                              (when (contains? @public-vars "default$")
+                                "export default default$\n")))]
+           {:imports imports
+            :exports exports
+            :body transpiled
+            :javascript (str imports transpiled exports)
+            :jsx *jsx*}))))))
 
 (defn compile-string
   ([s] (compile-string s nil))
