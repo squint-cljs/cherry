@@ -373,7 +373,7 @@
     (is (str/includes? s "local_file.some_fn.call(null);")))
   (let [s (cherry/compile-string "(ns bar (:require [\"./foo.mjs\" #_#_:refer [foo-bar] :as foo-alias])) (prn foo-alias/foo-bar)")]
     (is (str/includes? s "import * as foo_alias from './foo.mjs'"))
-    (is (str/includes? s "prn.call(null,foo_alias.foo_bar);"))))
+    (is (str/includes? s "prn.call(null, foo_alias.foo_bar);"))))
 
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test))

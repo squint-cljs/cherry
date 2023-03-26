@@ -37,12 +37,13 @@ help                      Print this help"))
     (let [res (cc/compile-string e)
           dir (fs/mkdtempSync ".tmp")
           f (str dir "/cherry.mjs")]
-      (fs/writeFileSync f res "utf-8")
       (when (:show opts)
         (println res))
-      (-> (esm/dynamic-import (str (js/process.cwd) "/" f))
-          (.finally (fn [_]
-                      (fs/rmSync dir #js {:force true :recursive true})))))
+      (fs/writeFileSync f res "utf-8")
+      (when-not (:no-run opts)
+        (-> (esm/dynamic-import (str (js/process.cwd) "/" f))
+            (.finally (fn [_]
+                        (fs/rmSync dir #js {:force true :recursive true}))))))
     (if (or (:help opts)
             (= "help" (first rest-cmds))
             (empty? rest-cmds))

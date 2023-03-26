@@ -366,49 +366,36 @@
   ([s] (compile-string* s nil))
   ([s {:keys [elide-exports
               elide-imports
-              core-alias] :as opts}]
-   (let [imported-vars (atom {})
-         public-vars (atom #{})
-         aliases (atom {core-alias cc/*core-package*})]
-     (binding [*imported-vars* imported-vars
-               *public-vars* public-vars
-               *aliases* aliases
-               *jsx* false
-               cc/*core-package* "cherry-cljs/lib/cljs_core.js"
-               cc/*target* :cherry]
-       (let [transpiled (transpile-string* s (assoc opts :core-alias core-alias))
-             imports (when-not elide-imports
-                       (let [ns->alias (zipmap (vals @aliases)
-                                               (keys @aliases))]
-                         (reduce (fn [acc [k v]]
-                                   (let [alias (get ns->alias k)
-                                         symbols (if alias
-                                                   (map #(str % " as " (str alias "_" %)) v)
-                                                   v)]
-                                     (str acc
-                                          (when (or (not *repl*)
-                                                    (seq symbols))
-                                            (format "import { %s } from '%s'\n"
-                                                    (str/join ", " symbols)
-                                                    k)))))
-                                 ""
-                                 @imported-vars)))
-             #_#_imports (when-let [core-vars (and (not elide-imports)
-                                                   (seq @imported-vars))]
-                           (str (format "import { %s } from 'cherry-cljs/cljs.core.js'\n"
-                                        (str/join ", " core-vars))))
-             exports (when-not elide-exports
-                       (str (when-let [vars (disj @public-vars "default$")]
-                              (when (seq vars)
-                                (str (format "\nexport { %s }\n"
-                                             (str/join ", " vars)))))
-                            (when (contains? @public-vars "default$")
-                              "export default default$\n")))]
-         {:imports imports
-          :exports exports
-          :body transpiled
-          :javascript (str imports transpiled exports)
-          :jsx *jsx*})))))
+              core-alias]
+       :or {core-alias "cherry_core"}
+       :as opts}]
+   (binding [cc/*core-package* "cherry-cljs/lib/cljs_core.js"
+             cc/*target* :cherry
+             *jsx* false]
+     (let [imported-vars (atom {})
+           public-vars (atom #{})
+           aliases (atom {core-alias cc/*core-package*})
+           imports (atom (format "import * as %s from '%s';\n"
+                                 core-alias cc/*core-package*))]
+       (binding [*imported-vars* imported-vars
+                 *public-vars* public-vars
+                 *aliases* aliases]
+         (let [transpiled (transpile-string* s (assoc opts
+                                                      :core-alias core-alias
+                                                      :imports imports))
+               imports (when-not elide-imports @imports)
+               exports (when-not elide-exports
+                         (str (when-let [vars (disj @public-vars "default$")]
+                                (when (seq vars)
+                                  (str (format "\nexport { %s }\n"
+                                               (str/join ", " vars)))))
+                              (when (contains? @public-vars "default$")
+                                "export default default$\n")))]
+           {:imports imports
+            :exports exports
+            :body transpiled
+            :javascript (str imports transpiled exports)
+            :jsx *jsx*}))))))
 
 (defn compile-string
   ([s] (compile-string s nil))
