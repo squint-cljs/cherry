@@ -208,31 +208,44 @@
                           (with-meta (cons head (rest expr))
                             (meta expr))
                           expr)
-                   head-str (str head)]
-               (cond
-                 (and (= (.charAt head-str 0) \.)
-                      (> (count head-str) 1)
-                      (not (= ".." head-str)))
-                 (emit-special '. env
-                               (list* '.
-                                      (second expr)
-                                      (symbol (subs head-str 1))
-                                      (nnext expr)))
-                 (contains? built-in-macros head)
-                 (let [macro (built-in-macros head)
-                       ;; fix for calling macro with more than 20 args
+                   head-str (str head)
+                   macro (when (symbol? head)
+                           (or (get built-in-macros head)
+                               (let [ns (namespace head)
+                                     nm (name head)]
+                                 (when (and ns nm)
+                                   (some-> env :macros (get (symbol ns)) (get (symbol nm)))))))]
+               (if macro
+                 (let [;; fix for calling macro with more than 20 args
                        #?@(:cljs [macro (or (.-afn ^js macro) macro)])
                        new-expr (apply macro expr {} (rest expr))]
                    (emit new-expr env))
-                 (and (> (count head-str) 1)
-                      (str/ends-with? head-str "."))
-                 (emit (list* 'new (symbol (subs head-str 0 (dec (count head-str)))) (rest expr))
-                       env)
-                 (special-form? head) (emit-special head env expr)
-                 (infix-operator? head) (emit-infix head env expr)
-                 (prefix-unary? head) (emit-prefix-unary head expr)
-                 (suffix-unary? head) (emit-suffix-unary head expr)
-                 :else (emit-special 'funcall env expr)))
+                 (cond
+                   (and (= (.charAt head-str 0) \.)
+                        (> (count head-str) 1)
+                        (not (= ".." head-str)))
+                   (emit-special '. env
+                                 (list* '.
+                                        (second expr)
+                                        (symbol (subs head-str 1))
+                                        (nnext expr)))
+                   (or (contains? built-in-macros head)
+                       (contains? (:macros env) head))
+                   (let [macro (or (built-in-macros head)
+                                   ((:macros env) head))
+                         ;; fix for calling macro with more than 20 args
+                         #?@(:cljs [macro (or (.-afn ^js macro) macro)])
+                         new-expr (apply macro expr {} (rest expr))]
+                     (emit new-expr env))
+                   (and (> (count head-str) 1)
+                        (str/ends-with? head-str "."))
+                   (emit (list* 'new (symbol (subs head-str 0 (dec (count head-str)))) (rest expr))
+                         env)
+                   (special-form? head) (emit-special head env expr)
+                   (infix-operator? head) (emit-infix head env expr)
+                   (prefix-unary? head) (emit-prefix-unary head expr)
+                   (suffix-unary? head) (emit-suffix-unary head expr)
+                   :else (emit-special 'funcall env expr))))
              (list? expr)
              (emit-special 'funcall env expr)
              :else
