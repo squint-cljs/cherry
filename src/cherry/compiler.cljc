@@ -45,7 +45,7 @@
                          'return 'delete 'new 'do 'aget 'while
                          'inc! 'dec! 'dec 'inc 'defined? 'and 'or
                          '? 'try 'break 'throw
-                         'js/await 'const 'let 'let* 'ns 'def 'loop*
+                         'js/await 'const 'let 'let* 'letfn* 'ns 'def 'loop*
                          'recur 'js* 'case* 'deftype*
                          ;; prefixed to avoid conflicts
                          'clava-compiler-jsx]))
@@ -87,7 +87,8 @@
                       'defn core-defn
                       'defn- core-defn
                       'time macros/core-time
-                      'declare macros/core-declare})
+                      'declare macros/core-declare
+                      'letfn macros/core-letfn})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
@@ -334,7 +335,10 @@
                    :cljs PersistentHashSet)
   [expr env]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'hash_set)
-  (emit-return (format "%s%s" "hash_set"
+  (emit-return (format "%s%s" (format "%shash_set"
+                                      (if-let [ca (:core-alias env)]
+                                        (str ca ".")
+                                        ""))
                        (comma-list (emit-args env expr))) env))
 
 (defn transpile-form
