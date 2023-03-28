@@ -353,6 +353,9 @@
   (is (true? (jsv! "(= 1 1)")))
   (is (true? (jsv! "(= [1 2 3] [1 2 3])"))))
 
+(deftest empty-list-test
+  (is (= '() (jsv! "()"))))
+
 (deftest double-names-in-sig-test
   (is (= 2 (jsv! '(do (defn foo [x x] x) (foo 1 2))))))
 

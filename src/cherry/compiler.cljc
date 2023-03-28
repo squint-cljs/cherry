@@ -229,14 +229,6 @@
                                         (second expr)
                                         (symbol (subs head-str 1))
                                         (nnext expr)))
-                   (or (contains? built-in-macros head)
-                       (contains? (:macros env) head))
-                   (let [macro (or (built-in-macros head)
-                                   ((:macros env) head))
-                         ;; fix for calling macro with more than 20 args
-                         #?@(:cljs [macro (or (.-afn ^js macro) macro)])
-                         new-expr (apply macro expr {} (rest expr))]
-                     (emit new-expr env))
                    (and (> (count head-str) 1)
                         (str/ends-with? head-str "."))
                    (emit (list* 'new (symbol (subs head-str 0 (dec (count head-str)))) (rest expr))
@@ -251,6 +243,13 @@
              :else
              (throw (new Exception (str "invalid form: " expr))))))
    env))
+
+(derive #?(:clj clojure.lang.PersistentList$EmptyList :cljs EmptyList) ::empty-list)
+
+(defmethod emit ::empty-list [_expr env]
+  ;; NOTE: we can later optimize this to a constant, but (.-EMPTY List) is prone
+  ;; to advanced optimization
+  (emit '(list) env))
 
 #?(:cljs (derive PersistentVector ::vector))
 

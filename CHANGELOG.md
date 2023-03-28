@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## Unreleased
+
+- Compile '() to empty list call
+
 ## 0.0.0-alpha.60
 
 - [#78](https://github.com/squint-cljs/cherry/issues/78): fix macro call with more than 20 arguments
