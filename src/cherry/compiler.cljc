@@ -200,7 +200,10 @@
      (if (:quote env)
        (do
          (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'list)
-         (format "list(%s)"
+         (format "%slist(%s)"
+                 (if-let [ca (:core-alias env)]
+                   (str ca ".")
+                   "")
                  (str/join ", " (emit-args env expr))))
        (cond (symbol? (first expr))
              (let [head* (first expr)
