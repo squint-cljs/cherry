@@ -16,3 +16,4 @@ example.mjs
 /examples/vite/vite-project/cherry.mjs
 .lein-repl-history
 compiler-common
+out

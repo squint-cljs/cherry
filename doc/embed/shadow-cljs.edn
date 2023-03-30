@@ -1,0 +1,9 @@
+{:deps true
+ :builds
+ {:cli
+  {:target :esm
+   :runtime :node
+   :output-dir "out"
+   :modules {:eval {:init-fn my.cherry/init}}
+   :build-hooks [(shadow.cljs.build-report/hook
+                  {:output-to "report.html"})]}}}

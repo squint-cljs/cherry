@@ -1,0 +1,5 @@
+{:aliases {:cherry {:extra-deps {io.github.squint-cljs/cherry
+                                 {:local/root "../.."}
+                                 #_{:git/sha "d5fab9ea4e728c926a9dfa8704ff354df8cf3860"}}}
+           :shadow {:extra-deps {thheller/shadow-cljs {:mvn/version "2.22.9"}}
+                    :main-opts ["-m" "shadow.cljs.devtools.cli"]}}}
