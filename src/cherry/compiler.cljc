@@ -347,7 +347,8 @@
 (defn transpile-form
   ([f] (transpile-form f nil))
   ([f opts]
-   (emit f (merge {:context :statement} opts))))
+   (binding [cc/*target* :cherry]
+     (emit f (merge {:context :statement} opts)))))
 
 (def ^:dynamic *jsx* false)
 
@@ -389,7 +390,6 @@
        :or {core-alias "cherry_core"}
        :as opts}]
    (binding [cc/*core-package* "cherry-cljs/lib/cljs_core.js"
-             cc/*target* :cherry
              *jsx* false]
      (let [imported-vars (atom {})
            public-vars (atom #{})
