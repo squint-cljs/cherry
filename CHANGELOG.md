@@ -2,7 +2,7 @@
 
 ## 0.0.1
 
-- Support `cherry.embed` namespace to embed cherry into a CLJS/shadow app. See [docs](docs/embed.md).
+- Support `cherry.embed` namespace to embed cherry into a CLJS/shadow app. See [docs](doc/embed.md).
 - Many other small fixes
 
 ## 0.0.0-alpha.60
