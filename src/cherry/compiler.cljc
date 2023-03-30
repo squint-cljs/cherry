@@ -45,7 +45,7 @@
                          'return 'delete 'new 'do 'aget 'while
                          'inc! 'dec! 'dec 'inc 'defined? 'and 'or
                          '? 'try 'break 'throw
-                         'js/await 'const 'let 'let* 'letfn* 'ns 'def 'loop*
+                         'js/await 'const 'let 'let* 'letfn* 'ns 'require 'def 'loop*
                          'recur 'js* 'case* 'deftype*
                          ;; prefixed to avoid conflicts
                          'clava-compiler-jsx]))
