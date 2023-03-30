@@ -18,6 +18,12 @@ An example shadow-cljs project:
                     :main-opts ["-m" "shadow.cljs.devtools.cli"]}}}
 ```
 
+`package.json`:
+
+``` json
+{"type": "module"}
+```
+
 `shadow-cljs.edn`
 ``` clojure
 {:deps true
@@ -52,7 +58,26 @@ the `cljs.core` namespace.
 We can invoke it with:
 
 ``` shell
-$ node out/eval.js -e '(prn :hello)'
+$ node out/eval.js -e '(do (prn :hello) (js/console.log (clojure.string/join , [1 2 3])))'
 :hello
+123
 ```
 
+Note that you can enable `eval` in your CLJS/shadow app with:
+
+``` clojure
+(set! *eval* cherry/eval-form)
+```
+
+Full example:
+
+``` clojure
+(ns my-shadow.app
+  (:require [cherry.embed :as cherry]))
+
+(cherry/preserve-ns 'cljs.core)
+
+(set! *eval* cherry/eval-form)
+
+(def x (eval '(+ 1 2 3))
+```
