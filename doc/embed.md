@@ -13,7 +13,7 @@ An example shadow-cljs project:
 
 ``` clojure
 {:aliases {:cherry {:extra-deps {io.github.squint-cljs/cherry
-                                 {:git/sha "d5fab9ea4e728c926a9dfa8704ff354df8cf3860"}}}
+                                 {:git/sha "4e948708cb20ab0a1a892c30fe87842a2efcc380"}}}
            :shadow {:extra-deps {thheller/shadow-cljs {:mvn/version "2.22.9"}}
                     :main-opts ["-m" "shadow.cljs.devtools.cli"]}}}
 ```
