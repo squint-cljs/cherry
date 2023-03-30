@@ -79,5 +79,5 @@ Full example:
 
 (set! *eval* cherry/eval-form)
 
-(def x (eval '(+ 1 2 3))
+(def x (eval '(+ 1 2 3)))
 ```
