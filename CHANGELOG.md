@@ -1,8 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
-## Unreleased
+## 0.0.1
 
-- Compile '() to empty list call
+- Support `cherry.embed` namespace to embed cherry into a CLJS/shadow app. See [docs](docs/embed.md).
+- Many other small fixes
 
 ## 0.0.0-alpha.60
 

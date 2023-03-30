@@ -112,6 +112,10 @@ reworked to meet the above goals.
 <!-- - [Nextjournal](https://nextjournal.com/) -->
 <!-- - The main author's [Github Sponsors](https://github.com/sponsors/borkdude) -->
 
+## Embed cherry in a CLJS/shadow app
+
+See [embed.md](doc/embed.md).
+
 ## Development
 
 ``` shell
