@@ -105,7 +105,7 @@ $ node out/eval.js -e '(time (print (loop [i 0 j 10000000] (if (zero? j) i (recu
 
 The execution time is similar to self-hosted ClojureScript:
 
-```
+``` shell
 $ plk -e '(time (print (loop [i 0 j 10000000] (if (zero? j) i (recur (inc i) (dec j))))))'
 10000000"Elapsed time: 9.894542 msecs"
 ```
