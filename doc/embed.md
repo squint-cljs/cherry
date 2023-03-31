@@ -84,3 +84,28 @@ Full example:
 
 (def x (eval '(+ 1 2 3)))
 ```
+
+Since cherry is a compiler, the code generally runs faster than with [SCI](https://github.com/babashka/sci) which is an
+interpreter. For many cases SCI is fast enough, but numerical computations in
+a hot loop isn't one of its strenghts:
+
+``` shell
+$ npx nbb@latest -e '(time (print (loop [i 0 j 10000000] (if (zero? j) i (recur (inc i) (dec j))))))'
+10000000
+"Elapsed time: 566.194958 msecs"
+```
+
+With cherry:
+
+``` shell
+$ node out/eval.js -e '(time (print (loop [i 0 j 10000000] (if (zero? j) i (recur (inc i) (dec j))))))'
+10000000
+"Elapsed time: 8.812375 msecs"
+```
+
+The execution time is similar to self-hosted ClojureScript:
+
+```
+$ plk -e '(time (print (loop [i 0 j 10000000] (if (zero? j) i (recur (inc i) (dec j))))))'
+10000000"Elapsed time: 9.894542 msecs"
+```
