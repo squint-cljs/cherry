@@ -8,6 +8,8 @@
          _GT_
          _LT_
          _LT__EQ_
+         _STAR_
+         _SLASH_
          _PLUS_
          __GT_IndexedSeq
          __GT_LazySeq
