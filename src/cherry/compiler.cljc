@@ -1,4 +1,4 @@
-;; Adapted from Scriptjure. Original copyright notice:
+;y; Adapted from Scriptjure. Original copyright notice:
 
 ;; Copyright (c) Allen Rohner, 2009. All rights reserved.  The use
 ;; and distribution terms for this software are covered by the Eclipse

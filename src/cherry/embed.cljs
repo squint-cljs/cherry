@@ -29,7 +29,7 @@
   ([form] (compile-form form nil))
   ([form opts]
    (:body (cherry/compile-form* form
-                                (merge {:context :expression
+                                (merge {:context :expr
                                         :core-alias 'cljs.core}
                                        opts)))))
 
@@ -41,7 +41,7 @@
 (defn compile-string
   ([expr] (compile-string expr nil))
   ([expr opts]
-   (:body (cherry/compile-string* expr (merge {:context :expression
+   (:body (cherry/compile-string* expr (merge {:context :expr
                                                :core-alias 'cljs.core}
                                               opts)))))
 
