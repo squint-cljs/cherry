@@ -378,5 +378,9 @@
     (is (str/includes? s "import * as foo_alias from './foo.mjs'"))
     (is (str/includes? s "prn.call(null, foo_alias.foo_bar);"))))
 
+(deftest skip-truthy-check-test
+  (is (str/includes? (jss! "(if (zero? x) 1 2)") "== 0"))
+  (is (not (str/includes? (jss! "(if (zero? x) 1 2)") "truth_"))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test))

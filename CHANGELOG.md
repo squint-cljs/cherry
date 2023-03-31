@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## Unreleased
+
+- [#93](https://github.com/squint-cljs/cherry/issues/93): optimize `if` + `zero?`
+
 ## 0.0.1
 
 - Support `cherry.embed` namespace to embed cherry into a CLJS/shadow app. See [docs](doc/embed.md).

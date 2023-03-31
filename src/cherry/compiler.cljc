@@ -97,7 +97,9 @@
 (reset! cc/core-vars core-vars)
 
 (defn special-form? [expr]
-  (contains? special-forms expr))
+  (or
+   (contains? cc/special-forms expr)
+   (contains? special-forms expr)))
 
 (defn emit-prefix-unary [_type [operator arg]]
   (str operator (emit arg)))
@@ -160,17 +162,23 @@
                   (emit then env)
                   (emit else env)))
         (emit-return env))
-    (str (format "if (%struth_(%s)) {\n"
+    (let [test-expr (emit test (assoc env :context :expr))
+          needs-truth? (not (:bool test-expr))]
+      (str
+       (if needs-truth?
+         (format "if (%struth_(%s)) {\n"
                  (if-let [ca (:core-alias env)]
                    (str ca ".")
                    "")
-                 (emit test (assoc env :context :expr)))
-         (emit then env)
-         "}"
-         (when (some? else)
-           (str " else {\n"
-                (emit else env)
-                "}")))))
+                 test-expr)
+         (format "if (%s) {\n"
+                 test-expr))
+       (emit then env)
+       "}"
+       (when (some? else)
+         (str " else {\n"
+              (emit else env)
+              "}"))))))
 
 (defmethod emit-special 'fn [_type env [_fn & sigs :as expr]]
   ;; (prn :expr expr)
