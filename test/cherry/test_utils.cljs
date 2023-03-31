@@ -30,8 +30,8 @@
     (:body (cherry/compile-string* expr
                                    {:elide-imports true
                                     :core-alias nil}))
-    (binding [*target* :cherry]
-      (cherry/transpile-form expr))))
+    (:body (cherry/compile-form* expr {:elide-imports true
+                                       :core-alias nil}))))
 
 (defn js! [expr]
   (let [js (jss! expr)]

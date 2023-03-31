@@ -28,11 +28,10 @@
 (defn compile-form
   ([form] (compile-form form nil))
   ([form opts]
-   (cherry/transpile-form form
-                          (merge {:context :expression
-                                  :core-alias 'cljs.core
-                                  :imports (atom "")}
-                                 opts))))
+   (:body (cherry/compile-form* form
+                                (merge {:context :expression
+                                        :core-alias 'cljs.core}
+                                       opts)))))
 
 (defn eval-form
   ([form] (eval-form form nil))

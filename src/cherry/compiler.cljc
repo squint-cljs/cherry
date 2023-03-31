@@ -352,8 +352,8 @@
                                         ""))
                        (comma-list (emit-args env expr))) env))
 
-(defn transpile-form
-  ([f] (transpile-form f nil))
+(defn transpile-form-internal
+  ([f] (transpile-form-internal f nil))
   ([f opts]
    (binding [cc/*target* :cherry]
      (emit f (merge {:context :statement} opts)))))
@@ -378,7 +378,7 @@
     :read-cond :allow
     :features #{:cljc}}))
 
-(defn transpile-string* [s compiler-opts]
+(defn transpile-string-internal [s compiler-opts]
   (let [rdr (e/reader s)
         opts cherry-parse-opts]
     (loop [transpiled ""]
@@ -386,30 +386,30 @@
             next-form (e/parse-next rdr opts)]
         (if (= ::e/eof next-form)
           transpiled
-          (let [next-t (transpile-form next-form compiler-opts)
+          (let [next-t (transpile-form-internal next-form compiler-opts)
                 next-js (some-> next-t not-empty (statement))]
             (recur (str transpiled next-js))))))))
 
-(defn compile-string*
-  ([s] (compile-string* s nil))
-  ([s {:keys [elide-exports
-              elide-imports
-              core-alias]
-       :or {core-alias "cherry_core"}
-       :as opts}]
+(defn compile-internal
+  ([x f {:keys [elide-exports
+                elide-imports
+                core-alias
+                aliases]
+         :or {core-alias "cherry_core"}
+         :as opts}]
    (binding [cc/*core-package* "cherry-cljs/lib/cljs_core.js"
              *jsx* false]
      (let [imported-vars (atom {})
            public-vars (atom #{})
-           aliases (atom {core-alias cc/*core-package*})
+           aliases (atom (merge aliases {core-alias cc/*core-package*}))
            imports (atom (format "import * as %s from '%s';\n"
                                  core-alias cc/*core-package*))]
        (binding [*imported-vars* imported-vars
                  *public-vars* public-vars
                  *aliases* aliases]
-         (let [transpiled (transpile-string* s (assoc opts
-                                                      :core-alias core-alias
-                                                      :imports imports))
+         (let [transpiled (f x (assoc opts
+                                      :core-alias core-alias
+                                      :imports imports))
                imports (when-not elide-imports @imports)
                exports (when-not elide-exports
                          (str (when-let [vars (disj @public-vars "default$")]
@@ -424,11 +424,28 @@
             :javascript (str imports transpiled exports)
             :jsx *jsx*}))))))
 
+(defn compile-string*
+  ([s] (compile-string* s nil))
+  ([s opts]
+   (compile-internal s transpile-string-internal opts)))
+
 (defn compile-string
   ([s] (compile-string s nil))
   ([s opts]
    (let [{:keys [imports exports body]}
          (compile-string* s opts)]
+     (str imports body exports))))
+
+(defn compile-form*
+  ([form] (compile-form* form nil))
+  ([s opts]
+   (compile-internal s transpile-form-internal opts)))
+
+(defn compile-form
+  ([form] (compile-form form nil))
+  ([s opts]
+   (let [{:keys [imports exports body]}
+         (compile-form* s opts)]
      (str imports body exports))))
 
 #_(defn compile! [s]
