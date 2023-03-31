@@ -51,6 +51,9 @@ An example shadow-cljs project:
     (cherry/eval-string expr)))
 ```
 
+Note that when you don't want to "preserve" an entire namespace, you can just
+`(defn ^:export foo [])` a function or value in your CLJS namespace.
+
 When compiling this with `clojure -M:cherry:shadow release cli`, we get a single
 `out/eval.js` file of about 550kb of which roughly 330kb comes from preserving
 the `cljs.core` namespace.
