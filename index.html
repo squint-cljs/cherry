@@ -30,22 +30,26 @@
     </script>
   </head>
   <body>
+    <div style="float: right;">
+      <a href="https://gitHub.com/squint-cljs/cherry"><img src="https://img.shields.io/github/stars/squint-cljs/cherry.svg?style=social&label=Star"></a></div>
     <div>
-      <textarea rows="7" cols="80" id="cljsCode">(ns demo
-  (:require ["https://cdn.skypack.dev/canvas-confetti$default" :as confetti]))
 
-(defn go! []
-  (confetti))
+      <div>
+        <textarea rows="7" cols="80" id="cljsCode">(ns demo
+          (:require ["https://cdn.skypack.dev/canvas-confetti$default" :as confetti]))
 
-(go!)</textarea>
-    </div>
-    <div>
-      <button onClick="compile()">
-        Compile!
-      </button>
-    </div>
-    <div>
-      <pre><code id="compiledCode"></code></pre>
-    </div>
+          (defn go! []
+          (confetti))
+
+          (go!)</textarea>
+      </div>
+      <div>
+        <button onClick="compile()">
+          Compile!
+        </button>
+      </div>
+      <div>
+        <pre><code id="compiledCode"></code></pre>
+      </div>
   </body>
 </html>
