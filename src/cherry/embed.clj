@@ -12,10 +12,7 @@
                            (cherry.embed/assoc-in! js/globalThis ~path-sym obj#)
                            obj#))]
          ~@(keep (fn [[k v]]
-                   (if (or (:fn-var v)
-                           (:type v))
+                   (when-not (:macro v)
                      `(~'unchecked-set ~ns-sym
-                       (str (munge ~(str k))) ~(symbol (str sym) (str k)))
-                     nil #_(binding [*out* *err*]
-                             (prn v))))
+                       (str (munge ~(str k))) ~(symbol (str sym) (str k)))))
                  (ana/ns-publics sym))))))
