@@ -397,7 +397,7 @@
                 aliases]
          :or {core-alias "cherry_core"}
          :as opts}]
-   (binding [cc/*core-package* "cherry-cljs/lib/cljs_core.js"
+   (binding [cc/*core-package* "cherry-cljs/cljs.core.js"
              *jsx* false]
      (let [imported-vars (atom {})
            public-vars (atom #{})
