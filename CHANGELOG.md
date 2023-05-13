@@ -1,6 +1,6 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
-## Unreleased
+## 0.0.2 (2023-05-13)
 
 - [#93](https://github.com/squint-cljs/cherry/issues/93): optimize `if` + `zero?`
 - [#98](https://github.com/squint-cljs/cherry/issues/98): fix `$default` import
