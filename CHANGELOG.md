@@ -3,6 +3,7 @@
 ## Unreleased
 
 - [#93](https://github.com/squint-cljs/cherry/issues/93): optimize `if` + `zero?`
+- [#98](https://github.com/squint-cljs/cherry/issues/98): fix `$default` import
 
 ## 0.0.1
 
