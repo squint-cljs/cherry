@@ -526,8 +526,8 @@
   printing calls."
   [_ _ & body]
   `(let [out-str# (atom "")]
-     (binding [cljs.core/*print-newline* true
-               cljs.core/*print-fn* (fn [x#] (swap! out-str# str x#))]
+     (binding [*print-newline* true
+               *print-fn* (fn [x#] (swap! out-str# str x#))]
        ~@body)
      @out-str#))
 
