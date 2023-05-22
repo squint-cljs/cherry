@@ -383,5 +383,8 @@
   (is (str/includes? (jss! "(if (zero? x) 1 2)") "== 0"))
   (is (not (str/includes? (jss! "(if (zero? x) 1 2)") "truth_"))))
 
+(deftest with-out-str-test
+  (is (str/includes? (jsv! "(with-out-str (time :hello))") "Elapsed time")))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test))

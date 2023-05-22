@@ -88,7 +88,10 @@
                       'defn- core-defn
                       'time macros/core-time
                       'declare macros/core-declare
-                      'letfn macros/core-letfn})
+                      'letfn macros/core-letfn
+                      'with-out-str macros/core-with-out-str
+                      'binding macros/core-binding
+                      'with-redefs macros/core-with-redefs})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 

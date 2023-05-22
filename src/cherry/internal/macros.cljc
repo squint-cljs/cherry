@@ -519,3 +519,50 @@
   `(letfn* ~(vec (interleave (map first fnspecs)
                              (map #(cons `fn (rest %)) fnspecs)))
            ~@body))
+
+(defn core-with-out-str
+  "Evaluates exprs in a context in which *print-fn* is bound to .append
+  on a fresh StringBuffer.  Returns the string created by any nested
+  printing calls."
+  [_ _ & body]
+  `(let [out-str# (atom "")]
+     (binding [cljs.core/*print-newline* true
+               cljs.core/*print-fn* (fn [x#] (swap! out-str# str x#))]
+       ~@body)
+     @out-str#))
+
+(defn core-with-redefs
+  "binding => var-symbol temp-value-expr
+
+  Temporarily redefines vars while executing the body.  The
+  temp-value-exprs will be evaluated and each resulting value will
+  replace in parallel the root value of its var.  After the body is
+  executed, the root values of all the vars will be set back to their
+  old values. Useful for mocking out functions during testing."
+  [_ _ bindings & body]
+  (let [names (take-nth 2 bindings)
+             vals (take-nth 2 (drop 1 bindings))
+             orig-val-syms (map (comp gensym #(str % "-orig-val__") name) names)
+             temp-val-syms (map (comp gensym #(str % "-temp-val__") name) names)
+             binds (map vector names temp-val-syms)
+             resets (reverse (map vector names orig-val-syms))
+             bind-value (fn [[k v]] (list 'set! k v))]
+    `(let [~@(interleave orig-val-syms names)
+           ~@(interleave temp-val-syms vals)]
+       ~@(map bind-value binds)
+       (try
+         ~@body
+         (finally
+           ~@(map bind-value resets))))))
+
+(defn core-binding
+  "binding => var-symbol init-expr
+
+  Creates new bindings for the (already-existing) vars, with the
+  supplied initial values, executes the exprs in an implicit do, then
+  re-establishes the bindings that existed before.  The new bindings
+  are made in parallel (unlike let); all init-exprs are evaluated
+  before the vars are bound to their new values."
+  [_ _ bindings & body]
+  ;; (cljs.analyzer/confirm-bindings &env names)
+  `(with-redefs ~bindings ~@body))
