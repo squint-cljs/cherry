@@ -28,7 +28,7 @@
     (if forms
       (let [form (first forms)
             threaded (if (seq? form)
-                       (with-meta `(~(first form) ~@(next form)  ~x) (meta form))
+                       (with-meta `(~(first form) ~@(next form) ~x) (meta form))
                        (list form x))]
         (recur threaded (next forms)))
       x)))
@@ -236,7 +236,7 @@
                                      :else `(cons ~body-expr
                                                   (~giter (rest ~gxs)))))]
                       (if next-groups
-                        #_ "not the inner-most loop"
+                        #_"not the inner-most loop"
                         `(fn ~giter [~gxs]
                            (lazy-seq
                             (loop [~gxs ~gxs]
@@ -315,14 +315,14 @@
                      :else (let [chunksym (with-meta (gensym "chunk__")
                                             {:tag 'not-native})
                                  countsym (gensym "count__")
-                                 isym     (gensym "i__")
-                                 recform-chunk  `(recur ~seqsym ~chunksym ~countsym (unchecked-inc ~isym))
+                                 isym (gensym "i__")
+                                 recform-chunk `(recur ~seqsym ~chunksym ~countsym (unchecked-inc ~isym))
                                  steppair-chunk (step recform-chunk (nnext exprs))
-                                 subform-chunk  (steppair-chunk 1)]
-                             [true `(loop [~seqsym   (seq ~v)
+                                 subform-chunk (steppair-chunk 1)]
+                             [true `(loop [~seqsym (seq ~v)
                                            ~chunksym nil
                                            ~countsym 0
-                                           ~isym     0]
+                                           ~isym 0]
                                       (if (< ~isym ~countsym)
                                         (let [~k (-nth ~chunksym ~isym)]
                                           ~subform-chunk
@@ -357,17 +357,17 @@
    in JavaScript."
   [_ _&env x]
   (if (symbol? x)
-    (let [x     (cond-> x #_(:name nil
+    (let [x (cond-> x #_(:name nil
                                    ;; TODO
-                                   #_(cljs.analyzer/resolve-var &env x))
-                        (= "js" (namespace x)) name)
-          segs  (str/split (str (str/replace-first (str x) "/" ".")) #"\.")
-          n     (count segs)
-          syms  (map
-                 #(vary-meta (symbol "js" (str/join "." %))
-                             assoc :cljs.analyzer/no-resolve true)
-                 (reverse (take n (iterate butlast segs))))
-          js    (str/join " && " (repeat n "(typeof ~{} !== 'undefined')"))]
+                               #_(cljs.analyzer/resolve-var &env x))
+                    (= "js" (namespace x)) name)
+          segs (str/split (str (str/replace-first (str x) "/" ".")) #"\.")
+          n (count segs)
+          syms (map
+                #(vary-meta (symbol "js" (str/join "." %))
+                            assoc :cljs.analyzer/no-resolve true)
+                (reverse (take n (iterate butlast segs))))
+          js (str/join " && " (repeat n "(typeof ~{} !== 'undefined')"))]
       (bool-expr (concat (list 'js* js) syms)))
     `(some? ~x)))
 
@@ -413,35 +413,35 @@
   expression, a vector can be used to match a list if needed. The
   test-constants need not be all of the same type."
   [_ &env e & clauses]
-  (let [esym    (gensym)
+  (let [esym (gensym)
         default (if (odd? (count clauses))
                   (last clauses)
                   `(throw
                     (js/Error.
                      (cljs.core/str "No matching clause: " ~esym))))
-        env     &env
-        pairs   (reduce
-                 (fn [m [test expr]]
-                   (cond
-                     (seq? test)
-                     (reduce
-                      (fn [m test]
-                        (let [test (if (symbol? test)
-                                     (list 'quote test)
-                                     test)]
-                          (assoc-test m test expr env)))
-                      m test)
-                     (symbol? test)
-                     (assoc-test m (list 'quote test) expr env)
-                     :else
-                     (assoc-test m test expr env)))
-                 {} (partition 2 clauses))
-        tests   (keys pairs)]
+        env &env
+        pairs (reduce
+               (fn [m [test expr]]
+                 (cond
+                   (seq? test)
+                   (reduce
+                    (fn [m test]
+                      (let [test (if (symbol? test)
+                                   (list 'quote test)
+                                   test)]
+                        (assoc-test m test expr env)))
+                    m test)
+                   (symbol? test)
+                   (assoc-test m (list 'quote test) expr env)
+                   :else
+                   (assoc-test m test expr env)))
+               {} (partition 2 clauses))
+        tests (keys pairs)]
     (cond
       (every? (some-fn number? string? #?(:clj char? :cljs (fnil char? :nonchar)) #(const? env %)) tests)
       (let [no-default (if (odd? (count clauses)) (butlast clauses) clauses)
-            tests      (mapv #(if (seq? %) (vec %) [%]) (take-nth 2 no-default))
-            thens      (vec (take-nth 2 (drop 1 no-default)))]
+            tests (mapv #(if (seq? %) (vec %) [%]) (take-nth 2 no-default))
+            thens (vec (take-nth 2 (drop 1 no-default)))]
         `(let [~esym ~e] (case* ~esym ~tests ~thens ~default)))
       (every? keyword? tests)
       (let [no-default (if (odd? (count clauses)) (butlast clauses) clauses)
@@ -499,9 +499,9 @@
   [_ _ expr]
   `(let [start# (system-time)
          ret# ~expr]
-     (prn (cljs.core/str "Elapsed time: "
-                         (.toFixed (- (system-time) start#) 6)
-                         " msecs"))
+     (prn (str "Elapsed time: "
+               (.toFixed (- (system-time) start#) 6)
+               " msecs"))
      ret#))
 
 (defn core-declare
@@ -541,12 +541,12 @@
   old values. Useful for mocking out functions during testing."
   [_ _ bindings & body]
   (let [names (take-nth 2 bindings)
-             vals (take-nth 2 (drop 1 bindings))
-             orig-val-syms (map (comp gensym #(str % "-orig-val__") name) names)
-             temp-val-syms (map (comp gensym #(str % "-temp-val__") name) names)
-             binds (map vector names temp-val-syms)
-             resets (reverse (map vector names orig-val-syms))
-             bind-value (fn [[k v]] (list 'set! k v))]
+        vals (take-nth 2 (drop 1 bindings))
+        orig-val-syms (map (comp gensym #(str % "-orig-val__") name) names)
+        temp-val-syms (map (comp gensym #(str % "-temp-val__") name) names)
+        binds (map vector names temp-val-syms)
+        resets (reverse (map vector names orig-val-syms))
+        bind-value (fn [[k v]] (list 'set! k v))]
     `(let [~@(interleave orig-val-syms names)
            ~@(interleave temp-val-syms vals)]
        ~@(map bind-value binds)
