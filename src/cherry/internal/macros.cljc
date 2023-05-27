@@ -524,10 +524,16 @@
   "Evaluates exprs in a context in which *print-fn* is bound to .append
   on a fresh StringBuffer.  Returns the string created by any nested
   printing calls."
-  [_ _ & body]
-  `(let [out-str# (atom "")]
-     (binding [*print-newline* true
-               *print-fn* (fn [x#] (swap! out-str# str x#))]
+ [_ _ & body]
+  `(let [out-str# (atom "")
+         old-print-fn# ~'*print-fn*]
+     (try
+       (~'set-print-fn! (fn [x#] (swap! out-str# str x#)))
+       ~@body
+       (finally
+         (~'set-print-fn! old-print-fn#)))
+     #_(binding [~'*print-newline* true
+               ~'*print-fn* ]
        ~@body)
      @out-str#))
 
