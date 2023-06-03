@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.0.4 (2023-06-03)
+
+- [#101](https://github.com/squint-cljs/cherry/issues/101): include `lib/cherry.umd.js` fallback for Firefox web worker
+
 ## 0.0.3 (2023-05-13)
 
 - Adjust core package in standard import
