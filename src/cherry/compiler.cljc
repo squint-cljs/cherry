@@ -205,7 +205,7 @@
       (symbol (name sym))
       sym)))
 
-(defmethod emit ::list [expr env]
+(defn emit-list [expr env]
   (escape-jsx
    (let [env (dissoc env :jsx)]
      (if (:quote env)
@@ -359,7 +359,8 @@
   ([f] (transpile-form-internal f nil))
   ([f opts]
    (binding [cc/*target* :cherry]
-     (emit f (merge {:context :statement} opts)))))
+     (emit f (merge {:context :statement
+                     :emit {:squint.compiler/list emit-list}} opts)))))
 
 (def ^:dynamic *jsx* false)
 
