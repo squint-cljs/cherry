@@ -2,6 +2,7 @@
   (:require
    [cherry.compiler :as cherry]
    [cherry.jsx-test]
+   [cherry.squint-and-cherry-test]
    [cherry.test-utils :refer [js! jss! jsv!]]
    [clojure.string :as str]
    [clojure.test :as t :refer [async deftest is]]))
@@ -387,4 +388,4 @@
   (is (str/includes? (jsv! "(with-out-str (time :hello))") "Elapsed time")))
 
 (defn init []
-  (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test))
+  (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test))
