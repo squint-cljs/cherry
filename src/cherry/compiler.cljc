@@ -33,7 +33,7 @@
 (#?(:clj set-var!
     :cljs set!) cc/infix-operators (disj cc/infix-operators "="))
 
-(defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr env]
+(defn emit-keyword [expr env]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'keyword)
   (emit-return (str (format "%skeyword(%s)"
                             (if-let [core-alias (:core-alias env)]
@@ -192,11 +192,6 @@
 #_(defmethod emit-special 'break [_type _env [_break]]
     (statement "break"))
 
-(derive #?(:clj clojure.lang.Cons :cljs Cons) ::list)
-(derive #?(:clj clojure.lang.IPersistentList :cljs IList) ::list)
-(derive #?(:clj clojure.lang.LazySeq :cljs LazySeq) ::list)
-#?(:cljs (derive List ::list))
-
 (defn strip-core-symbol [sym]
   (let [sym-ns (namespace sym)]
     (if (and sym-ns
@@ -259,15 +254,6 @@
              (throw (new Exception (str "invalid form: " expr))))))
    env))
 
-(derive #?(:bb (class (list)) :clj clojure.lang.PersistentList$EmptyList :cljs EmptyList) ::empty-list)
-
-(defmethod emit ::empty-list [_expr env]
-  ;; NOTE: we can later optimize this to a constant, but (.-EMPTY List) is prone
-  ;; to advanced optimization
-  (emit '(list) env))
-
-#?(:cljs (derive PersistentVector ::vector))
-
 #_(defn wrap-expr [env s]
     (case (:context env)
       :expr (wrap-iife s)
@@ -284,8 +270,7 @@
                           v)))
       "")))
 
-(defmethod emit #?(:clj clojure.lang.IPersistentVector
-                   :cljs ::vector) [expr env]
+(defn emit-vector [expr env]
   (if (and (:jsx env)
            (let [f (first expr)]
              (or (keyword? f)
@@ -316,11 +301,7 @@
                                  "")
                                (str/join ", " (emit-args env expr))) env)))))
 
-#?(:cljs (derive PersistentArrayMap ::map))
-#?(:cljs (derive PersistentHashMap ::map))
-
-(defmethod emit #?(:clj clojure.lang.IPersistentMap
-                   :cljs ::map) [expr env]
+(defn emit-map [expr env]
   (let [env* env
         env (dissoc env :jsx)
         expr-env (assoc env :context :expr)
@@ -360,7 +341,10 @@
   ([f opts]
    (binding [cc/*target* :cherry]
      (emit f (merge {:context :statement
-                     :emit {:squint.compiler/list emit-list}} opts)))))
+                     :emit {::cc/list emit-list
+                            ::cc/vector emit-vector
+                            ::cc/map emit-map
+                            ::cc/keyword emit-keyword}} opts)))))
 
 (def ^:dynamic *jsx* false)
 
