@@ -22,8 +22,8 @@
    [edamame.core :as e]
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
-                                          *aliases* *imported-vars* *public-vars* *repl* comma-list emit emit-args emit-infix
-                                          emit-special emit-return escape-jsx expr-env infix-operator? prefix-unary?
+                                          *aliases* *imported-vars* *public-vars* comma-list emit emit-args emit-infix
+                                          emit-return escape-jsx expr-env infix-operator? prefix-unary?
                                           statement suffix-unary?]])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
 
@@ -98,6 +98,8 @@
 (def core-vars (conj (:vars core-config) 'goog_typeOf))
 
 (reset! cc/core-vars core-vars)
+
+(defmulti emit-special (fn [disp _env & _args] disp))
 
 (defn special-form? [expr]
   (or
@@ -231,7 +233,7 @@
                    (and (= (.charAt head-str 0) \.)
                         (> (count head-str) 1)
                         (not (= ".." head-str)))
-                   (emit-special '. env
+                   (cc/emit-special '. env
                                  (list* '.
                                         (second expr)
                                         (symbol (subs head-str 1))
@@ -240,13 +242,13 @@
                         (str/ends-with? head-str "."))
                    (emit (list* 'new (symbol (subs head-str 0 (dec (count head-str)))) (rest expr))
                          env)
-                   (special-form? head) (emit-special head env expr)
+                   (special-form? head) (cc/emit-special head env expr)
                    (infix-operator? head) (emit-infix head env expr)
                    (prefix-unary? head) (emit-prefix-unary head expr)
                    (suffix-unary? head) (emit-suffix-unary head expr)
-                   :else (emit-special 'funcall env expr))))
+                   :else (cc/emit-special 'funcall env expr))))
              (list? expr)
-             (emit-special 'funcall env expr)
+             (cc/emit-special 'funcall env expr)
              :else
              (throw (new Exception (str "invalid form: " expr))))))
    env))
@@ -340,7 +342,8 @@
                             ::cc/vector emit-vector
                             ::cc/map emit-map
                             ::cc/keyword emit-keyword
-                            ::cc/set emit-set}} opts)))))
+                            ::cc/set emit-set
+                            ::cc/special emit-special}} opts)))))
 
 (def ^:dynamic *jsx* false)
 

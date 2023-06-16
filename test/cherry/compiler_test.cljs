@@ -45,8 +45,6 @@
   (let [s (jss! '(let [x 1 x (let [x (+ x 1)]
                                x)] x))]
     (is (= 2 (js/eval s))))
-  (prn (jss! '(let [{:keys [a b]} {:a 1 :b (+ 1 2 3)}]
-                (+ a b))))
   (is (= 7 (jsv! '(let [{:keys [a b]} {:a 1 :b (+ 1 2 3)}]
                     (+ a b)))))
   (is (= 8 (jsv!
