@@ -119,9 +119,6 @@
                                 (partition 2 more))
                            (repeat statement-separator))))
 
-(defmethod emit-special 'quote [_ env [_ form]]
-  (emit-return (emit form (expr-env (assoc env :quote true))) env))
-
 (defmethod emit-special 'deftype* [_ env [_ t fields pmasks body]]
   (let [fields (map munge fields)]
     (str "var " (munge t) " = " (format "function %s {
@@ -326,9 +323,7 @@
                       (format "({ %s })" keys))
                     (emit-return env)) env*)))
 
-(defmethod emit #?(:clj clojure.lang.PersistentHashSet
-                   :cljs PersistentHashSet)
-  [expr env]
+(defn emit-set [expr env]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'hash_set)
   (emit-return (format "%s%s" (format "%shash_set"
                                       (if-let [ca (:core-alias env)]
@@ -344,7 +339,8 @@
                      :emit {::cc/list emit-list
                             ::cc/vector emit-vector
                             ::cc/map emit-map
-                            ::cc/keyword emit-keyword}} opts)))))
+                            ::cc/keyword emit-keyword
+                            ::cc/set emit-set}} opts)))))
 
 (def ^:dynamic *jsx* false)
 
