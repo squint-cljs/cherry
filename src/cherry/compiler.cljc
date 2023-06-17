@@ -97,8 +97,6 @@
 
 (def core-vars (conj (:vars core-config) 'goog_typeOf))
 
-(reset! cc/core-vars core-vars)
-
 (defmulti emit-special (fn [disp _env & _args] disp))
 
 (defn special-form? [expr]
@@ -338,6 +336,7 @@
   ([f opts]
    (binding [cc/*target* :cherry]
      (emit f (merge {:context :statement
+                     :core-vars core-vars
                      :emit {::cc/list emit-list
                             ::cc/vector emit-vector
                             ::cc/map emit-map
