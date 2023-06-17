@@ -22,8 +22,8 @@
    [edamame.core :as e]
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
-                                          *aliases* *imported-vars* *public-vars* *repl* comma-list emit emit-args emit-infix
-                                          emit-special emit-return escape-jsx expr-env infix-operator? prefix-unary?
+                                          *aliases* *imported-vars* *public-vars* comma-list emit emit-args emit-infix
+                                          emit-return escape-jsx expr-env infix-operator? prefix-unary?
                                           statement suffix-unary?]])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
 
@@ -33,7 +33,7 @@
 (#?(:clj set-var!
     :cljs set!) cc/infix-operators (disj cc/infix-operators "="))
 
-(defmethod emit #?(:clj clojure.lang.Keyword :cljs Keyword) [expr env]
+(defn emit-keyword [expr env]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'keyword)
   (emit-return (str (format "%skeyword(%s)"
                             (if-let [core-alias (:core-alias env)]
@@ -97,7 +97,7 @@
 
 (def core-vars (conj (:vars core-config) 'goog_typeOf))
 
-(reset! cc/core-vars core-vars)
+(defmulti emit-special (fn [disp _env & _args] disp))
 
 (defn special-form? [expr]
   (or
@@ -118,9 +118,6 @@
                                   (str (when-not var-declarations "var ") (emit env name) " = " (emit env expr)))
                                 (partition 2 more))
                            (repeat statement-separator))))
-
-(defmethod emit-special 'quote [_ env [_ form]]
-  (emit-return (emit form (expr-env (assoc env :quote true))) env))
 
 (defmethod emit-special 'deftype* [_ env [_ t fields pmasks body]]
   (let [fields (map munge fields)]
@@ -192,11 +189,6 @@
 #_(defmethod emit-special 'break [_type _env [_break]]
     (statement "break"))
 
-(derive #?(:clj clojure.lang.Cons :cljs Cons) ::list)
-(derive #?(:clj clojure.lang.IPersistentList :cljs IList) ::list)
-(derive #?(:clj clojure.lang.LazySeq :cljs LazySeq) ::list)
-#?(:cljs (derive List ::list))
-
 (defn strip-core-symbol [sym]
   (let [sym-ns (namespace sym)]
     (if (and sym-ns
@@ -205,7 +197,7 @@
       (symbol (name sym))
       sym)))
 
-(defmethod emit ::list [expr env]
+(defn emit-list [expr env]
   (escape-jsx
    (let [env (dissoc env :jsx)]
      (if (:quote env)
@@ -239,7 +231,7 @@
                    (and (= (.charAt head-str 0) \.)
                         (> (count head-str) 1)
                         (not (= ".." head-str)))
-                   (emit-special '. env
+                   (cc/emit-special '. env
                                  (list* '.
                                         (second expr)
                                         (symbol (subs head-str 1))
@@ -248,25 +240,16 @@
                         (str/ends-with? head-str "."))
                    (emit (list* 'new (symbol (subs head-str 0 (dec (count head-str)))) (rest expr))
                          env)
-                   (special-form? head) (emit-special head env expr)
+                   (special-form? head) (cc/emit-special head env expr)
                    (infix-operator? head) (emit-infix head env expr)
                    (prefix-unary? head) (emit-prefix-unary head expr)
                    (suffix-unary? head) (emit-suffix-unary head expr)
-                   :else (emit-special 'funcall env expr))))
+                   :else (cc/emit-special 'funcall env expr))))
              (list? expr)
-             (emit-special 'funcall env expr)
+             (cc/emit-special 'funcall env expr)
              :else
              (throw (new Exception (str "invalid form: " expr))))))
    env))
-
-(derive #?(:bb (class (list)) :clj clojure.lang.PersistentList$EmptyList :cljs EmptyList) ::empty-list)
-
-(defmethod emit ::empty-list [_expr env]
-  ;; NOTE: we can later optimize this to a constant, but (.-EMPTY List) is prone
-  ;; to advanced optimization
-  (emit '(list) env))
-
-#?(:cljs (derive PersistentVector ::vector))
 
 #_(defn wrap-expr [env s]
     (case (:context env)
@@ -284,8 +267,7 @@
                           v)))
       "")))
 
-(defmethod emit #?(:clj clojure.lang.IPersistentVector
-                   :cljs ::vector) [expr env]
+(defn emit-vector [expr env]
   (if (and (:jsx env)
            (let [f (first expr)]
              (or (keyword? f)
@@ -316,11 +298,7 @@
                                  "")
                                (str/join ", " (emit-args env expr))) env)))))
 
-#?(:cljs (derive PersistentArrayMap ::map))
-#?(:cljs (derive PersistentHashMap ::map))
-
-(defmethod emit #?(:clj clojure.lang.IPersistentMap
-                   :cljs ::map) [expr env]
+(defn emit-map [expr env]
   (let [env* env
         env (dissoc env :jsx)
         expr-env (assoc env :context :expr)
@@ -345,9 +323,7 @@
                       (format "({ %s })" keys))
                     (emit-return env)) env*)))
 
-(defmethod emit #?(:clj clojure.lang.PersistentHashSet
-                   :cljs PersistentHashSet)
-  [expr env]
+(defn emit-set [expr env]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'hash_set)
   (emit-return (format "%s%s" (format "%shash_set"
                                       (if-let [ca (:core-alias env)]
@@ -359,7 +335,14 @@
   ([f] (transpile-form-internal f nil))
   ([f opts]
    (binding [cc/*target* :cherry]
-     (emit f (merge {:context :statement} opts)))))
+     (emit f (merge {:context :statement
+                     :core-vars core-vars
+                     :emit {::cc/list emit-list
+                            ::cc/vector emit-vector
+                            ::cc/map emit-map
+                            ::cc/keyword emit-keyword
+                            ::cc/set emit-set
+                            ::cc/special emit-special}} opts)))))
 
 (def ^:dynamic *jsx* false)
 

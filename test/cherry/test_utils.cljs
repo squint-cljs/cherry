@@ -2,7 +2,6 @@
   (:require
    ["cherry-cljs/cljs.core.js" :as cl]
    [cherry.compiler :as cherry]
-   [squint.compiler-common :refer [*target*]]
    [clojure.test :as t]))
 
 (def old-fail (get-method t/report [:cljs.test/default :fail]))
