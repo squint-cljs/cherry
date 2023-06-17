@@ -3,7 +3,7 @@
    [cherry.compiler :as cherry]
    [squint.compiler :as squint]
    [cherry.jsx-test]
-   [cherry.test-utils :as :refer [js! jss! jsv!]]
+   [cherry.test-utils :refer [js! jss! jsv!]]
    [clojure.string :as str]
    [clojure.test :as t :refer [async deftest is]]))
 
