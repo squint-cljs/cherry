@@ -30,9 +30,6 @@
 #?(:clj (defmacro set-var! [the-var value]
           `(alter-var-root (var ~the-var) (constantly ~value))))
 
-(#?(:clj set-var!
-    :cljs set!) cc/infix-operators (disj cc/infix-operators "="))
-
 (defn emit-keyword [expr env]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'keyword)
   (emit-return (str (format "%skeyword(%s)"
@@ -241,7 +238,7 @@
                    (emit (list* 'new (symbol (subs head-str 0 (dec (count head-str)))) (rest expr))
                          env)
                    (special-form? head) (cc/emit-special head env expr)
-                   (infix-operator? head) (emit-infix head env expr)
+                   (infix-operator? env head) (emit-infix head env expr)
                    (prefix-unary? head) (emit-prefix-unary head expr)
                    (suffix-unary? head) (emit-suffix-unary head expr)
                    :else (cc/emit-special 'funcall env expr))))
@@ -337,6 +334,7 @@
    (binding [cc/*target* :cherry]
      (emit f (merge {:context :statement
                      :core-vars core-vars
+                     :infix-operators (disj cc/infix-operators "=")
                      :emit {::cc/list emit-list
                             ::cc/vector emit-vector
                             ::cc/map emit-map
