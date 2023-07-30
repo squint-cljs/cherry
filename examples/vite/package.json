@@ -12,6 +12,6 @@
     "vite": "^3.0.0"
   },
   "dependencies": {
-    "cherry-cljs": "^0.0.0-alpha.33"
+    "cherry-cljs": "^0.0.4"
   }
 }
