@@ -5,7 +5,8 @@
    [cherry.squint-and-cherry-test]
    [cherry.test-utils :refer [js! jss! jsv!]]
    [clojure.string :as str]
-   [clojure.test :as t :refer [async deftest is]]))
+   [clojure.test :as t :refer [async deftest is]]
+   ["fs" :as fs]))
 
 (deftest return-test
   (is (str/includes? (jss! '(do (def x (do 1 2 nil))))
@@ -386,6 +387,9 @@
 
 (deftest with-out-str-test
   (is (str/includes? (jsv! "(with-out-str (time :hello))") "Elapsed time")))
+
+(deftest defclass-test
+  (is (= "<<<<1-3-3>>>>,1-3-3" (str (jsv! (str (fs/readFileSync "test-resources/defclass_test.cljs")))))))
 
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test))

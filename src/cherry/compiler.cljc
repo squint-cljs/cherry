@@ -24,7 +24,8 @@
                                           #?(:cljs format)
                                           *aliases* *imported-vars* *public-vars* comma-list emit emit-args emit-infix
                                           emit-return escape-jsx expr-env infix-operator? prefix-unary?
-                                          statement suffix-unary?]])
+                                          statement suffix-unary?]]
+   [squint.defclass :as defclass])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
 
 #?(:clj (defmacro set-var! [the-var value]
@@ -45,7 +46,8 @@
                          'js/await 'const 'let 'let* 'letfn* 'ns 'require 'def 'loop*
                          'recur 'js* 'case* 'deftype*
                          ;; prefixed to avoid conflicts
-                         'clava-compiler-jsx]))
+                         'clava-compiler-jsx
+                         'squint.defclass/defclass* 'squint.defclass/super*]))
 
 (def built-in-macros {'-> macros/core->
                       '->> macros/core->>
@@ -88,7 +90,9 @@
                       'letfn macros/core-letfn
                       'with-out-str macros/core-with-out-str
                       'binding macros/core-binding
-                      'with-redefs macros/core-with-redefs})
+                      'with-redefs macros/core-with-redefs
+                      'defclass defclass/defclass
+                      'js-template defclass/js-template})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
@@ -149,6 +153,12 @@
 (defmethod emit-special 'let [_type env [_let bindings & more]]
   (emit (core-let bindings more) env)
   #_(prn (core-let bindings more)))
+
+(defmethod emit-special 'squint.defclass/defclass* [_ env form]
+  (defclass/emit-class env emit form))
+
+(defmethod emit-special 'squint.defclass/super* [_ env form]
+  (defclass/emit-super env emit (second form)))
 
 (defmethod emit-special 'if [_type env [_if test then else]]
   (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'truth_)
