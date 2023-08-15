@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.1.5 (2023-08-15)
+
+- Support `defclass` and `js-template`, same as squint. See [squint docs](https://github.com/squint-cljs/squint/blob/main/doc/defclass.md).
+
 ## 0.0.4 (2023-06-03)
 
 - [#101](https://github.com/squint-cljs/cherry/issues/101): include `lib/cherry.umd.js` fallback for Firefox web worker
