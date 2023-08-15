@@ -124,6 +124,14 @@ $ cd cherry
 $ bb dev
 ```
 
+## `defclass`
+
+See [squint docs](https://github.com/squint-cljs/squint/blob/main/doc/defclass.md).
+
+## `js-template`
+
+See [squint docs](https://github.com/squint-cljs/squint/blob/main/doc/defclass.md).
+
 License
 =======
 Cherry is licensed under the EPL, the same as Clojure core and [Scriptjure](https://github.com/arohner/scriptjure). See epl-v10.html in the root directory for more information.
