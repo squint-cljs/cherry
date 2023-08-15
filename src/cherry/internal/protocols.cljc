@@ -268,10 +268,12 @@
   [tsym sym]
   (with-meta `(.. ~tsym ~'-prototype ~(to-property sym)) {:extend-type true}))
 
+(def self-sym (with-meta 'self__
+                {:squint.compiler/no-rename true}))
 
-(core/defn- adapt-obj-params [type [[this & args :as sig] & body]]
+(core/defn- adapt-obj-params [type [[this & args :as _sig] & body]]
   (core/list (vec args)
-             (list* 'cljs.core/this-as (vary-meta this assoc :tag type) body)))
+             (list* 'cljs.core/this-as self-sym (list* 'cljs.core/this-as (vary-meta this assoc :tag type) body))))
 
 (core/defn- add-obj-methods [type type-sym sigs]
   (map (core/fn [[f & meths :as form]]
@@ -287,8 +289,8 @@
      (cljs.core/this-as ~(vary-meta this assoc :tag type)
        ~@body)))
 
-(core/defn- adapt-ifn-params [type [[this & args :as sig] & body]]
-  (core/let [self-sym (with-meta 'self__ {:tag type})]
+(core/defn- adapt-ifn-params [type [[this & args :as _sig] & body]]
+  (core/let [self-sym (vary-meta self-sym assoc :tag type)]
     `(~(vec (cons self-sym args))
       (cljs.core/this-as ~self-sym
         (let [~this ~self-sym]
@@ -297,8 +299,9 @@
 (core/defn- adapt-proto-params [type [[this & args :as sig] & body]]
   (core/let [this' (vary-meta this assoc :tag type)]
     `(~(vec (cons this' args))
-      (cljs.core/this-as ~this'
-        ~@body))))
+      (cljs.core/this-as ~self-sym
+        (cljs.core/this-as ~this'
+          ~@body)))))
 
 (core/defn- ifn-invoke-methods [type type-sym [f & meths :as form]]
   (map
@@ -310,7 +313,7 @@
 
 (core/defn- add-ifn-methods [type type-sym [f & meths :as form]]
   (core/let [meths    (map #(adapt-ifn-params type %) meths)
-             this-sym (with-meta 'self__ {:tag type})
+             this-sym (vary-meta self-sym assoc :tag type)
              argsym   (gensym "args")
              max-ifn-arity 20]
     (concat
@@ -318,14 +321,15 @@
       `(set! ~(extend-prefix type-sym 'apply)
              ~(with-meta
                 `(fn ~[this-sym argsym]
-                   (this-as ~this-sym
-                     (let [args# (cljs.core/aclone ~argsym)]
-                       (.apply (.-call ~this-sym) ~this-sym
-                               (.concat (array ~this-sym)
-                                        (if (> (.-length args#) ~max-ifn-arity)
-                                          (doto (.slice args# 0 ~max-ifn-arity)
-                                            (.push (.slice args# ~max-ifn-arity)))
-                                          args#))))))
+                   (this-as ~self-sym
+                     (this-as ~this-sym
+                       (let [args# (cljs.core/aclone ~argsym)]
+                         (.apply (.-call ~this-sym) ~this-sym
+                                 (.concat (array ~this-sym)
+                                          (if (> (.-length args#) ~max-ifn-arity)
+                                            (doto (.slice args# 0 ~max-ifn-arity)
+                                              (.push (.slice args# ~max-ifn-arity)))
+                                            args#)))))))
                 (meta form)))]
      (ifn-invoke-methods type type-sym form))))
 
