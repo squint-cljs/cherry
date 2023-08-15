@@ -24,6 +24,7 @@
                                           #?(:cljs format)
                                           *aliases* *imported-vars* *public-vars* comma-list emit emit-args emit-infix
                                           emit-return escape-jsx expr-env infix-operator? prefix-unary?
+
                                           statement suffix-unary?]]
    [squint.defclass :as defclass])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
@@ -239,10 +240,10 @@
                         (> (count head-str) 1)
                         (not (= ".." head-str)))
                    (cc/emit-special '. env
-                                 (list* '.
-                                        (second expr)
-                                        (symbol (subs head-str 1))
-                                        (nnext expr)))
+                                    (list* '.
+                                           (second expr)
+                                           (symbol (subs head-str 1))
+                                           (nnext expr)))
                    (and (> (count head-str) 1)
                         (str/ends-with? head-str "."))
                    (emit (list* 'new (symbol (subs head-str 0 (dec (count head-str)))) (rest expr))
