@@ -1,0 +1,8 @@
+;; (sort (map munge (keys (ns-publics 'clojure.walk))))
+{:vars #{keywordize_keys
+         postwalk
+         postwalk_replace
+         prewalk
+         prewalk_replace
+         stringify_keys
+         walk}}
