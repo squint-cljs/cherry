@@ -29,10 +29,10 @@
                           nth cljs.core/nth
                           seq cljs.core/seq
                           goog_typeOf goog/typeOf}}
-    :compiler {:depends-on #{:cljs.core :clojure.string}
+    :compiler {:depends-on #{:cljs.core :clojure.string :clojure.walk}
                :exports
                {compileString cherry.compiler/compile-string}}
-    :cli {:depends-on #{:compiler :clojure.string}
+    :cli {:depends-on #{:compiler :clojure.string :clojure.walk}
           :init-fn cherry.internal.cli/init}}
    :build-hooks [(shadow.cljs.build-report/hook
                   {:output-to "report.html"})]}}}

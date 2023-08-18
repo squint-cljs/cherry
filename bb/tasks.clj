@@ -22,18 +22,24 @@
   []
   (let [core-config (edn/read-string (slurp (io/resource "cherry/cljs.core.edn")))
         string-config (edn/read-string (slurp (io/resource "cherry/clojure.string.edn")))
+        walk-config (edn/read-string (slurp (io/resource "cherry/clojure.walk.edn")))
         reserved (edn/read-string (slurp (io/resource "cherry/js_reserved.edn")))]
     {:modules
      {:cljs.core {:exports (assoc (->namespace "cljs.core" (:vars core-config) reserved)
                                   'goog_typeOf 'goog/typeOf)}
       :clojure.string {:exports (->namespace "clojure.string" (:vars string-config) reserved)
-                       :entriees '[clojure.string]
-                       :depends-on #{:cljs.core}}}}))
+                       :entries '[clojure.string]
+                       :depends-on #{:cljs.core}}
+      :clojure.walk {:exports (->namespace "clojure.walk" (:vars walk-config) reserved)
+                     :entries '[clojure.walk]
+                     :depends-on #{:cljs.core}}}}))
 
 (def test-config
   '{:compiler-options {:load-tests true}
     :modules {:cherry.tests {:init-fn cherry.compiler-test/init
-                             :depends-on #{:compiler :clojure.string}}}})
+                             :depends-on #{:compiler
+                                           :clojure.string
+                                           :clojure.walk}}}})
 
 (defn shadow-extra-test-config []
   (merge-with
