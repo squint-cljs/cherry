@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.1.6 (2023-08-18)
+
+- Add `clojure.string` and `clojure.walk`
+
 ## 0.1.5 (2023-08-15)
 
 - Support `defclass` and `js-template`, same as squint. See [squint docs](https://github.com/squint-cljs/squint/blob/main/doc/defclass.md).
