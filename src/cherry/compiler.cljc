@@ -33,7 +33,7 @@
           `(alter-var-root (var ~the-var) (constantly ~value))))
 
 (defn emit-keyword [expr env]
-  (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'keyword)
+  (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'keyword)
   (emit-return (str (format "%skeyword(%s)"
                             (if-let [core-alias (:core-alias env)]
                               (str core-alias ".")
@@ -162,7 +162,7 @@
   (defclass/emit-super env emit (second form)))
 
 (defmethod emit-special 'if [_type env [_if test then else]]
-  (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'truth_)
+  (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'truth_)
   (if (= :expr (:context env))
     (-> (let [env (assoc env :context :expr)]
           (format "(%s) ? (%s) : (%s)"
@@ -210,7 +210,7 @@
    (let [env (dissoc env :jsx)]
      (if (:quote env)
        (do
-         (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'list)
+         (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'list)
          (format "%slist(%s)"
                  (if-let [ca (:core-alias env)]
                    (str ca ".")
@@ -299,7 +299,7 @@
     (if (::js (meta expr))
       (emit-return (format "[%s]"
                            (str/join ", " (emit-args env expr))) env)
-      (do (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'vector)
+      (do (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'vector)
           (emit-return (format "%svector(%s)"
                                (if-let [core-alias (:core-alias env)]
                                  (str core-alias ".")
@@ -321,7 +321,7 @@
                                 (emit (val pair) expr-env)))
         keys (str/join ", " (map mk-pair (seq expr)))]
     (when map-fn
-      (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) map-fn))
+      (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) map-fn))
     (escape-jsx (-> (if map-fn
                       (format "%s%s(%s)"
                               (if-let [ca (:core-alias env)]
@@ -332,7 +332,7 @@
                     (emit-return env)) env*)))
 
 (defn emit-set [expr env]
-  (swap! *imported-vars* update "cherry-cljs/lib/cljs_core.js" (fnil conj #{}) 'hash_set)
+  (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'hash_set)
   (emit-return (format "%s%s" (format "%shash_set"
                                       (if-let [ca (:core-alias env)]
                                         (str ca ".")

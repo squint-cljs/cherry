@@ -1,1 +1,1 @@
-export * from './lib/cljs_core.js';
+export * from './lib/cljs.core.js';

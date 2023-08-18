@@ -1,0 +1,20 @@
+;; (sort (map munge (keys (ns-publics 'clojure.string))))
+{:vars #{blank_QMARK_
+         capitalize
+         ends_with_QMARK_
+         escape
+         includes_QMARK_
+         index_of join
+         last_index_of
+         lower_case
+         replace
+         replace_first
+         reverse
+         split
+         split_lines
+         starts_with_QMARK_
+         trim
+         trim_newline
+         triml
+         trimr
+         upper_case}}
