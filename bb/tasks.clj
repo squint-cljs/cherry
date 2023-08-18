@@ -12,22 +12,28 @@
       (str s "$")
       s)))
 
+(defn ->namespace [the-ns-name vars reserved]
+  (let [ks (map #(symbol (munge* % reserved)) vars)
+        vs (map #(symbol (str the-ns-name) (str %)) vars)
+        the-map (zipmap ks vs)]
+    the-map))
+
 (defn shadow-extra-config
   []
   (let [core-config (edn/read-string (slurp (io/resource "cherry/cljs.core.edn")))
-        reserved (edn/read-string (slurp (io/resource "cherry/js_reserved.edn")))
-        vars (:vars core-config)
-        ks (map #(symbol (munge* % reserved)) vars)
-        vs (map #(symbol "cljs.core" (str %)) vars)
-        core-map (zipmap ks vs)
-        core-map (assoc core-map 'goog_typeOf 'goog/typeOf)]
+        string-config (edn/read-string (slurp (io/resource "cherry/clojure.string.edn")))
+        reserved (edn/read-string (slurp (io/resource "cherry/js_reserved.edn")))]
     {:modules
-     {:cljs_core {:exports core-map}}}))
+     {:cljs.core {:exports (assoc (->namespace "cljs.core" (:vars core-config) reserved)
+                                  'goog_typeOf 'goog/typeOf)}
+      :clojure.string {:exports (->namespace "clojure.string" (:vars string-config) reserved)
+                       :entriees '[clojure.string]
+                       :depends-on #{:cljs.core}}}}))
 
 (def test-config
   '{:compiler-options {:load-tests true}
-    :modules {:cherry_tests {:init-fn cherry.compiler-test/init
-                             :depends-on #{:compiler}}}})
+    :modules {:cherry.tests {:init-fn cherry.compiler-test/init
+                             :depends-on #{:compiler :clojure.string}}}})
 
 (defn shadow-extra-test-config []
   (merge-with
@@ -59,7 +65,7 @@
   (spit ".work/config-merge.edn" (shadow-extra-test-config))
   (shell "npm install")
   (shell "npx shadow-cljs --config-merge .work/config-merge.edn release cherry")
-  (shell "node lib/cherry_tests.js"))
+  (shell "node lib/cherry.tests.js"))
 
 (defn bump-compiler-common []
   (let [{:keys [out]}

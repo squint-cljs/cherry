@@ -42,7 +42,7 @@ help                      Print this help"))
       (fs/writeFileSync f res "utf-8")
       (when-not (:no-run opts)
         (-> (esm/dynamic-import (str (js/process.cwd) "/" f))
-            (.finally (fn [_]
+            #_(.finally (fn [_]
                         (fs/rmSync dir #js {:force true :recursive true}))))))
     (if (or (:help opts)
             (= "help" (first rest-cmds))

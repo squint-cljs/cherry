@@ -4,12 +4,13 @@
   {:js-options {;; don't bundle any npm libs
                 :js-provider :import}
    :compiler-options {:infer-externs :auto}
+   :devtools {:enabled false}
    :target :esm
    :runtime :node
    :output-dir "lib"
    :modules
    ;; note: this is overriden in bb build-cherry
-   {:cljs_core {:exports {assoc cljs.core/assoc
+   {:cljs.core {:exports {assoc cljs.core/assoc
                           map cljs.core/map
                           str cljs.core/str
                           keyword cljs.core/keyword
@@ -28,10 +29,10 @@
                           nth cljs.core/nth
                           seq cljs.core/seq
                           goog_typeOf goog/typeOf}}
-    :compiler {:depends-on #{:cljs_core}
+    :compiler {:depends-on #{:cljs.core :clojure.string}
                :exports
                {compileString cherry.compiler/compile-string}}
-    :cli {:depends-on #{:compiler}
+    :cli {:depends-on #{:compiler :clojure.string}
           :init-fn cherry.internal.cli/init}}
    :build-hooks [(shadow.cljs.build-report/hook
                   {:output-to "report.html"})]}}}
