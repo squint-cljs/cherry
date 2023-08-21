@@ -1,2 +1,2 @@
-(ns scratch (:require ["foo" :as foo]))
-(defn App [] #jsx [foo/c #js {:x 1}])
+(let [^:js {:keys [x y]} #js {:x 1 :y 2}]
+  (prn [x y]))
