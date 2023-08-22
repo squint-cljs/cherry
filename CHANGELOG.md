@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.1.7 (2023-08-18)
+
+- Fix overriding core vars
+
 ## 0.1.6 (2023-08-18)
 
 - Add `clojure.string` and `clojure.walk`

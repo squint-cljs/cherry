@@ -343,7 +343,8 @@
   ([f] (transpile-form-internal f nil))
   ([f opts]
    (binding [cc/*target* :cherry]
-     (emit f (merge {:context :statement
+     (emit f (merge {:ns-state (atom {})
+                     :context :statement
                      :core-vars core-vars
                      :infix-operators (disj cc/infix-operators "=")
                      :emit {::cc/list emit-list
@@ -375,7 +376,9 @@
 
 (defn transpile-string-internal [s compiler-opts]
   (let [rdr (e/reader s)
-        opts cherry-parse-opts]
+        opts cherry-parse-opts
+        opts (merge {:ns-state (atom {})}
+                    opts)]
     (loop [transpiled ""]
       (let [opts (assoc opts :auto-resolve @*aliases*)
             next-form (e/parse-next rdr opts)]
@@ -392,32 +395,34 @@
                 aliases]
          :or {core-alias "cherry_core"}
          :as opts}]
-   (binding [cc/*core-package* "cherry-cljs/cljs.core.js"
-             *jsx* false]
-     (let [imported-vars (atom {})
-           public-vars (atom #{})
-           aliases (atom (merge aliases {core-alias cc/*core-package*}))
-           imports (atom (format "import * as %s from '%s';\n"
-                                 core-alias cc/*core-package*))]
-       (binding [*imported-vars* imported-vars
-                 *public-vars* public-vars
-                 *aliases* aliases]
-         (let [transpiled (f x (assoc opts
-                                      :core-alias core-alias
-                                      :imports imports))
-               imports (when-not elide-imports @imports)
-               exports (when-not elide-exports
-                         (str (when-let [vars (disj @public-vars "default$")]
-                                (when (seq vars)
-                                  (str (format "\nexport { %s }\n"
-                                               (str/join ", " vars)))))
-                              (when (contains? @public-vars "default$")
-                                "export default default$\n")))]
-           {:imports imports
-            :exports exports
-            :body transpiled
-            :javascript (str imports transpiled exports)
-            :jsx *jsx*}))))))
+   (let [opts (merge {:ns-state (atom {})}
+                     opts)]
+     (binding [cc/*core-package* "cherry-cljs/cljs.core.js"
+               *jsx* false]
+       (let [imported-vars (atom {})
+             public-vars (atom #{})
+             aliases (atom (merge aliases {core-alias cc/*core-package*}))
+             imports (atom (format "import * as %s from '%s';\n"
+                                   core-alias cc/*core-package*))]
+         (binding [*imported-vars* imported-vars
+                   *public-vars* public-vars
+                   *aliases* aliases]
+           (let [transpiled (f x (assoc opts
+                                        :core-alias core-alias
+                                        :imports imports))
+                 imports (when-not elide-imports @imports)
+                 exports (when-not elide-exports
+                           (str (when-let [vars (disj @public-vars "default$")]
+                                  (when (seq vars)
+                                    (str (format "\nexport { %s }\n"
+                                                 (str/join ", " vars)))))
+                                (when (contains? @public-vars "default$")
+                                  "export default default$\n")))]
+             {:imports imports
+              :exports exports
+              :body transpiled
+              :javascript (str imports transpiled exports)
+              :jsx *jsx*})))))))
 
 (defn compile-string*
   ([s] (compile-string* s nil))

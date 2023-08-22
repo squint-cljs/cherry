@@ -1,12 +1,12 @@
 (ns cherry.compiler-test
   (:require
+   ["fs" :as fs]
    [cherry.compiler :as cherry]
    [cherry.jsx-test]
    [cherry.squint-and-cherry-test]
    [cherry.test-utils :refer [js! jss! jsv!]]
    [clojure.string :as str]
-   [clojure.test :as t :refer [async deftest is]]
-   ["fs" :as fs]))
+   [clojure.test :as t :refer [async deftest is]]))
 
 (deftest return-test
   (is (str/includes? (jss! '(do (def x (do 1 2 nil))))
@@ -185,8 +185,8 @@
                            y [4 5 6]]
                      (swap! a conj x y))
                    (deref a)))]
-    (is (=  [1 4 1 5 1 6 2 4 2 5 2 6 3 4 3 5 3 6]
-            (js/eval s)))))
+    (is (= [1 4 1 5 1 6 2 4 2 5 2 6 3 4 3 5 3 6]
+           (js/eval s)))))
 
 (deftest for-test
   (let [s (jss! '(for [x [1 2 3] y [4 5 6]] [x y]))]
@@ -268,7 +268,7 @@
                       IFoo
                       (foo [_] [:foo x])
                       (bar [_] :bar))
-                    (def x  (->Foo 1))
+                    (def x (->Foo 1))
                     (set! (.-x x) 2)
                     (foo x))))))
 
@@ -390,6 +390,9 @@
 
 (deftest defclass-test
   (is (= "[\"<<<<1-3-3>>>>\" \"1-3-3\"]" (str (jsv! (str (fs/readFileSync "test-resources/defclass_test.cljs")))))))
+
+(deftest override-core-var-test
+  (is (= 1 (jsv! "(def count 1) (set! count (inc count)) (defn frequencies [x] (dec x)) (frequencies count)"))))
 
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test))
