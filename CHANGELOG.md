@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.1.8 (2023-09-18)
+
+- Bump shared compiler code with squint, optimizes truthiness checks and fixes `and` and `or` wrt/ truthiness
+
 ## 0.1.7 (2023-08-18)
 
 - Fix overriding core vars
