@@ -55,7 +55,7 @@
                       '->> macros/core->>
                       'as-> macros/core-as->
                       'comment macros/core-comment
-                      'dotimes macros/core-dotimes
+                      'dotimes squint-macros/core-dotimes
                       'if-not macros/core-if-not
                       'when macros/core-when
                       'when-not macros/core-when-not

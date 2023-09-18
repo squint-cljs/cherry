@@ -44,18 +44,6 @@
 (defn core-comment
   [_ _ & _body])
 
-(defn core-dotimes
-  [_ _ bindings & body]
-  (assert (vector? bindings))
-  (assert (= 2 (count bindings)))
-  (let [i (first bindings)
-        n (second bindings)]
-    `(let [n# (long ~n)]
-       (loop [~i 0]
-         (when (< ~i n#)
-           ~@body
-           (recur (unchecked-inc ~i)))))))
-
 (defn core-if-not
   "if-not from clojure.core"
   ([&form &env test then] (core-if-not &form &env test then nil))
