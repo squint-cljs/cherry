@@ -18,6 +18,7 @@
    [cherry.internal.loop :as loop]
    [cherry.internal.macros :as macros]
    [cherry.internal.protocols :as protocols]
+   [squint.internal.macros :as squint-macros]
    [clojure.string :as str]
    [edamame.core :as e]
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
@@ -54,7 +55,7 @@
                       '->> macros/core->>
                       'as-> macros/core-as->
                       'comment macros/core-comment
-                      'dotimes macros/core-dotimes
+                      'dotimes squint-macros/core-dotimes
                       'if-not macros/core-if-not
                       'when macros/core-when
                       'when-not macros/core-when-not
@@ -93,7 +94,9 @@
                       'binding macros/core-binding
                       'with-redefs macros/core-with-redefs
                       'defclass defclass/defclass
-                      'js-template defclass/js-template})
+                      'js-template defclass/js-template
+                      'and squint-macros/core-and
+                      'or squint-macros/core-or})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
@@ -160,33 +163,6 @@
 
 (defmethod emit-special 'squint.defclass/super* [_ env form]
   (defclass/emit-super env emit (second form)))
-
-(defmethod emit-special 'if [_type env [_if test then else]]
-  (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'truth_)
-  (if (= :expr (:context env))
-    (-> (let [env (assoc env :context :expr)]
-          (format "(%s) ? (%s) : (%s)"
-                  (emit test env)
-                  (emit then env)
-                  (emit else env)))
-        (emit-return env))
-    (let [test-expr (emit test (assoc env :context :expr))
-          needs-truth? (not (:bool test-expr))]
-      (str
-       (if needs-truth?
-         (format "if (%struth_(%s)) {\n"
-                 (if-let [ca (:core-alias env)]
-                   (str ca ".")
-                   "")
-                 test-expr)
-         (format "if (%s) {\n"
-                 test-expr))
-       (emit then env)
-       "}"
-       (when (some? else)
-         (str " else {\n"
-              (emit else env)
-              "}"))))))
 
 (defmethod emit-special 'fn [_type env [_fn & sigs :as expr]]
   ;; (prn :expr expr)
