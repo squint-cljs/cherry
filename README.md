@@ -49,6 +49,7 @@ Run `npx cherry --help` to see all command line options.
 
 A few examples of currenly working projects compiled by cherry:
 
+- [Cherry ClojureScript template on livecodes.io](https://dev.livecodes.io/?template=clojurescript)
 - [playground](https://squint-cljs.github.io/cherry/)
 - [wordle](https://squint-cljs.github.io/cherry/examples/wordle/index.html)
 - [react](https://squint-cljs.github.io/cherry/examples/react/index.html)
