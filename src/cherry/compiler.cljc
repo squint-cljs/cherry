@@ -1,4 +1,4 @@
-;y; Adapted from Scriptjure. Original copyright notice:
+;; Adapted from Scriptjure. Original copyright notice:
 
 ;; Copyright (c) Allen Rohner, 2009. All rights reserved.  The use
 ;; and distribution terms for this software are covered by the Eclipse
@@ -319,16 +319,22 @@
   ([f] (transpile-form-internal f nil))
   ([f opts]
    (binding [cc/*target* :cherry]
-     (emit f (merge {:ns-state (atom {})
-                     :context :statement
-                     :core-vars core-vars
-                     :infix-operators (disj cc/infix-operators "=")
-                     :emit {::cc/list emit-list
-                            ::cc/vector emit-vector
-                            ::cc/map emit-map
-                            ::cc/keyword emit-keyword
-                            ::cc/set emit-set
-                            ::cc/special emit-special}} opts)))))
+     (str
+      (emit f (merge {:ns-state (atom {})
+                      :context :statement
+                      :core-vars core-vars
+                      :infix-operators (disj cc/infix-operators "=")
+                      :gensym (let [ctr (volatile! 0)]
+                                (fn [sym]
+                                  (let [next-id (vswap! ctr inc)]
+                                    (symbol (str (if sym (munge sym)
+                                                     "G__") next-id)))))
+                      :emit {::cc/list emit-list
+                             ::cc/vector emit-vector
+                             ::cc/map emit-map
+                             ::cc/keyword emit-keyword
+                             ::cc/set emit-set
+                             ::cc/special emit-special}} opts))))))
 
 (def ^:dynamic *jsx* false)
 
