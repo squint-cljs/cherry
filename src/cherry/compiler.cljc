@@ -414,7 +414,12 @@
 (defn compile-string
   ([s] (compile-string s nil))
   ([s opts]
-   (let [{:keys [imports exports body]}
+   (let [opts #?(:cljs (if (object? opts)
+                         (cond-> (js->clj opts :keywordize-keys true)
+                           :context (update :context keyword))
+                         opts)
+                 :default opts)
+         {:keys [imports exports body]}
          (compile-string* s opts)]
      (str imports body exports))))
 

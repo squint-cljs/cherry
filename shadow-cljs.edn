@@ -6,7 +6,7 @@
    :compiler-options {:infer-externs :auto}
    :devtools {:enabled false}
    :target :esm
-   :runtime :node
+   :runtime :browser
    :output-dir "lib"
    :modules
    ;; note: this is overriden in bb build-cherry
@@ -29,6 +29,7 @@
                           nth cljs.core/nth
                           seq cljs.core/seq
                           goog_typeOf goog/typeOf}}
+    :node {:entries [] :depends-on #{:compiler}}
     :compiler {:depends-on #{:cljs.core :clojure.string :clojure.walk}
                :exports
                {compileString cherry.compiler/compile-string}}
