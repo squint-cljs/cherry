@@ -28,7 +28,7 @@
      {:cljs.core {:exports (assoc (->namespace "cljs.core" (:vars core-config) reserved)
                                   'goog_typeOf 'goog/typeOf)}
       :clojure.string {:exports (->namespace "clojure.string" (:vars string-config) reserved)
-                       #_#_:entries '[clojure.string]
+                       :entries '[clojure.string]
                        :depends-on #{:cljs.core}}
       :clojure.walk {:exports (->namespace "clojure.walk" (:vars walk-config) reserved)
                      :entries '[clojure.walk]
@@ -37,13 +37,14 @@
 (def test-config
   '{:compiler-options {:load-tests true}
     :modules {:cherry.tests {:init-fn cherry.compiler-test/init
-                             :depends-on #{:compiler
+                             :depends-on #{:node
+                                           :compiler
                                            :cljs.core
                                            :clojure.string
                                            :clojure.walk}}}})
 
 (defn shadow-extra-test-config []
-  "{}" #_(merge-with
+  (merge-with
    merge
    (shadow-extra-config)
    test-config))

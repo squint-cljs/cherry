@@ -10,7 +10,8 @@
    :output-dir "lib"
    :modules
    ;; note: this is overriden in bb build-cherry
-   {:cljs.core {:exports {assoc cljs.core/assoc
+   {:cljs.core {:default true
+                :exports {assoc cljs.core/assoc
                           map cljs.core/map
                           str cljs.core/str
                           keyword cljs.core/keyword
@@ -33,7 +34,7 @@
                      :depends-on #{:cljs.core}}
     :clojure.walk {:exports {walk clojure.walk/walk}
                    :depends-on #{:cljs.core}}
-    :node {:entries [] :depends-on #{:compiler}}
+    :node {:entries [] :depends-on #{:compiler :cljs.core}}
     :compiler {:depends-on #{:cljs.core :clojure.string :clojure.walk}
                :exports
                {compileString cherry.compiler/compile-string}}
