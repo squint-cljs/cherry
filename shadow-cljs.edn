@@ -4,7 +4,7 @@
   {:js-options {;; don't bundle any npm libs
                 :js-provider :import}
    :compiler-options {:infer-externs :auto}
-   :devtools {:enabled false}
+   :devtools {:enabled false :console-support false}
    :target :esm
    :runtime :browser
    :output-dir "lib"
