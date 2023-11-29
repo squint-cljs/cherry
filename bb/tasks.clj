@@ -43,7 +43,7 @@
                                            :clojure.walk}}}})
 
 (defn shadow-extra-test-config []
-  (merge-with
+  "{}" #_(merge-with
    merge
    (shadow-extra-config)
    test-config))
