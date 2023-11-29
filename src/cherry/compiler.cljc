@@ -380,15 +380,21 @@
    (let [opts (merge {:ns-state (atom {})}
                      opts)]
      (binding [cc/*core-package* "cherry-cljs/cljs.core.js"
-               *jsx* false]
+               *jsx* false
+               cc/*repl* (:repl opts cc/*repl*)]
        (let [imported-vars (atom {})
              public-vars (atom #{})
              aliases (atom (merge aliases {core-alias cc/*core-package*}))
-             imports (atom (format "import * as %s from '%s';\n"
-                                   core-alias cc/*core-package*))]
+             imports (atom (if cc/*repl*
+                             (format "var %s = await import('%s');\n"
+                                     core-alias cc/*core-package*)
+                             (format "import * as %s from '%s';\n"
+                                     core-alias cc/*core-package*)))]
          (binding [*imported-vars* imported-vars
                    *public-vars* public-vars
-                   *aliases* aliases]
+                   *aliases* aliases
+                   cc/*target* :squint
+                   cc/*async* (:async opts)]
            (let [transpiled (f x (assoc opts
                                         :core-alias core-alias
                                         :imports imports))
@@ -404,7 +410,8 @@
               :exports exports
               :body transpiled
               :javascript (str imports transpiled exports)
-              :jsx *jsx*})))))))
+              :jsx *jsx*
+              :ns cc/*cljs-ns*})))))))
 
 (defn compile-string*
   ([s] (compile-string* s nil))
