@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.1.12 (2023-11-30)
+
+- Alas, the previous build didn't pick up the added vars
+
 ## 0.1.11 (2023-11-30)
 
 - Add Clojure 1.11 functions like `parse-long`, etc (notice how the version numbers align!)

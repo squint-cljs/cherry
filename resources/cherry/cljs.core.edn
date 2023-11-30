@@ -456,15 +456,13 @@
          zipmap
 
          ;; 1.11
-         random-uuid
-         update-keys
-         update-vals
-         parse-boolean
-         parse-double
-         parse-long
-         parse-uuid
-         NaN?
-         infinite?
+         update_keys
+         update_vals
+         parse_boolean
+         parse_double
+         parse_long
+         parse_uuid
+         NaN_QMARK_
          iteration
          abs
          }}
