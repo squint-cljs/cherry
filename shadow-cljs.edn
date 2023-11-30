@@ -34,11 +34,11 @@
                      :depends-on #{:cljs.core}}
     :clojure.walk {:exports {walk clojure.walk/walk}
                    :depends-on #{:cljs.core}}
-    :node {:entries [] :depends-on #{:compiler :cljs.core}}
+    :node {:entries [fs] :depends-on #{:compiler :cljs.core}}
     :compiler {:depends-on #{:cljs.core :clojure.string :clojure.walk}
                :exports
                {compileString cherry.compiler/compile-string}}
-    :cli {:depends-on #{:compiler :clojure.string :clojure.walk}
+    :cli {:depends-on #{:compiler :clojure.string :clojure.walk :node}
           :init-fn cherry.internal.cli/init}}
    :build-hooks [(shadow.cljs.build-report/hook
                   {:output-to "report.html"})]}}}
