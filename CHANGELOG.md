@@ -1,5 +1,11 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.1.10 (2023-11-30)
+
+- Catch up with newest squint common compiler enhancements
+- Support `js-await` (rather than `js/await`)
+- [Update playground](https://squint-cljs.github.io/cherry/?src=https://gist.githubusercontent.com/borkdude/ca3af924dc2526f00361f28dcf5d0bfb/raw/09cd9e17bf0d6fa3655d0e7cbf2c878e19cb894f/pinball.cljs)!
+
 ## 0.1.9 (2023-10-04)
 
 - Fix reading `:cljs` branches from `.cljc` files

@@ -241,16 +241,6 @@
       :statement s
       :return s))
 
-(defn jsx-attrs [v env]
-  (let [env (expr-env env)]
-    (if v
-      (str " "
-           (str/join " "
-                     (map (fn [[k v]]
-                            (str (name k) "=" (emit v (assoc env :jsx-attr true))))
-                          v)))
-      "")))
-
 (defn emit-vector [expr env]
   (if (and (:jsx env)
            (let [f (first expr)]
@@ -268,19 +258,18 @@
           tag-name (emit tag-name (expr-env (dissoc env :jsx)))]
       (emit-return (format "<%s%s>%s</%s>"
                            tag-name
-                           (jsx-attrs attrs env)
+                           (cc/jsx-attrs attrs env)
                            (let [env (expr-env env)]
-                             (str/join " " (map #(emit % env) elts)))
+                             (str/join "" (map #(emit % env) elts)))
                            tag-name) env))
     (if (::js (meta expr))
       (emit-return (format "[%s]"
                            (str/join ", " (emit-args env expr))) env)
-      (do (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'vector)
-          (emit-return (format "%svector(%s)"
-                               (if-let [core-alias (:core-alias env)]
-                                 (str core-alias ".")
-                                 "")
-                               (str/join ", " (emit-args env expr))) env)))))
+      (emit-return (format "%svector(%s)"
+                           (if-let [core-alias (:core-alias env)]
+                             (str core-alias ".")
+                             "")
+                           (str/join ", " (emit-args env expr))) env))))
 
 (defn emit-map [expr env]
   (let [env* env
