@@ -394,5 +394,17 @@
 (deftest override-core-var-test
   (is (= 1 (jsv! "(def count 1) (set! count (inc count)) (defn frequencies [x] (dec x)) (frequencies count)"))))
 
+(deftest no-truth-check-test
+  (let [inputs ["(if (zero? 0) 1 2)" "(when (< 1 2) 1)" ;; "(when (= 1 1) 1)"
+                "(let [x (zero? 0)] (when x 1))"
+                "(if (neg? 1) 0 1)" ;; "(if (not 1) 0 1)"
+                "(if \"foo\" 1 2)" ;; "(if :foo 1 2)"
+                "(let [x nil] (if (nil? x) 1 2))"
+                "(let [x (zero? 0) y x] (if y 1 2))"]]
+    (doseq [input inputs]
+      (let [js (jss! input)]
+        (is (not (str/includes? js "truth_")) (str "contains truth check: " input "\n" js))
+        (is (= 1 (js/eval js)))))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test))
