@@ -85,7 +85,7 @@ Goals of cherry:
 - Native support for JS object destructuring: `[^:js {:keys [a b]} #js {:a 1 :b 2}]`
 - Native support for JSX via `#jsx` reader tag. See [example](https://github.com/squint-cljs/cherry/blob/main/examples/jsx/pages/component.cljs).
 
-Cherry may introduce new constructs such as `js/await` which won't be compatible
+Cherry may introduce new constructs such as `js-await` which won't be compatible
 with current CLJS. Also it might not support all features that CLJS offers. As
 such, using existing libraries from the CLJS ecosystem or compiling Cherry CLJS
 code with the CLJS compiler may become challenging. However, some results of
