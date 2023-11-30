@@ -45,7 +45,7 @@
                          'return 'delete 'new 'do 'aget 'while
                          'inc! 'dec! 'dec 'inc 'defined? 'and 'or
                          '? 'try 'break 'throw
-                         'js/await 'const 'let 'let* 'letfn* 'ns 'require 'def 'loop*
+                         'js/await 'js-await 'const 'let 'let* 'letfn* 'ns 'require 'def 'loop*
                          'recur 'js* 'case* 'deftype*
                          ;; prefixed to avoid conflicts
                          'clava-compiler-jsx
@@ -354,14 +354,16 @@
     :readers {'js #(vary-meta % assoc ::js true)
               'jsx jsx}
     :read-cond :allow
-    :features #{:cljs}}))
+    :features #{:cljs :cherry}}))
 
 (defn transpile-string-internal [s compiler-opts]
   (let [rdr (e/reader s)
         opts cherry-parse-opts
         opts (merge {:ns-state (atom {})}
                     opts)]
-    (loop [transpiled ""]
+    (loop [transpiled (if cc/*repl*
+                        (str "globalThis." cc/*cljs-ns* " = globalThis." cc/*cljs-ns* " || {};\n")
+                        "")]
       (let [opts (assoc opts :auto-resolve @*aliases*)
             next-form (e/parse-next rdr opts)]
         (if (= ::e/eof next-form)
@@ -377,18 +379,23 @@
                 aliases]
          :or {core-alias "cherry_core"}
          :as opts}]
-   (let [opts (merge {:ns-state (atom {})}
-                     opts)]
+   (let [opts (merge {:ns-state (atom {})} opts)]
      (binding [cc/*core-package* "cherry-cljs/cljs.core.js"
-               *jsx* false]
+               *jsx* false
+               cc/*repl* (:repl opts cc/*repl*)]
        (let [imported-vars (atom {})
              public-vars (atom #{})
              aliases (atom (merge aliases {core-alias cc/*core-package*}))
-             imports (atom (format "import * as %s from '%s';\n"
-                                   core-alias cc/*core-package*))]
+             imports (atom (if cc/*repl*
+                             (format "var %s = await import('%s');\n"
+                                     core-alias cc/*core-package*)
+                             (format "import * as %s from '%s';\n"
+                                     core-alias cc/*core-package*)))]
          (binding [*imported-vars* imported-vars
                    *public-vars* public-vars
-                   *aliases* aliases]
+                   *aliases* aliases
+                   cc/*target* :squint
+                   cc/*async* (:async opts)]
            (let [transpiled (f x (assoc opts
                                         :core-alias core-alias
                                         :imports imports))
@@ -404,7 +411,8 @@
               :exports exports
               :body transpiled
               :javascript (str imports transpiled exports)
-              :jsx *jsx*})))))))
+              :jsx *jsx*
+              :ns cc/*cljs-ns*})))))))
 
 (defn compile-string*
   ([s] (compile-string* s nil))
@@ -414,7 +422,12 @@
 (defn compile-string
   ([s] (compile-string s nil))
   ([s opts]
-   (let [{:keys [imports exports body]}
+   (let [opts #?(:cljs (if (object? opts)
+                         (cond-> (js->clj opts :keywordize-keys true)
+                           :context (update :context keyword))
+                         opts)
+                 :default opts)
+         {:keys [imports exports body]}
          (compile-string* s opts)]
      (str imports body exports))))
 

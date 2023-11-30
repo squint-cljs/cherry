@@ -37,7 +37,9 @@
 (def test-config
   '{:compiler-options {:load-tests true}
     :modules {:cherry.tests {:init-fn cherry.compiler-test/init
-                             :depends-on #{:compiler
+                             :depends-on #{:node
+                                           :compiler
+                                           :cljs.core
                                            :clojure.string
                                            :clojure.walk}}}})
 
