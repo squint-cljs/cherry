@@ -199,7 +199,7 @@
       }
       var squint = await(import(squintUrl));
       var compileString = squint.compileString;
-      let pr_str_js = compileString('pr-str', {repl: repl, "elide-exports": repl, context: repl ? 'return' : 'statement'});
+      let pr_str_js = compileString('pr-str', {repl: true, "elide-exports": true, context: 'return'});
       let pr_str = await eval(`(async function() { ${pr_str_js} })()`);
 
       window.compile = () => {
