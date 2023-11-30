@@ -45,7 +45,7 @@
                          'return 'delete 'new 'do 'aget 'while
                          'inc! 'dec! 'dec 'inc 'defined? 'and 'or
                          '? 'try 'break 'throw
-                         'js/await 'const 'let 'let* 'letfn* 'ns 'require 'def 'loop*
+                         'js/await 'js-await 'const 'let 'let* 'letfn* 'ns 'require 'def 'loop*
                          'recur 'js* 'case* 'deftype*
                          ;; prefixed to avoid conflicts
                          'clava-compiler-jsx
@@ -354,7 +354,7 @@
     :readers {'js #(vary-meta % assoc ::js true)
               'jsx jsx}
     :read-cond :allow
-    :features #{:cljs}}))
+    :features #{:cljs :cherry}}))
 
 (defn transpile-string-internal [s compiler-opts]
   (let [rdr (e/reader s)
