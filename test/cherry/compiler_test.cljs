@@ -406,5 +406,10 @@
         (is (not (str/includes? js "truth_")) (str "contains truth check: " input "\n" js))
         (is (= 1 (js/eval js)))))))
 
+(deftest map-literal-test
+  (is (= {} (jsv! '{})))
+  (is (= {1 true} (jsv! '(do (def x 1) {x true}))))
+  (is (= {[0,1] true} (jsv! '{[0 1] true}))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test))
