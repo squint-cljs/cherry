@@ -361,7 +361,9 @@
         opts cherry-parse-opts
         opts (merge {:ns-state (atom {})}
                     opts)]
-    (loop [transpiled ""]
+    (loop [transpiled (if cc/*repl*
+                        (str "globalThis." cc/*cljs-ns* " = globalThis." cc/*cljs-ns* " || {};\n")
+                        "")]
       (let [opts (assoc opts :auto-resolve @*aliases*)
             next-form (e/parse-next rdr opts)]
         (if (= ::e/eof next-form)
@@ -377,8 +379,7 @@
                 aliases]
          :or {core-alias "cherry_core"}
          :as opts}]
-   (let [opts (merge {:ns-state (atom {})}
-                     opts)]
+   (let [opts (merge {:ns-state (atom {})} opts)]
      (binding [cc/*core-package* "cherry-cljs/cljs.core.js"
                *jsx* false
                cc/*repl* (:repl opts cc/*repl*)]
