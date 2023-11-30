@@ -453,4 +453,18 @@
          with_meta
          write_all
          zero_QMARK_
-         zipmap}}
+         zipmap
+
+         ;; 1.11
+         random-uuid
+         update-keys
+         update-vals
+         parse-boolean
+         parse-double
+         parse-long
+         parse-uuid
+         NaN?
+         infinite?
+         iteration
+         abs
+         }}
