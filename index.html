@@ -10,8 +10,9 @@
     <script type="importmap">
       {
         "imports": {
-          "cherry-cljs/cljs.core.js": "https://cdn.jsdelivr.net/npm/cherry-cljs@0.1.8/cljs.core.js",
-          "cherry-cljs/lib/clojure.string.js": "https://cdn.jsdelivr.net/npm/cherry-cljs@0.1.8/lib/clojure.string.js",
+          "cherry-cljs": "https://cdn.jsdelivr.net/npm/cherry-cljs@0.1.10/index.js",
+          "cherry-cljs/cljs.core.js": "https://cdn.jsdelivr.net/npm/cherry-cljs@0.1.10/cljs.core.js",
+          "cherry-cljs/lib/clojure.string.js": "https://cdn.jsdelivr.net/npm/cherry-cljs@0.1.10/lib/clojure.string.js",
           "squint-cljs": "https://unpkg.com/squint-cljs@0.4.67/index.js",
           "squint-cljs/core.js": "https://unpkg.com/squint-cljs@0.4.67/core.js",
           "squint-cljs/string.js": "https://unpkg.com/squint-cljs@0.4.67/string.js",
@@ -90,7 +91,7 @@
           let result = await import(dataUri);
         } else {
           let result = await eval(`(async function() { ${js} })()`);
-        document.querySelector('#result').innerText = util.inspect(result);
+          document.querySelector('#result').innerText = pr_str(result);
         if (docChanged) {
           let url = new URL(window.location.href);
           url.searchParams.delete("src");
@@ -191,13 +192,16 @@
 
       var squintUrl;
       if (dev) {
-        console.log('Loading development squint.js')
+        console.log('Loading development cherry core.cljs.js')
         squintUrl = '/index.js';
       } else {
-        squintUrl = 'squint-cljs';
+        squintUrl = 'cherry-cljs';
       }
       var squint = await(import(squintUrl));
       var compileString = squint.compileString;
+      let pr_str_js = compileString('pr-str', {repl: repl, "elide-exports": repl, context: repl ? 'return' : 'statement'});
+      let pr_str = await eval(`(async function() { ${pr_str_js} })()`);
+
       window.compile = () => {
         let code = editor.state.doc.toString();
         code = '' + boilerplateSrc + '\n\n' + code;
