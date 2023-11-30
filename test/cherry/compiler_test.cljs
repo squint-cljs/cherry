@@ -6,7 +6,7 @@
    [cherry.squint-and-cherry-test]
    [cherry.test-utils :refer [js! jss! jsv!]]
    [clojure.string :as str]
-   [clojure.test :as t :refer [async deftest is]]))
+   [clojure.test :as t :refer [async deftest is testing]]))
 
 (deftest return-test
   (is (str/includes? (jss! '(do (def x (do 1 2 nil))))
@@ -410,6 +410,12 @@
   (is (= {} (jsv! '{})))
   (is (= {1 true} (jsv! '(do (def x 1) {x true}))))
   (is (= {[0,1] true} (jsv! '{[0 1] true}))))
+
+(deftest aset-test
+  (is (= [1] (js->clj (jsv! "(def x #js []) (aset x 0 1) x"))))
+  (testing "multiple dimensions"
+    (is (= [[1]] (js->clj (jsv! "(def x #js [#js []]) (aset x 0 0 1) x"))))
+    (is (= [[0 1]] (js->clj (jsv! "(def x #js [#js [0]]) (aset x 0 1 1) x"))))))
 
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test))
