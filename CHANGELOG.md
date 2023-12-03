@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.1.13 (2023-12-03)
+
+- Fix varargs, allow `Math` to be used unqualified
+
 ## 0.1.12 (2023-11-30)
 
 - Alas, the previous build didn't pick up the added vars
