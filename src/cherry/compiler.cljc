@@ -307,7 +307,8 @@
 (defn transpile-form-internal
   ([f] (transpile-form-internal f nil))
   ([f opts]
-   (binding [cc/*target* :cherry]
+   (binding [cc/*target* :cherry
+             cc/*repl* (:repl opts cc/*repl*)]
      (str
       (emit f (merge {:ns-state (atom {})
                       :context :statement
@@ -384,7 +385,8 @@
                    *public-vars* public-vars
                    *aliases* aliases
                    cc/*target* :squint
-                   cc/*async* (:async opts)]
+                   cc/*async* (:async opts)
+                   cc/*cljs-ns* (:ns opts cc/*cljs-ns*)]
            (let [transpiled (f x (assoc opts
                                         :core-alias core-alias
                                         :imports imports))

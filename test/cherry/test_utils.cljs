@@ -24,17 +24,25 @@
 (doseq [k (js/Object.keys cl)]
   (aset js/globalThis k (aget cl k)))
 
-(defn jss! [expr]
-  (if (string? expr)
-    (:body (cherry/compile-string* expr
-                                   {:elide-imports true
-                                    :core-alias nil}))
-    (:body (cherry/compile-form* expr {:elide-imports true
-                                       :core-alias nil}))))
+(defn jss!
+  ([expr] (jss! expr nil))
+  ([expr opts]
+   (if (string? expr)
+     (:body (cherry/compile-string* expr (merge {:elide-imports true
+                                                 :core-alias nil}
+                                                opts)))
+     (cherry/transpile-form-internal expr (merge {:elide-imports true
+                                                  :core-alias nil}
+                                                 opts)))))
 
-(defn js! [expr]
-  (let [js (jss! expr)]
-    [(js/eval js) js]))
+(defn js!
+  ([expr] (js! expr nil))
+  ([expr opts]
+   (let [js (jss! expr opts)]
+     [(js/eval js) js])))
 
-(defn jsv! [expr]
-  (first (js! expr)))
+(defn jsv!
+  ([expr] (jsv! expr nil))
+  ([expr opts]
+   (first (js! expr opts))))
+

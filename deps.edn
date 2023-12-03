@@ -5,7 +5,7 @@
         org.babashka/sci {:mvn/version "0.3.32"}
         io.github.squint-cljs/squint
         #_{:local/root "/Users/borkdude/dev/squint"}
-        {:git/sha "7c91bc84f180f9ffbdd074c873d54a2de713f090"}}
+        {:git/sha "1094991e151f1d3271da5ad96e601f2e0be60a56"}}
 
  :aliases
  {:dev {:extra-deps {io.github.squint-cljs/squint

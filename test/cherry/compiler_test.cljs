@@ -95,8 +95,22 @@
   (is (= 1 (jsv! '(do (defn foo [] (fn [x] x)) ((foo) 1))))))
 
 (deftest fn-varargs-test
-  (is (= '(3 4) (jsv! '(let [f (fn foo [x y & zs] zs)] (f 1 2 3 4)))))
-  (is (nil? (jsv! '(let [f (fn foo [x y & zs] zs)] (f 1 2))))))
+  (doseq [repl [true false]]
+    (testing "vararg fixed arity"
+      (is (nil? (jsv! '(let [f (fn foo [x y & zs] zs)] (f 1 2)) {:repl repl}))))
+    (testing "vararg vararg arity"
+      (is (= [3 4] (jsv! '(let [f (fn foo [x y & zs] zs)] (f 1 2 3 4)) {:repl repl}))))
+    (testing "multi vararg fixed arity"
+      (is (= 1 (jsv! '(let [f (fn foo
+                                 ([y] 1)
+                                 ([y & zs] zs))]
+                         (f 1))
+                      {:repl repl}))))
+    (testing "multi vararg vararg arity"
+      (is (= [2] (jsv! '(let [f (fn foo
+                                  ([y] 1)
+                                  ([y & zs] zs))]
+                          (f 1 2)) {:repl repl}))))))
 
 (deftest fn-multi-arity-test
   (is (= 1 (jsv! '(let [f (fn foo ([x] x) ([x y] y))] (f 1)))))
@@ -416,6 +430,15 @@
   (testing "multiple dimensions"
     (is (= [[1]] (js->clj (jsv! "(def x #js [#js []]) (aset x 0 0 1) x"))))
     (is (= [[0 1]] (js->clj (jsv! "(def x #js [#js [0]]) (aset x 0 1 1) x"))))))
+
+(deftest Math-test
+  (let [expr '(Math/sqrt 3.14)]
+    (is (= (Math/sqrt 3.14) (jsv! (str expr))))
+    (testing "repl-mode"
+      (let [s (jss! (str expr) {:repl true})]
+        (is (str/includes? s "globalThis.user"))
+        (is (not (str/includes? s "globalThis.user.Math")))
+        (is (= (Math/sqrt 3.14) (js/eval s)))))))
 
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test))
