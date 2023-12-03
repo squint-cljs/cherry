@@ -20,6 +20,13 @@
     "cherry-cljs": ".",
     "esbuild": "^0.14.54",
     "react": "^18.2.0",
-    "shadow-cljs": "^2.20.1"
-  }
+    "shadow-cljs": "^2.20.1",
+    "cherry-cljs": "."
+  },
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/borkdude"
+    }
+  ]
 }

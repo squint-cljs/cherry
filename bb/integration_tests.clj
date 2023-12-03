@@ -1,5 +1,5 @@
 (ns integration-tests
-  (:require [babashka.process :refer [sh shell]]
+  (:require [babashka.process :as p :refer [sh shell]]
             [clojure.string :as str]
             [clojure.test :as t :refer [deftest is]]))
 
@@ -12,6 +12,10 @@
   (let [out (:out (sh "npx cherry run equality_test.cljs" {:err :inherit
                                                            :dir "test-resources/test_project"}))]
     (is (str/includes? out "[false true]"))))
+
+(deftest repl-api-test
+  (let [out (:out (p/shell {:out :string} "node test-resources/js_api.mjs"))]
+    (is (= ["1" "1"]  (str/split-lines out)))))
 
 (defn run-tests []
   (shell {:dir "test-resources/test_project"} "npm install")

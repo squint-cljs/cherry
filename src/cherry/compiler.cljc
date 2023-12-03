@@ -373,7 +373,8 @@
      (binding [cc/*core-package* "cherry-cljs/cljs.core.js"
                *jsx* false
                cc/*repl* (:repl opts cc/*repl*)]
-       (let [imported-vars (atom {})
+       (let [opts (merge {:ns-state (atom {})} opts)
+             imported-vars (atom {})
              public-vars (atom #{})
              aliases (atom (merge aliases {core-alias cc/*core-package*}))
              imports (atom (if cc/*repl*
@@ -403,12 +404,28 @@
               :body transpiled
               :javascript (str imports transpiled exports)
               :jsx *jsx*
-              :ns cc/*cljs-ns*})))))))
+              :ns cc/*cljs-ns*
+              :ns-state (:ns-state opts)})))))))
 
 (defn compile-string*
   ([s] (compile-string* s nil))
-  ([s opts]
-   (compile-internal s transpile-string-internal opts)))
+  ([s opts] (compile-string* s opts nil))
+  ([s opts state]
+   (compile-internal s transpile-string-internal (merge state opts))))
+
+#?(:cljs
+   (defn clj-ize-opts [opts]
+     (cond-> opts
+       (:context opts) (update :context keyword)
+       (:ns opts) (update :ns symbol)
+       (:elide_imports opts) (assoc :elide-imports (:elide_imports opts))
+       (:elide_exports opts) (assoc :elide-exports (:elide_exports opts)))))
+
+#?(:cljs
+   (defn compileStringEx [s opts state]
+     (let [opts (js->clj opts :keywordize-keys true)
+           state (js->clj state :keywordize-keys true)]
+       (clj->js (compile-string* s (clj-ize-opts opts) (clj-ize-opts state))))))
 
 (defn compile-string
   ([s] (compile-string s nil))

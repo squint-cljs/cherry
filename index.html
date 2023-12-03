@@ -77,10 +77,11 @@
 
       let urlParams = new URLSearchParams(window.location.search);
       var repl = JSON.parse(urlParams.get('repl'));
-
+      let compilerState;
       let evalCode = async (code) => {
         try {
-        let js = compileString(`(do ${code}\n)`, {repl: repl, "elide-exports": repl, context: repl ? 'return' : 'statement'});
+          compilerState = compileStringEx(`(do ${code}\n)`, {repl: repl, "elide-exports": repl, context: repl ? 'return' : 'statement'}, compilerState);
+          let js = compilerState.javascript;
         if (dev) {
           js = js.replace('cherry-cljs/cljs.core.js', 'http://' + window.location.host + '/cljs.core.js');
         }
@@ -198,8 +199,8 @@
         squintUrl = 'cherry-cljs';
       }
       var squint = await(import(squintUrl));
-      var compileString = squint.compileString;
-      let pr_str_js = compileString('pr-str', {repl: true, "elide-exports": true, context: 'return'});
+      var compileStringEx = squint.compileStringEx;
+      let pr_str_js = compileStringEx('pr-str', {repl: true, "elide-exports": true, context: 'return'}).javascript;
       let pr_str = await eval(`(async function() { ${pr_str_js} })()`);
 
       window.compile = () => {

@@ -37,7 +37,8 @@
     :node {:entries [fs] :depends-on #{:compiler :cljs.core}}
     :compiler {:depends-on #{:cljs.core :clojure.string :clojure.walk}
                :exports
-               {compileString cherry.compiler/compile-string}}
+               {compileString cherry.compiler/compile-string
+                compileStringEx cherry.compiler/compileStringEx}}
     :cli {:depends-on #{:compiler :clojure.string :clojure.walk :node}
           :init-fn cherry.internal.cli/init}}
    :build-hooks [(shadow.cljs.build-report/hook
