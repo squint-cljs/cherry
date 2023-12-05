@@ -96,7 +96,11 @@
                       'defclass defclass/defclass
                       'js-template defclass/js-template
                       'and squint-macros/core-and
-                      'or squint-macros/core-or})
+                      'or squint-macros/core-or
+                      'coercive-boolean squint-macros/coercive-boolean
+                      'coercive-= squint-macros/coercive-=
+                      'coercive-not= squint-macros/coercive-not=
+                      'coercive-not squint-macros/coercive-not})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
