@@ -1,11 +1,16 @@
 {:min-bb-version "0.9.161"
- :deps {borkdude/rewrite-edn {:mvn/version "0.3.4"}
+ :deps {org.babashka/cli {:mvn/version "0.2.23"}
+        org.babashka/http-server {:mvn/version "0.1.12"}
+        borkdude/rewrite-edn {:mvn/version "0.3.4"}
         io.github.squint-cljs/cherry-cljs {:local/root "."}}
  :paths ["bb"]
- :tasks {:requires ([tasks :as t])
+ :tasks {:requires ([babashka.cli :as cli]
+                    [tasks :as t])
+         :init (def playground-cli-opts (cli/parse-opts *command-line-args* {:coerce {:port :int :headers :edn}}))
          build (t/build-cherry-npm-package)
          publish (t/publish)
          dev (t/watch-cherry)
+         serve-playground (t/start-playground-server playground-cli-opts)
          test {:doc "Run tests"
                :task (t/test-cherry)}
          bump-common tasks/bump-compiler-common
