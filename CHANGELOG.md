@@ -1,5 +1,7 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+- [#119](https://github.com/squint-cljs/cherry/issues/119): Add a `bb` task for serving the playground
+
 ## 0.1.13 (2023-12-03)
 
 - Fix varargs, allow `Math` to be used unqualified
