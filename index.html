@@ -204,8 +204,11 @@
       }
       var squint = await(import(squintUrl));
       var compileStringEx = squint.compileStringEx;
-      let pr_str_js = compileStringEx('pr-str', {repl: true, "elide-exports": true, context: 'return'}).javascript;
-      let pr_str = await eval(`(async function() { ${pr_str_js} })()`);
+
+      let cherry_core_url = (dev ? 'http://' + window.location.host + '/cljs.core.js' : 'cherry-cljs/cljs.core.js');
+      let cherry_core = await(import(cherry_core_url));
+
+      let pr_str = cherry_core.pr_str;
 
       window.compile = () => {
         let code = editor.state.doc.toString();
