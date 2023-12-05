@@ -2,6 +2,14 @@
 
 - [#119](https://github.com/squint-cljs/cherry/issues/119): Add a `bb` task for serving the playground
 
+## 0.1.15 (2023-12-05)
+
+- Support `coercive-boolean` etc
+
+## 0.1.14
+
+- Playground improvements
+
 ## 0.1.13 (2023-12-03)
 
 - Fix varargs, allow `Math` to be used unqualified
