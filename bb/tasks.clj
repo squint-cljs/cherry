@@ -1,6 +1,7 @@
 (ns tasks
   (:require
    [babashka.fs :as fs]
+   [babashka.http-server :as server]
    [babashka.process :refer [shell]]
    [clojure.edn :as edn]
    [clojure.java.io :as io]
@@ -85,3 +86,7 @@
         nodes ((requiring-resolve 'borkdude.rewrite-edn/assoc-in) nodes [:deps 'io.github.squint-cljs/compiler-common :git/sha] sha)
         deps (str nodes)]
     (spit "deps.edn" deps)))
+
+(defn start-playground-server [opts]
+  (server/exec (merge {:dir "."}
+                      opts)))
