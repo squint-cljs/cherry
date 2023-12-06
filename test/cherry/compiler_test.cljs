@@ -8,6 +8,8 @@
    [clojure.string :as str]
    [clojure.test :as t :refer [async deftest is testing]]))
 
+(def eq =)
+
 (deftest return-test
   (is (str/includes? (jss! '(do (def x (do 1 2 nil))))
                      "return"))
@@ -369,8 +371,16 @@
   (is (true? (jsv! "(= 1 1)")))
   (is (true? (jsv! "(= [1 2 3] [1 2 3])"))))
 
-(deftest empty-list-test
-  (is (= '() (jsv! "()"))))
+(deftest list-test
+  (testing "creates a list of elements"
+    (is (eq '(1 2 3) (jsv! '(list 1 2 3)))))
+  (testing "accepts a single, numeric element in the list"
+    (is (eq '(23) (jsv! '(list 23)))))
+  (testing "creates an empty list"
+    (is (eq '() (jsv! '(list))))
+    (is (eq '() (jsv! "()")))
+    (is (eq '() (jsv! "'()")))
+    (is (eq '(1 2 3) (jsv! "'(1 2 3)")))))
 
 (deftest double-names-in-sig-test
   (is (= 2 (jsv! '(do (defn foo [x x] x) (foo 1 2))))))
