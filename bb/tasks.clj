@@ -24,6 +24,7 @@
   (let [core-config (edn/read-string (slurp (io/resource "cherry/cljs.core.edn")))
         string-config (edn/read-string (slurp (io/resource "cherry/clojure.string.edn")))
         walk-config (edn/read-string (slurp (io/resource "cherry/clojure.walk.edn")))
+        set-config (edn/read-string (slurp (io/resource "cherry/clojure.set.edn")))
         reserved (edn/read-string (slurp (io/resource "cherry/js_reserved.edn")))]
     {:modules
      {:cljs.core {:exports (assoc (->namespace "cljs.core" (:vars core-config) reserved)
@@ -33,7 +34,10 @@
                        :depends-on #{:cljs.core}}
       :clojure.walk {:exports (->namespace "clojure.walk" (:vars walk-config) reserved)
                      :entries '[clojure.walk]
-                     :depends-on #{:cljs.core}}}}))
+                     :depends-on #{:cljs.core}}
+      :clojure.set {:exports (->namespace "clojure.set" (:vars set-config) reserved)
+                    :entries '[clojure.set]
+                    :depends-on #{:cljs.core}}}}))
 
 (def test-config
   '{:compiler-options {:load-tests true}

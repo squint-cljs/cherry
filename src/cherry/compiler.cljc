@@ -51,56 +51,54 @@
                          'clava-compiler-jsx
                          'squint.defclass/defclass* 'squint.defclass/super*]))
 
-(def built-in-macros {'-> macros/core->
-                      '->> macros/core->>
-                      'as-> macros/core-as->
-                      'comment macros/core-comment
-                      'dotimes squint-macros/core-dotimes
-                      'if-not macros/core-if-not
-                      'when macros/core-when
-                      'when-not macros/core-when-not
-                      'doto macros/core-doto
-                      'cond macros/core-cond
-                      'cond-> macros/core-cond->
-                      'cond->> macros/core-cond->>
-                      'if-let macros/core-if-let
-                      'if-some macros/core-if-some
-                      'when-let macros/core-when-let
-                      'when-first macros/core-when-first
-                      'when-some macros/core-when-some
-                      'some-> macros/core-some->
-                      'some->> macros/core-some->>
-                      'loop loop/core-loop
-                      'doseq macros/core-doseq
-                      'for macros/core-for
-                      'lazy-seq macros/core-lazy-seq
-                      'defonce macros/core-defonce
-                      'exists? macros/core-exists?
-                      'case macros/core-case
-                      '.. macros/core-dotdot
-                      'defmacro core-defmacro
-                      'this-as macros/core-this-as
-                      'unchecked-get macros/core-unchecked-get
-                      'unchecked-set macros/core-unchecked-set
-                      'defprotocol protocols/core-defprotocol
-                      'extend-type protocols/core-extend-type
-                      'deftype deftype/core-deftype
-                      'defn core-defn
-                      'defn- core-defn
-                      'time macros/core-time
-                      'declare macros/core-declare
-                      'letfn macros/core-letfn
-                      'with-out-str macros/core-with-out-str
-                      'binding macros/core-binding
-                      'with-redefs macros/core-with-redefs
-                      'defclass defclass/defclass
-                      'js-template defclass/js-template
-                      'and squint-macros/core-and
-                      'or squint-macros/core-or
-                      'coercive-boolean squint-macros/coercive-boolean
-                      'coercive-= squint-macros/coercive-=
-                      'coercive-not= squint-macros/coercive-not=
-                      'coercive-not squint-macros/coercive-not})
+(def built-in-macros (merge {'-> macros/core->
+                             '->> macros/core->>
+                             'as-> macros/core-as->
+                             'comment macros/core-comment
+                             'dotimes squint-macros/core-dotimes
+                             'if-not macros/core-if-not
+                             'when macros/core-when
+                             'when-not macros/core-when-not
+                             'doto macros/core-doto
+                             'cond macros/core-cond
+                             'cond-> macros/core-cond->
+                             'cond->> macros/core-cond->>
+                             'if-let macros/core-if-let
+                             'if-some macros/core-if-some
+                             'when-let macros/core-when-let
+                             'when-first macros/core-when-first
+                             'when-some macros/core-when-some
+                             'some-> macros/core-some->
+                             'some->> macros/core-some->>
+                             'loop loop/core-loop
+                             'doseq macros/core-doseq
+                             'for macros/core-for
+                             'lazy-seq macros/core-lazy-seq
+                             'defonce macros/core-defonce
+                             'exists? macros/core-exists?
+                             'case macros/core-case
+                             '.. macros/core-dotdot
+                             'defmacro core-defmacro
+                             'this-as macros/core-this-as
+                             'unchecked-get macros/core-unchecked-get
+                             'unchecked-set macros/core-unchecked-set
+                             'defprotocol protocols/core-defprotocol
+                             'extend-type protocols/core-extend-type
+                             'deftype deftype/core-deftype
+                             'defn core-defn
+                             'defn- core-defn
+                             'time macros/core-time
+                             'declare macros/core-declare
+                             'letfn macros/core-letfn
+                             'with-out-str macros/core-with-out-str
+                             'binding macros/core-binding
+                             'with-redefs macros/core-with-redefs
+                             'defclass defclass/defclass
+                             'js-template defclass/js-template
+                             'and squint-macros/core-and
+                             'or squint-macros/core-or
+                             }
+                            cc/common-macros))
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 

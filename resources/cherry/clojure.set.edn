@@ -1,0 +1,4 @@
+;; (sort (map munge (keys (ns-publics 'clojure.set))))
+{:vars #{difference index intersection join map_invert
+         project rename rename_keys select
+         subset_QMARK_ superset_QMARK_ union}}
