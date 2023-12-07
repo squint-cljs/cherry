@@ -1,11 +1,10 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
-- [#119](https://github.com/squint-cljs/cherry/issues/119): Add a `bb` task for serving the playground
-
 ## 0.1.16 (2023-12-07)
 
 - Support `clojure.set`
 - Support `bit-shift-left` and more
+- [#119](https://github.com/squint-cljs/cherry/issues/119): Add a `bb` task for serving the playground
 
 ## 0.1.15 (2023-12-05)
 
