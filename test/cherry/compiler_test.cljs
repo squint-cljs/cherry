@@ -451,5 +451,22 @@
         (is (not (str/includes? s "globalThis.user.Math")))
         (is (= (Math/sqrt 3.14) (js/eval s)))))))
 
+(defn wrap-async [s]
+  (str/replace "(async function () {\n%s\n})()" "%s" s))
+
+(deftest set-lib-test
+  (t/async done
+    (let [js (cherry/compile-string "(ns foo (:require [clojure.set :as set]))
+             [(set/intersection #{:a :b})
+              (set/intersection #{:a :b} #{:b :c})]" {:repl true
+                                                      :context :return})]
+      (-> (.then (js/eval (wrap-async js))
+                 (fn [vs]
+                   (let [expected [#{:a :b} #{:b}]
+                         pairs (map vector expected vs)]
+                     (doseq [[expected s] pairs]
+                       (is (eq expected s))))))
+          (.finally done)))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test))
