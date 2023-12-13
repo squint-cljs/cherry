@@ -138,7 +138,11 @@
       }
         let updateExt = EditorView.updateListener.of((update) => {
         if (update.docChanged) docChanged = true;
-      });
+        });
+      const platform = navigator.platform;
+      const isMac = platform.startsWith('Mac') || platform.startsWith('iP');
+      let modifier = localStorage.getItem("editor.modifier") || (isMac ? 'Meta' : 'Ctrl');
+      if (!isMac || modifier === 'Ctrl') document.getElementById('modifierDesc').innerText = 'Ctrl'
       let extensions = [
         history(),
         theme,
@@ -147,8 +151,8 @@
         drawSelection(),
         keymap.of(complete_keymap),
         keymap.of(historyKeymap),
-        squintExtension({modifier: "Meta"}),
-        eval_region.extension({modifier: "Meta"}),
+        squintExtension({modifier: modifier}),
+        eval_region.extension({modifier: modifier}),
         updateExt,
         ...default_extensions
       ];
@@ -315,7 +319,8 @@
                 <input type="checkbox" id="replCheckBox" name="repl" onChange="changeREPL(this)" />
               </label>
               <br>
-              In REPL-mode you can evaluate individual expression by using the ⌘ (macOS) or Windows key + Enter. The result will appear below.
+              In REPL-mode you can evaluate individual expression with <span id="modifierDesc">⌘</span> + Enter. The result will appear below.
+              To evaluate the whole program at once, use Alt + Enter;
               <pre><code style="white-space: pre-wrap;max-width:80%;" id="result"></code>
               </pre>
               Compiled code:
