@@ -84,7 +84,7 @@
                           }])}
 
       let urlParams = new URLSearchParams(window.location.search);
-      var repl = JSON.parse(urlParams.get('repl'));
+      var repl = urlParams.get('repl') !== 'false';
       let compilerState;
       let evalCode = async (code) => {
         try {
@@ -284,11 +284,7 @@
           compile();
         }
         let url = new URL(window.location.href);
-        if (repl) {
-          url.searchParams.set("repl", repl);
-        } else {
-          url.searchParams.delete("repl");
-        }
+        url.searchParams.set("repl", repl);
         window.history.replaceState(null, null, url);
       }
       if (repl) {
