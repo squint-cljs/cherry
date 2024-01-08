@@ -160,12 +160,6 @@
   (emit (core-let bindings more) env)
   #_(prn (core-let bindings more)))
 
-(defmethod emit-special 'squint.defclass/defclass* [_ env form]
-  (defclass/emit-class env emit form))
-
-(defmethod emit-special 'squint.defclass/super* [_ env form]
-  (defclass/emit-super env emit (second form)))
-
 (defmethod emit-special 'fn [_type env [_fn & sigs :as expr]]
   ;; (prn :expr expr)
   (let [expanded (apply core-fn expr {} sigs)]
