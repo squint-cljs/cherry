@@ -1,8 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
-## 0.1.17 (???)
+## 0.1.17 (2024-04-16)
 
 - [#127](https://github.com/squint-cljs/cherry/issues/127): fix duplicate `cherry-cljs` property in `package.json` which caused issues with some bundlers
+- Bump squint common compiler code
 
 ## 0.1.16 (2023-12-07)
 
