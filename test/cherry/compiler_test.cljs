@@ -29,18 +29,18 @@
 (deftest do-test
   (let [[v s] (js! '(do 1 2 3))]
     (is (= 3 v))
-    (is (not (str/includes? s "function"))))
+    (is (not (str/includes? s "() =>"))))
   (let [[v s] (js! '(do 1 2 3 (do 4 5 6)))]
     (is (= 6 v))
-    (is (not (str/includes? s "function"))))
+    (is (not (str/includes? s "() =>"))))
   (let [[v s] (js! '(do (def x (do 4 5 6))
                         x))]
     (is (= 6 v))
-    (is (str/includes? s "function")))
+    (is (str/includes? s "() =>")))
   (let [[v s] (js! '(let [x (do 4 5 6)]
                       x))]
     (is (= 6 v))
-    (is (str/includes? s "function"))))
+    (is (str/includes? s "() =>"))))
 
 (deftest let-test
   (is (= 3 (jsv! '(let [x (do 1 2 3)] x))))
