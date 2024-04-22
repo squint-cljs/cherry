@@ -361,8 +361,7 @@
 (defn compile-internal
   ([x f {:keys [elide-exports
                 elide-imports
-                core-alias
-                aliases]
+                core-alias]
          :or {core-alias "cherry_core"}
          :as opts}]
    (let [opts (merge {:ns-state (atom {})} opts)]
@@ -372,7 +371,7 @@
        (let [opts (merge {:ns-state (atom {})} opts)
              imported-vars (atom {})
              public-vars (atom #{})
-             aliases (atom (merge aliases {core-alias cc/*core-package*}))
+             aliases (atom {core-alias cc/*core-package*})
              imports (atom (if cc/*repl*
                              (format "var %s = await import('%s');\n"
                                      core-alias cc/*core-package*)
