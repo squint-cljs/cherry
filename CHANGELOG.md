@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## Unreleased
+
+- Fix [#130](https://github.com/squint-cljs/cherry/issues/130): fix predefined `:aliases` for cherry.embed
+
 ## 0.1.17 (2024-04-16)
 
 - [#127](https://github.com/squint-cljs/cherry/issues/127): fix duplicate `cherry-cljs` property in `package.json` which caused issues with some bundlers
