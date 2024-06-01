@@ -96,6 +96,7 @@
          default_dispatch_val
          delay_QMARK_
          demunge
+         _deref
          deref
          derive
          descendants

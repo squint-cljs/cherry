@@ -1,11 +1,18 @@
 (ns cherry.internal.protocols
   (:require [clojure.core :as core]))
 
+;; TODO: this is a hack to make IDeref work with cljs.core/deref
+(defn- ->core [psym]
+  (if (contains? #{'IDeref} psym)
+    (symbol "cljs$core$IDeref")
+    psym))
+
 (core/defn- protocol-prefix [psym]
-  (core/str (core/-> (core/str psym)
-                     (.replace #?(:clj \. :cljs (js/RegExp. "\\." "g")) \$)
-                     (.replace \/ \$))
-            "$"))
+  (let [psym (->core psym)]
+    (core/str (core/-> (core/str psym)
+                       (.replace #?(:clj \. :cljs (js/RegExp. "\\." "g")) \$)
+                       (.replace \/ \$))
+              "$")))
 
 (defn core-unchecked-get [obj key]
   (list 'js* "(~{}[~{}])" obj key))
