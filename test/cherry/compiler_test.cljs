@@ -468,5 +468,8 @@
                        (is (eq expected s))))))
           (.finally done)))))
 
+(deftest built-in-protocol-test
+  (is (= 1 (jsv! "(deftype Signal [] IDeref (-deref [this] 1)) (deref (Signal.))"))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test))
