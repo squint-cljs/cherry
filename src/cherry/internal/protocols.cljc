@@ -1,10 +1,13 @@
 (ns cherry.internal.protocols
   (:require [clojure.core :as core]))
 
-;; TODO: this is a hack to make IDeref work with cljs.core/deref
+;; TODO: this is a hack to enable the implementation of core protocols
+(def core-protocols #{'IDeref 
+                      'IReset 
+                      'ISwap})
 (defn- ->core [psym]
-  (if (contains? #{'IDeref} psym)
-    (symbol "cljs$core$IDeref")
+  (if (contains? core-protocols psym)
+    (symbol (str "cljs$core$" psym))
     psym))
 
 (core/defn- protocol-prefix [psym]
