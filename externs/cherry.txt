@@ -1,1 +1,6 @@
 cljs$core$IDeref$_deref$arity$1
+cljs$core$ISwap$_swap_BANG_$arity$2
+cljs$core$ISwap$_swap_BANG_$arity$3
+cljs$core$ISwap$_swap_BANG_$arity$4
+cljs$core$ISwap$_swap_BANG_$arity$5
+cljs$core$IReset$_reset_BANG_$arity$2

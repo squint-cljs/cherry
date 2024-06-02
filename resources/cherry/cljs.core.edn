@@ -334,6 +334,7 @@
          repeatedly
          replace
          replicate
+         _reset_BANG_
          reset_BANG_
          reset_meta_BANG_
          reset_vals_BANG_
@@ -386,6 +387,7 @@
          subs
          subseq
          subvec
+         _swap_BANG_
          swap_BANG_
          swap_vals_BANG_
          symbol
