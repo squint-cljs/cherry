@@ -1,8 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
-## Unreleased
+## 0.2.18 (2024-06-02)
 
 - Fix [#130](https://github.com/squint-cljs/cherry/issues/130): fix predefined `:aliases` for cherry.embed
+- Support `IDeref`, `ISwap`, `IReset` in `deftype`
 
 ## 0.1.17 (2024-04-16)
 
