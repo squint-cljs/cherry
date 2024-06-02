@@ -3,7 +3,7 @@
 
 ;; TODO: this is a hack to enable the implementation of core protocols
 (def core-protocols #{'IDeref 
-                      'IReset 
+                      'IReset
                       'ISwap})
 (defn- ->core [psym]
   (if (contains? core-protocols psym)

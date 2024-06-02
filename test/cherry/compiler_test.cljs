@@ -469,7 +469,20 @@
           (.finally done)))))
 
 (deftest built-in-protocol-test
-  (is (= 1 (jsv! "(deftype Signal [] IDeref (-deref [this] 1)) (deref (Signal.))"))))
+  (is (= 3 (jsv! "(deftype Signal [x]
+IDeref (-deref [this] x)
+ISwap (-swap! [this f]
+        (set! x (f x))
+        x)
+IReset (-reset! [this v]
+        (set! x v)
+        x))
+
+(def x (Signal. 1))
+(reset! x (inc @x))
+(swap! x inc)
+
+(deref x)"))))
 
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test))
