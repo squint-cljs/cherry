@@ -469,11 +469,14 @@
           (.finally done)))))
 
 (deftest built-in-protocol-test
-  (is (= 3 (jsv! "(deftype Signal [x]
+  (is (= 8 (jsv! "(deftype Signal [x]
 IDeref (-deref [this] x)
 ISwap (-swap! [this f]
-        (set! x (f x))
-        x)
+              (set! x (f x))
+              x)
+      (-swap! [this f a1]
+              (set! x (f x a1))
+              x)
 IReset (-reset! [this v]
         (set! x v)
         x))
@@ -481,6 +484,7 @@ IReset (-reset! [this v]
 (def x (Signal. 1))
 (reset! x (inc @x))
 (swap! x inc)
+(swap! x (fn [old-val v] (+ old-val v)) 5)
 
 (deref x)"))))
 
