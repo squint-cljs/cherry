@@ -2,7 +2,7 @@
   "type": "module",
   "name": "cherry-cljs",
   "sideEffects": false,
-  "version": "0.2.18",
+  "version": "0.2.19",
   "files": [
     "cljs.core.js",
     "lib",
