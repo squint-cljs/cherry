@@ -9,7 +9,7 @@
 
  :aliases
  {:cljs {:extra-paths ["test"]
-         :extra-deps {thheller/shadow-cljs {:mvn/version "2.25.10"}}}
+         :extra-deps {thheller/shadow-cljs {:mvn/version "2.28.10"}}}
   :test ;; added by neil
   {:extra-paths ["test"]
    :extra-deps {io.github.cognitect-labs/test-runner

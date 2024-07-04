@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.2.19 (2024-07-04)
+
+- [#135](https://github.com/squint-cljs/cherry/issues/135): Fix UMD build
+
 ## 0.2.18 (2024-06-02)
 
 - Fix [#130](https://github.com/squint-cljs/cherry/issues/130): fix predefined `:aliases` for cherry.embed

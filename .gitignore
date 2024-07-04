@@ -19,3 +19,4 @@ compiler-common
 out
 scratch.cljs
 !test-resources/js_api.mjs
+index2.html

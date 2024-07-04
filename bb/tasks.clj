@@ -64,7 +64,7 @@
 (defn publish []
   (build-cherry-npm-package)
   (run! fs/delete (fs/glob "lib" "*.map"))
-  (shell "npx esbuild index.js --bundle --minify --format=iife --global-name=CherryCljs --outfile=lib/cherry.umd.js")
+  (shell "npx esbuild index.js --bundle --minify --format=iife --global-name=CherryCljs --outfile=lib/cherry.umd.js --ignore-annotations")
   (shell "npm publish"))
 
 (defn watch-cherry []
