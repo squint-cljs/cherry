@@ -2,7 +2,7 @@
 
 ## 0.3.20 (2024-09-12)
 
-- Support `#html` literals, ported from squint
+- [#138](https://github.com/squint-cljs/cherry/issues/138): Support `#html` literals, ported from squint
 
 ## 0.2.19 (2024-07-04)
 
