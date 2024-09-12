@@ -34,15 +34,18 @@
           `(alter-var-root (var ~the-var) (constantly ~value))))
 
 (defn emit-keyword [expr env]
-  (if (:html-attr env)
-    (name expr)
-    (do
-      (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'keyword)
-      (emit-return (format "%skeyword(%s)"
-                           (if-let [core-alias (:core-alias env)]
-                             (str core-alias ".")
-                             "")
-                           (pr-str (subs (str expr) 1))) env))))
+  (let [js? (:js env)]
+    (if (or (:html-attr env)
+            js?)
+      (cond-> (name expr)
+        js? (pr-str))
+      (do
+        (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'keyword)
+        (emit-return (format "%skeyword(%s)"
+                             (if-let [core-alias (:core-alias env)]
+                               (str core-alias ".")
+                               "")
+                             (pr-str (subs (str expr) 1))) env)))))
 
 (def special-forms (set ['var '. 'if 'funcall 'fn 'fn* 'quote 'set!
                          'return 'delete 'new 'do 'aget 'while
