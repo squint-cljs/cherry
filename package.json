@@ -2,7 +2,7 @@
   "type": "module",
   "name": "cherry-cljs",
   "sideEffects": false,
-  "version": "0.2.19",
+  "version": "0.3.20",
   "files": [
     "cljs.core.js",
     "lib",
@@ -11,6 +11,9 @@
   ],
   "bin": {
     "cherry": "node_cli.js"
+  },
+  "dependencies": {
+    "squint-cljs": "0.8.113"
   },
   "devDependencies": {
     "@babel/core": "^7.19.0",

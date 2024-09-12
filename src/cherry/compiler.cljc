@@ -24,7 +24,7 @@
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
                                           *aliases* *imported-vars* *public-vars* comma-list emit emit-args emit-infix
-                                          emit-return escape-jsx expr-env infix-operator? prefix-unary?
+                                          emit-return escape-jsx infix-operator? prefix-unary?
 
                                           statement suffix-unary?]]
    [squint.defclass :as defclass])
@@ -34,12 +34,18 @@
           `(alter-var-root (var ~the-var) (constantly ~value))))
 
 (defn emit-keyword [expr env]
-  (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'keyword)
-  (emit-return (str (format "%skeyword(%s)"
-                            (if-let [core-alias (:core-alias env)]
-                              (str core-alias ".")
-                              "")
-                            (pr-str (subs (str expr) 1)))) env))
+  (let [js? (:js env)] ;; js is used for emitting CSS literals
+    (if (or (:html-attr env)
+            js?)
+      (cond-> (name expr)
+        js? (pr-str))
+      (do
+        (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'keyword)
+        (emit-return (format "%skeyword(%s)"
+                             (if-let [core-alias (:core-alias env)]
+                               (str core-alias ".")
+                               "")
+                             (pr-str (subs (str expr) 1))) env)))))
 
 (def special-forms (set ['var '. 'if 'funcall 'fn 'fn* 'quote 'set!
                          'return 'delete 'new 'do 'aget 'while
@@ -49,7 +55,8 @@
                          'recur 'js* 'case* 'deftype*
                          ;; prefixed to avoid conflicts
                          'clava-compiler-jsx
-                         'squint.defclass/defclass* 'squint.defclass/super*]))
+                         'squint.defclass/defclass* 'squint.defclass/super*
+                         'squint-compiler-html]))
 
 (def built-in-macros (merge {'-> macros/core->
                              '->> macros/core->>
@@ -208,7 +215,7 @@
                        new-expr (apply macro expr {} (rest expr))]
                    (emit new-expr env))
                  (cond
-                   (and (= (.charAt head-str 0) \.)
+                   (and (= \. (.charAt head-str 0))
                         (> (count head-str) 1)
                         (not (= ".." head-str)))
                    (cc/emit-special '. env
@@ -237,42 +244,12 @@
       :statement s
       :return s))
 
-(defn emit-vector [expr env]
-  (if (and (:jsx env)
-           (let [f (first expr)]
-             (or (keyword? f)
-                 (symbol? f))))
-    (let [v expr
-          tag (first v)
-          attrs (second v)
-          attrs (when (map? attrs) attrs)
-          elts (if attrs (nnext v) (next v))
-          tag-name (symbol tag)
-          tag-name (if (= '<> tag-name)
-                     (symbol "")
-                     tag-name)
-          tag-name (emit tag-name (expr-env (dissoc env :jsx)))]
-      (emit-return (format "<%s%s>%s</%s>"
-                           tag-name
-                           (cc/jsx-attrs attrs env)
-                           (let [env (expr-env env)]
-                             (str/join "" (map #(emit % env) elts)))
-                           tag-name) env))
-    (if (::js (meta expr))
-      (emit-return (format "[%s]"
-                           (str/join ", " (emit-args env expr))) env)
-      (emit-return (format "%svector(%s)"
-                           (if-let [core-alias (:core-alias env)]
-                             (str core-alias ".")
-                             "")
-                           (str/join ", " (emit-args env expr))) env))))
-
 (defn emit-map [expr env]
   (let [env* env
         env (dissoc env :jsx)
         expr-env (assoc env :context :expr)
         map-fn
-        (when-not (::js (meta expr))
+        (when-not (::cc/js (meta expr))
           (if (<= (count expr) 8)
             'array_map
             'hash_map))
@@ -316,7 +293,7 @@
                                     (symbol (str (if sym (munge sym)
                                                      "G__") next-id)))))
                       :emit {::cc/list emit-list
-                             ::cc/vector emit-vector
+                             ::cc/vector cc/emit-vector
                              ::cc/map emit-map
                              ::cc/keyword emit-keyword
                              ::cc/set emit-set
@@ -326,6 +303,9 @@
 
 (defn jsx [form]
   (list 'clava-compiler-jsx form))
+
+(defn html [form]
+  (list 'squint-compiler-html form))
 
 (defmethod emit-special 'clava-compiler-jsx [_ env [_ form]]
   (set! *jsx* true)
@@ -337,8 +317,9 @@
    {:all true
     :end-location false
     :location? seq?
-    :readers {'js #(vary-meta % assoc ::js true)
-              'jsx jsx}
+    :readers {'js #(vary-meta % assoc ::cc/js true)
+              'jsx jsx
+              'html html}
     :read-cond :allow
     :features #{:cljs :cherry}}))
 
@@ -368,7 +349,8 @@
      (binding [cc/*core-package* "cherry-cljs/cljs.core.js"
                *jsx* false
                cc/*repl* (:repl opts cc/*repl*)]
-       (let [opts (merge {:ns-state (atom {})} opts)
+       (let [need-html-import (atom false)
+             opts (merge {:ns-state (atom {})} opts)
              imported-vars (atom {})
              public-vars (atom #{})
              aliases (atom {core-alias cc/*core-package*})
@@ -385,13 +367,19 @@
                    cc/*cljs-ns* (:ns opts cc/*cljs-ns*)]
            (let [transpiled (f x (assoc opts
                                         :core-alias core-alias
-                                        :imports imports))
+                                        :imports imports
+                                        :need-html-import need-html-import))
+                 _ (when @need-html-import
+                     (swap! imports str
+                            (if cc/*repl*
+                              "var squint_html = await import('squint-cljs/src/squint/html.js');\n"
+                              "import * as squint_html from 'squint-cljs/src/squint/html.js';\n")))
                  imports (when-not elide-imports @imports)
                  exports (when-not elide-exports
                            (str (when-let [vars (disj @public-vars "default$")]
                                   (when (seq vars)
-                                    (str (format "\nexport { %s }\n"
-                                                 (str/join ", " vars)))))
+                                    (format "\nexport { %s }\n"
+                                            (str/join ", " vars))))
                                 (when (contains? @public-vars "default$")
                                   "export default default$\n")))]
              {:imports imports
