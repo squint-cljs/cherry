@@ -40,7 +40,9 @@
       (-> (js/eval js)
           (.then
            #(is (html= "<div class=\"foo\" id=\"6\" style=\"color:green;\"></div>" %)))
-          (.catch #(is false "nooooo"))
+          (.catch #(do
+                     (js/console.error %)
+                     (is false "nooooo")))
           (.finally done)))))
 
 (deftest html-nil-test
@@ -122,6 +124,17 @@
        (p/let [js (compile-html "#html [:div [:br]]")
                v (js/eval js)
                _ (is (html= "<div><br></div>" v))])
+       )
+     (p/catch #(is false "nooooo"))
+     (p/finally done))))
+
+(deftest keyword-escape-test
+  (t/async done
+    (->
+     (p/do
+       (p/let [js (compile-html "#html [:div \"dude\" :hello]")
+               v (js/eval js)
+               _ (is (html= "<div>dude:hello</div>" v))])
        )
      (p/catch #(is false "nooooo"))
      (p/finally done))))

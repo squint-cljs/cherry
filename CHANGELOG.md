@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.3.21 (2024-09-12)
+
+- Fix emitting keyword in HTML
+
 ## 0.3.20 (2024-09-12)
 
 - [#138](https://github.com/squint-cljs/cherry/issues/138): Support `#html` literals, ported from squint

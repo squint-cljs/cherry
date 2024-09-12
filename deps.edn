@@ -4,8 +4,8 @@
         org.babashka/cli {:mvn/version "0.3.32"}
         org.babashka/sci {:mvn/version "0.3.32"}
         io.github.squint-cljs/squint
-        #_{:local/root "/Users/borkdude/dev/squint"}
-        {:git/sha "8df5c90ec37ab7d8ddf1c6d73ab7d96e0597a2cf"}
+        {:local/root "/Users/borkdude/dev/squint"}
+        #_{:git/sha "8df5c90ec37ab7d8ddf1c6d73ab7d96e0597a2cf"}
         funcool/promesa {:mvn/version "11.0.678"}}
 
  :aliases

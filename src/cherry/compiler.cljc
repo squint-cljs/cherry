@@ -41,11 +41,12 @@
         js? (pr-str))
       (do
         (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'keyword)
-        (emit-return (format "%skeyword(%s)"
-                             (if-let [core-alias (:core-alias env)]
-                               (str core-alias ".")
-                               "")
-                             (pr-str (subs (str expr) 1))) env)))))
+        (-> (emit-return (format "%skeyword(%s)"
+                                 (if-let [core-alias (:core-alias env)]
+                                   (str core-alias ".")
+                                   "")
+                                 (pr-str (subs (str expr) 1))) env)
+            (escape-jsx env))))))
 
 (def special-forms (set ['var '. 'if 'funcall 'fn 'fn* 'quote 'set!
                          'return 'delete 'new 'do 'aget 'while
