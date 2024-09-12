@@ -34,7 +34,7 @@
           `(alter-var-root (var ~the-var) (constantly ~value))))
 
 (defn emit-keyword [expr env]
-  (let [js? (:js env)]
+  (let [js? (:js env)] ;; js is used for emitting CSS literals
     (if (or (:html-attr env)
             js?)
       (cond-> (name expr)
@@ -215,7 +215,7 @@
                        new-expr (apply macro expr {} (rest expr))]
                    (emit new-expr env))
                  (cond
-                   (and (= (.charAt head-str 0) \.)
+                   (and (= \. (.charAt head-str 0))
                         (> (count head-str) 1)
                         (not (= ".." head-str)))
                    (cc/emit-special '. env
@@ -249,8 +249,7 @@
         env (dissoc env :jsx)
         expr-env (assoc env :context :expr)
         map-fn
-        (when-not (or (::cc/js (meta expr))
-                      (:js env))
+        (when-not (::cc/js (meta expr))
           (if (<= (count expr) 8)
             'array_map
             'hash_map))

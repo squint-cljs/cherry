@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.3.20 (2024-09-12)
+
+- Support `#html` literals, ported from squint
+
 ## 0.2.19 (2024-07-04)
 
 - [#135](https://github.com/squint-cljs/cherry/issues/135): Fix UMD build

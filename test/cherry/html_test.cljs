@@ -58,7 +58,7 @@
 (deftest html-props-test
   (t/async done
     (let [js (cherry.compiler/compile-string
-              "(let [m #js {:a 1 :b 2}] #html [:div {:& m :a 2 :style {:color :red}} \"Hello\"])"
+              "(let [m {:a 1 :b 2}] #html [:div {:& m :a 2 :style {:color :red}} \"Hello\"])"
               {:repl true :elide-exports true :context :return})
           js (str/replace "(async function() { %s } )()" "%s" js)]
       (-> (js/eval js)
