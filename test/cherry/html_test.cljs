@@ -70,7 +70,7 @@
 (deftest html-dynamic-css-test
   (t/async done
     (let [js (cherry.compiler/compile-string
-              "(let [m #js {:color :green}] #html [:div {:style (assoc m :width \"200\")} \"Hello\"])"
+              "(let [m {:color :green}] #html [:div {:style (clj->js (assoc m :width \"200\"))} \"Hello\"])"
               {:repl true :elide-exports true :context :return})
           js (str/replace "(async function() { %s } )()" "%s" js)]
       (-> (js/eval js)
