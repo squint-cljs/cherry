@@ -12,6 +12,9 @@
   "bin": {
     "cherry": "node_cli.js"
   },
+  "dependencies": {
+    "squint-cljs": "0.8.113"
+  },
   "devDependencies": {
     "@babel/core": "^7.19.0",
     "@babel/preset-react": "^7.18.6",

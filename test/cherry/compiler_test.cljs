@@ -3,6 +3,7 @@
    ["fs" :as fs]
    [cherry.compiler :as cherry]
    [cherry.jsx-test]
+   [cherry.html-test]
    [cherry.squint-and-cherry-test]
    [cherry.test-utils :refer [js! jss! jsv!]]
    [clojure.string :as str]
@@ -489,4 +490,5 @@ IReset (-reset! [this v]
 (deref x)"))))
 
 (defn init []
-  (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test))
+  (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test
+                       'cherry.html-test))
