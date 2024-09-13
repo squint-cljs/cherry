@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.3.22 (2024-09-13)
+
+- Allow `defclass` to be referenced through other macros, e.g. as `cherry.core/defclass`
+
 ## 0.3.21 (2024-09-12)
 
 - Fix emitting keyword in HTML
