@@ -59,9 +59,9 @@
       (when (some #(match-file % out-file)
                   copy-resources)
         (when-not (fs/existsSync out-path)
-          (println "[squint] Creating directory:" out-path)
+          (println "[cherry] Creating directory:" out-path)
           (fs/mkdirSync out-path #js {:recursive true}))
-        (println "[squint] zCopying resource" path "to" out-path)
+        (println "[cherry] Copying resource" path "to" out-path)
         (fs/copyFileSync path out-file)))))
 
 (defn compile-files
@@ -92,14 +92,14 @@
                     (.then
                      #(do
                         (if (contains? #{".cljc" ".cljs"} (path/extname f ))
-                          (do (println "[squint] Compiling CLJS file:" f)
+                          (do (println "[cherry] Compiling CLJS file:" f)
                               (compiler/compile-file (assoc opts
                                                             :in-file f
                                                             :resolve-ns (fn [x]
                                                                           (resolve-ns opts f x)))))
                           (copy-file copy-resources f output-dir paths))))
                     (.then (fn [{:keys [out-file]}]
-                             (when out-file (println "[squint] Wrote file:" out-file))
+                             (when out-file (println "[cherry] Wrote file:" out-file))
                              out-file))))
               nil
               files))))
