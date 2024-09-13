@@ -1,8 +1,8 @@
 {:paths ["src" "resources"]
  :deps {borkdude/edamame {:mvn/version "1.0.0"}
         babashka/process {:mvn/version "0.1.7"}
-        org.babashka/cli {:mvn/version "0.3.32"}
-        org.babashka/sci {:mvn/version "0.3.32"}
+        org.babashka/cli {:mvn/version "0.7.51"}
+        org.babashka/sci {:mvn/version "0.6.37"}
         io.github.squint-cljs/squint
         #_{:local/root "/Users/borkdude/dev/squint"}
         {:git/sha "8df5c90ec37ab7d8ddf1c6d73ab7d96e0597a2cf"}
