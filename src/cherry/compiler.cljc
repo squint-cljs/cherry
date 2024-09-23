@@ -343,7 +343,8 @@
         opts (merge {:ns-state (atom {})}
                     opts)]
     (loop [transpiled (if cc/*repl*
-                        (str "globalThis." cc/*cljs-ns* " = globalThis." cc/*cljs-ns* " || {};\n")
+                        (let [ns (munge cc/*cljs-ns*)]
+                          (str "globalThis." ns " = globalThis." ns " || {};\n"))
                         "")]
       (let [opts (assoc opts :auto-resolve @*aliases*)
             next-form (e/parse-next rdr opts)]
