@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.3.23 (2024-10-05)
+
+- Fix referring to vars in other namespaces globally
+
 ## 0.3.22 (2024-09-13)
 
 - Allow `defclass` to be referenced through other macros, e.g. as `cherry.core/defclass`
