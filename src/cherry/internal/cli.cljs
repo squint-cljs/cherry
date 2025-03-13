@@ -181,4 +181,10 @@ Options:
 (defn init []
   (cli/dispatch table
                 (.slice js/process.argv 2)
-                {:aliases {:h :help}}))
+                {:aliases {:h :help}
+                 :coerce {:elide-exports :boolean
+                          :elide-imports :boolean
+                          :output-dir    :string
+                          :repl          :boolean
+                          :paths         [:string]
+                          :extension     :string}}))

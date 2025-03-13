@@ -13,7 +13,7 @@
     "cherry": "node_cli.js"
   },
   "dependencies": {
-    "squint-cljs": "0.8.113"
+    "squint-cljs": "0.8.141"
   },
   "devDependencies": {
     "@babel/core": "^7.19.0",

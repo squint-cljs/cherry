@@ -117,7 +117,8 @@
 
 (deftest fn-multi-arity-test
   (is (= 1 (jsv! '(let [f (fn foo ([x] x) ([x y] y))] (f 1)))))
-  (is (= 2 (jsv! '(let [f (fn foo ([x] x) ([x y] y))] (f 1 2))))))
+  (is (= 2 (jsv! '(let [f (fn foo ([x] x) ([x y] y))] (f 1 2)))))
+  (is (= 2 (jsv! '(let [f (fn foo-bar ([x] x) ([x y] y))] (f 1 2))))))
 
 (deftest fn-multi-varargs-test
   (is (= 1 (jsv! '(let [f (fn foo ([x] x) ([x y & zs] zs))] (f 1)))))
@@ -268,7 +269,9 @@
   (is (jsv! '(boolean 1))))
 
 (deftest defprotocol-extend-type-string-test
-  (is (= :foo (jsv! '(do (defprotocol IFoo (foo [_])) (extend-type string IFoo (foo [_] :foo)) (foo "bar"))))))
+  (is (= :foo (jsv! '(do (defprotocol IFoo (foo [_] "docstring"))
+                         (extend-type string IFoo (foo [_] :foo))
+                          (foo "bar"))))))
 
 (deftest deftype-test
   (is (= 1 (jsv! '(do (deftype Foo [x]) (.-x (->Foo 1))))))
@@ -441,7 +444,12 @@
   (is (= [1] (js->clj (jsv! "(def x #js []) (aset x 0 1) x"))))
   (testing "multiple dimensions"
     (is (= [[1]] (js->clj (jsv! "(def x #js [#js []]) (aset x 0 0 1) x"))))
-    (is (= [[0 1]] (js->clj (jsv! "(def x #js [#js [0]]) (aset x 0 1 1) x"))))))
+    (is (= [[0 1]] (js->clj (jsv! "(def x #js [#js [0]]) (aset x 0 1 1) x")))))
+  (testing "emit direct array access"
+    (let [js (jss! "(aset #js [#js [0]] 0 0 :hello)")]
+      (is (not (str/includes? js "aset")))
+      (is (str/includes? js "[[0]][0][0] ="))
+      (is (eq :hello (js/eval js))))))
 
 (deftest Math-test
   (let [expr '(Math/sqrt 3.14)]
