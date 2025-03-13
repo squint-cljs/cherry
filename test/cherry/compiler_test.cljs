@@ -443,7 +443,12 @@
   (is (= [1] (js->clj (jsv! "(def x #js []) (aset x 0 1) x"))))
   (testing "multiple dimensions"
     (is (= [[1]] (js->clj (jsv! "(def x #js [#js []]) (aset x 0 0 1) x"))))
-    (is (= [[0 1]] (js->clj (jsv! "(def x #js [#js [0]]) (aset x 0 1 1) x"))))))
+    (is (= [[0 1]] (js->clj (jsv! "(def x #js [#js [0]]) (aset x 0 1 1) x")))))
+  (testing "emit direct array access"
+    (let [js (jss! "(aset #js [#js [0]] 0 0 :hello)")]
+      (is (not (str/includes? js "aset")))
+      (is (str/includes? js "[[0]][0][0] ="))
+      (is (eq :hello (js/eval js))))))
 
 (deftest Math-test
   (let [expr '(Math/sqrt 3.14)]
