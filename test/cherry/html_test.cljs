@@ -72,13 +72,15 @@
 (deftest html-dynamic-css-test
   (t/async done
     (let [js (cherry.compiler/compile-string
-              "(let [m {:color :green}] #html [:div {:style (clj->js (assoc m :width \"200\"))} \"Hello\"])"
+              "(let [m {:color :green} m (assoc m :width \"200\")] #html [:div {:style {:& m}} \"Hello\"])"
               {:repl true :elide-exports true :context :return})
           js (str/replace "(async function() { %s } )()" "%s" js)]
       (-> (js/eval js)
           (.then
            #(is (html= "<div style=\"color:green; width:200;\">Hello</div>" %)))
-          (.catch #(is false "nooooo"))
+          (.catch #(is false (do
+                               (js/console.log %)
+                               "nooooo")))
           (.finally done)))))
 
 (deftest html-fragment-test
