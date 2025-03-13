@@ -41,13 +41,16 @@
                :exports
                {compileString cherry.compiler/compile-string
                 compileStringEx cherry.compiler/compileStringEx}}
-    :cli {:depends-on #{:compiler :clojure.string :clojure.walk :clojure.set :node}
+    :cli {:depends-on #{:compiler.node
+                        :compiler :clojure.string
+                        :clojure.walk
+                        :clojure.set :node}
           :init-fn cherry.internal.cli/init}
     :compiler.sci {:depends-on #{:compiler :compiler.node :node :clojure.set}
                    :init-fn cherry.compiler.sci/init}
     :compiler.node {:depends-on #{:compiler :node}
                     :exports
-                    {compileFile squint.compiler.node/compile-file-js
-                     compileString squint.compiler.node/compile-string-js}}}
+                    {compileFile cherry.compiler.node/compile-file-js
+                     compileString cherry.compiler.node/compile-string-js}}}
    :build-hooks [(shadow.cljs.build-report/hook
                   {:output-to "report.html"})]}}}
