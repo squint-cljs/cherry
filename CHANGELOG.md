@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.4.25 (2025-03-17)
+
+- Add `add-tap`
+
 ## 0.4.24 (2025-03-13)
 
 - Bump squint compiler common which brings in new `#html` id and class shortcuts + additional features and optimizations, such as an optimization for `aset`
