@@ -18,6 +18,7 @@
          _nth
          aclone
          add_watch
+         add_tap
          aget
          alength
          alter_meta_BANG_
