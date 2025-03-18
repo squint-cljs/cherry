@@ -36,6 +36,8 @@
                    :depends-on #{:cljs.core}}
     :clojure.set {:exports {walk clojure.set/intersection}
                   :depends-on #{:cljs.core}}
+    :cljs.pprint {:exports {pprint clojure.pprint/pprint}
+                  :depends-on #{:cljs.core}}
     :node {:entries [fs] :depends-on #{:compiler :cljs.core}}
     :compiler {:depends-on #{:cljs.core :clojure.string :clojure.walk}
                :exports

@@ -1,0 +1,2 @@
+;; (sort (map munge (keys (ns-publics 'cljs.pprint))))
+{:vars #{pprint}}

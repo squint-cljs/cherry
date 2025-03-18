@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.4.26 (2025-03-18)
+
+- Add `cljs.pprint/pprint`
+
 ## 0.4.25 (2025-03-17)
 
 - Add `add-tap`
