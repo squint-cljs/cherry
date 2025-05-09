@@ -497,6 +497,34 @@ IReset (-reset! [this v]
 
 (deref x)"))))
 
+(deftest pragmas-test
+  (let [code "\"use client\"
+(js* \"// ts-check\")
+(js* \"'use server'\")
+(js* \"/**
+* @param {number} x
+*/\")
+(defn foo [x] (merge x nil))
+\"use serverless\"
+"]
+    (doseq [code [code (str/replace "(do %s)" "%s" code)]
+            repl? [true false]
+            return? [true false]]
+      (let [{:keys [pragmas javascript]} (cherry/compile-string* code {:repl repl?
+                                                                       :context (if return?
+                                                                                  :return
+                                                                                  :statement)})]
+        (is (str/includes? pragmas "use client"))
+        (is (str/includes? pragmas "// ts-check"))
+        (is (not (str/includes? pragmas ";")))
+        (is (< (str/index-of javascript "use client")
+               (str/index-of javascript "ts-check")
+               (str/index-of javascript "'use server'")
+               (str/index-of javascript "import")
+               (str/index-of javascript "@param")
+               (str/index-of javascript "foo = function")
+               (str/index-of javascript "use serverless")))))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test
                        'cherry.html-test))

@@ -129,10 +129,19 @@
 
       let urlParams = new URLSearchParams(window.location.search);
       var repl = urlParams.get('repl') !== 'false';
-      let compilerState;
-      let evalCode = async (code) => {
+let compilerState;
+
+const url = new URL(window.location.href);
+
+let evalCode = async (code) => {
+  let importSource = url.searchParams.get('jsx.import-source') || 'react';
+
+  let opts = { repl: repl, 'elide-exports': repl, context: repl ? 'return' : 'statement',
+               "jsx-runtime": { "import-source": importSource, development: true }
+             };
+
         try {
-          compilerState = compileStringEx(`(do ${code}\n)`, {repl: repl, "elide-exports": repl, context: repl ? 'return' : 'statement'}, compilerState);
+          compilerState = compileStringEx(`${code}`, {repl: repl, "elide-exports": repl, context: repl ? 'return' : 'statement'}, compilerState);
           let js = compilerState.javascript;
         if (dev) {
           js = js.replace('cherry-cljs/cljs.core.js', 'http://' + window.location.host + '/cljs.core.js');
@@ -255,7 +264,7 @@
       const aocBoilerplateUrl = 'https://gist.githubusercontent.com/borkdude/cf94b492d948f7f418aa81ba54f428ff/raw/a6e9992b079e20e21d753e8c75a7353c5908b225/aoc_ui.cljs';
 
       let boilerplate = urlParams.get('boilerplate');
-      let boilerplateSrc;
+      let boilerplateSrc = '';
       if (boilerplate) {
         boilerplateSrc = await fetch(boilerplate).then(p => p.text());
       }
@@ -281,6 +290,7 @@
       var dev = JSON.parse(urlParams.get('dev')) ?? location.hostname === 'localhost';
 
       var squintUrl;
+
       if (dev) {
         console.log('Loading development cherry core.cljs.js')
         squintUrl = '/index.js';

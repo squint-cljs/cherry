@@ -474,9 +474,9 @@
                            :context (update :context keyword))
                          opts)
                  :default opts)
-         {:keys [pragmas imports exports body]}
+         {:keys [javascript]}
          (compile-string* s opts)]
-     (str pragmas imports body exports))))
+     javascript)))
 
 (defn compile-form*
   ([form] (compile-form* form nil))
@@ -489,16 +489,3 @@
    (let [{:keys [imports exports body]}
          (compile-form* s opts)]
      (str imports body exports))))
-
-#_(defn compile! [s]
-    (prn :s s)
-    (let [expr (e/parse-string s {:row-key :line
-                                  :col-key :column
-                                  :end-location false})
-          compiler-env (ana-api/empty-state)]
-      (prn :expr expr (meta expr))
-      (binding [cljs.env/*compiler* compiler-env
-                ana/*cljs-ns* 'cljs.user]
-        (let [analyzed (ana/analyze (ana/empty-env) expr)]
-          (prn (keys analyzed))
-          (prn (compiler/emit-str analyzed))))))
