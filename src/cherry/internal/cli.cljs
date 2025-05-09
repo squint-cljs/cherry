@@ -122,12 +122,13 @@ Options:
 
 --no-run: do not run compiled expression
 --show:   print compiled expression")
-      (let [e (if (:repl opts)
+      (let [e e #_(if (:repl opts)
                 (str/replace "(do %s\n)" "%s" e)
                 e)
             res (cc/compile-string e (assoc opts :repl (:repl opts) :ns-state (atom {:current 'user})
                                             :context (if (:repl opts) :return :statement)
-                                            :elide-exports (:repl opts)))
+                                            :elide-exports (and (:repl opts)
+                                                                (not (false? (:elide-exports opts))))))
             res (if (:repl opts)
                   (str/replace "(async function() { %s })()" "%s" res)
                   res)
