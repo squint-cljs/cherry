@@ -337,22 +337,39 @@
     :read-cond :allow
     :features #{:cljs :cherry}}))
 
-(defn transpile-string-internal [s compiler-opts]
-  (let [rdr (e/reader s)
-        opts cherry-parse-opts
-        opts (merge {:ns-state (atom {})}
-                    opts)]
+(defn read-forms [s]
+  (e/parse-string-all s (assoc cherry-parse-opts
+                               :auto-resolve-ns true
+                               :auto-resolve @*aliases*)))
+
+(defn transpile-string-internal [s env]
+  (let [env (merge {:ns-state (atom {})
+                    :context :statement} env)
+        forms (read-forms s)
+        max-form-idx (dec (count forms))
+        return? (= :return (:context env))
+        env (if return? (assoc env :context :statement) env)]
     (loop [transpiled (if cc/*repl*
                         (let [ns (munge cc/*cljs-ns*)]
-                          (str "globalThis." ns " = globalThis." ns " || {};\n"))
-                        "")]
-      (let [opts (assoc opts :auto-resolve @*aliases*)
-            next-form (e/parse-next rdr opts)]
+                          (cc/ensure-global ns))
+                        "")
+           forms forms
+           form-idx 0]
+      (let [next-form (if (seq forms)
+                        (first forms) ::e/eof)
+            last? (= form-idx max-form-idx)
+            env (if (and return? last?)
+                  (assoc env :context :return)
+                  env)]
         (if (= ::e/eof next-form)
           transpiled
-          (let [next-t (transpile-form-internal next-form compiler-opts)
-                next-js (some-> next-t not-empty (statement))]
-            (recur (str transpiled next-js))))))))
+          (let [next-t (-> (transpile-form-internal next-form env)
+                           not-empty)
+                next-js
+                (cc/save-pragma env next-t)]
+            (recur (str transpiled next-js)
+                   (rest forms)
+                   (inc form-idx))))))))
 
 (defn compile-internal
   ([x f {:keys [elide-exports
