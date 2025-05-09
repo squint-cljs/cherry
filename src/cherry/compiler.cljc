@@ -337,58 +337,97 @@
     :read-cond :allow
     :features #{:cljs :cherry}}))
 
-(defn transpile-string-internal [s compiler-opts]
-  (let [rdr (e/reader s)
-        opts cherry-parse-opts
-        opts (merge {:ns-state (atom {})}
-                    opts)]
+(defn read-forms [s]
+  (e/parse-string-all s (assoc cherry-parse-opts
+                               :auto-resolve-ns true
+                               :auto-resolve @*aliases*)))
+
+(defn transpile-string-internal [s env]
+  (let [env (merge {:ns-state (atom {})
+                    :context :statement} env)
+        forms (read-forms s)
+        max-form-idx (dec (count forms))
+        return? (= :return (:context env))
+        env (if return? (assoc env :context :statement) env)]
     (loop [transpiled (if cc/*repl*
                         (let [ns (munge cc/*cljs-ns*)]
-                          (str "globalThis." ns " = globalThis." ns " || {};\n"))
-                        "")]
-      (let [opts (assoc opts :auto-resolve @*aliases*)
-            next-form (e/parse-next rdr opts)]
+                          (cc/ensure-global ns))
+                        "")
+           forms forms
+           form-idx 0]
+      (let [next-form (if (seq forms)
+                        (first forms) ::e/eof)
+            last? (= form-idx max-form-idx)
+            env (if (and return? last?)
+                  (assoc env :context :return)
+                  env)]
         (if (= ::e/eof next-form)
           transpiled
-          (let [next-t (transpile-form-internal next-form compiler-opts)
-                next-js (some-> next-t not-empty (statement))]
-            (recur (str transpiled next-js))))))))
+          (let [next-t (-> (transpile-form-internal next-form env)
+                           not-empty)
+                next-js
+                (cc/save-pragma env next-t)]
+            (recur (str transpiled next-js)
+                   (rest forms)
+                   (inc form-idx))))))))
 
 (defn compile-internal
-  ([x f {:keys [elide-exports
-                elide-imports
-                core-alias]
-         :or {core-alias "cherry_core"}
-         :as opts}]
+  ([x {:keys [elide-exports
+              elide-imports
+              core-alias]
+       :or {core-alias "cherry_core"}
+       :as opts}]
    (let [opts (merge {:ns-state (atom {})} opts)]
      (binding [cc/*core-package* "cherry-cljs/cljs.core.js"
                *jsx* false
                cc/*repl* (:repl opts cc/*repl*)]
        (let [need-html-import (atom false)
-             opts (merge {:ns-state (atom {})} opts)
+             opts (merge {:ns-state (atom {})
+                          :top-level true} opts)
              imported-vars (atom {})
              public-vars (atom #{})
              aliases (atom {core-alias cc/*core-package*})
+             jsx-runtime (:jsx-runtime opts)
+             jsx-dev (:development jsx-runtime)
              imports (atom (if cc/*repl*
                              (format "var %s = await import('%s');\n"
                                      core-alias cc/*core-package*)
                              (format "import * as %s from '%s';\n"
-                                     core-alias cc/*core-package*)))]
+                                     core-alias cc/*core-package*)))
+             pragmas (atom {:js ""})]
          (binding [*imported-vars* imported-vars
                    *public-vars* public-vars
                    *aliases* aliases
-                   cc/*target* :squint
+                   cc/*target* :cherry
+                   *jsx* false
+                   cc/*cljs-ns* (:ns opts cc/*cljs-ns*)
                    cc/*async* (:async opts)
                    cc/*cljs-ns* (:ns opts cc/*cljs-ns*)]
-           (let [transpiled (f x (assoc opts
-                                        :core-alias core-alias
-                                        :imports imports
-                                        :need-html-import need-html-import))
+           (let [transpiled (transpile-string-internal x (assoc opts
+                                                                :core-alias core-alias
+                                                                :imports imports
+                                                                :jsx false
+                                                                :need-html-import need-html-import
+                                                                :pragmas pragmas))
+                 jsx *jsx*
+                 _ (when (and jsx jsx-runtime)
+                     (swap! imports str
+                            (format
+                             "var {jsx%s: _jsx, jsx%s%s: _jsxs, Fragment: _Fragment } = await import('%s');\n"
+                             (if jsx-dev "DEV" "")
+                             (if jsx-dev "" "s")
+                             (if jsx-dev "DEV" "")
+                             (str (:import-source jsx-runtime
+                                                  "react")
+                                  (if jsx-dev
+                                    "/jsx-dev-runtime"
+                                    "/jsx-runtime")))))
                  _ (when @need-html-import
                      (swap! imports str
                             (if cc/*repl*
                               "var squint_html = await import('squint-cljs/src/squint/html.js');\n"
                               "import * as squint_html from 'squint-cljs/src/squint/html.js';\n")))
+                 pragmas (:js @pragmas)
                  imports (when-not elide-imports @imports)
                  exports (when-not elide-exports
                            (str (when-let [vars (disj @public-vars "default$")]
@@ -397,19 +436,21 @@
                                             (str/join ", " vars))))
                                 (when (contains? @public-vars "default$")
                                   "export default default$\n")))]
-             {:imports imports
-              :exports exports
-              :body transpiled
-              :javascript (str imports transpiled exports)
-              :jsx *jsx*
-              :ns cc/*cljs-ns*
-              :ns-state (:ns-state opts)})))))))
+             (assoc opts
+                    :pragmas pragmas
+                    :imports imports
+                    :exports exports
+                    :body transpiled
+                    :javascript (str pragmas imports transpiled exports)
+                    :jsx jsx
+                    :ns cc/*cljs-ns*
+                    :ns-state (:ns-state opts)))))))))
 
 (defn compile-string*
   ([s] (compile-string* s nil))
   ([s opts] (compile-string* s opts nil))
   ([s opts state]
-   (compile-internal s transpile-string-internal (merge state opts))))
+   (compile-internal s (merge state opts))))
 
 #?(:cljs
    (defn clj-ize-opts [opts]
@@ -433,14 +474,14 @@
                            :context (update :context keyword))
                          opts)
                  :default opts)
-         {:keys [imports exports body]}
+         {:keys [javascript]}
          (compile-string* s opts)]
-     (str imports body exports))))
+     javascript)))
 
 (defn compile-form*
   ([form] (compile-form* form nil))
   ([s opts]
-   (compile-internal s transpile-form-internal opts)))
+   (compile-internal s opts)))
 
 (defn compile-form
   ([form] (compile-form form nil))
@@ -448,16 +489,3 @@
    (let [{:keys [imports exports body]}
          (compile-form* s opts)]
      (str imports body exports))))
-
-#_(defn compile! [s]
-    (prn :s s)
-    (let [expr (e/parse-string s {:row-key :line
-                                  :col-key :column
-                                  :end-location false})
-          compiler-env (ana-api/empty-state)]
-      (prn :expr expr (meta expr))
-      (binding [cljs.env/*compiler* compiler-env
-                ana/*cljs-ns* 'cljs.user]
-        (let [analyzed (ana/analyze (ana/empty-env) expr)]
-          (prn (keys analyzed))
-          (prn (compiler/emit-str analyzed))))))

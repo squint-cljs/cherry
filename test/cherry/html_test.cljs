@@ -22,11 +22,13 @@
       (is (str/includes? body "squint_html.tag`<div>Hello${x}</div>")))
     (let [js (cherry.compiler/compile-string "
 (defn li [x] #html [:li x])
-(defn foo [x] #html [:ul (map #(li %) (range x))]) (foo 5)" {:repl true :elide-exports true :context :return})
+(defn foo [x] #html [:ul (map #(li %) (range x))])
+(foo 5)" {:repl true :elide-exports true :context :return})
           js (str/replace "(async function() { %s } )()" "%s" js)]
       (-> (js/eval js)
           (.then
-           #(is (html= "<ul><li>0</li><li>1</li><li>2</li><li>3</li><li>4</li></ul>" %)))
+           (fn [v]
+             (is (html= "<ul><li>0</li><li>1</li><li>2</li><li>3</li><li>4</li></ul>" v))))
           (.catch #(is false "nooooo"))
           (.finally done)))))
 

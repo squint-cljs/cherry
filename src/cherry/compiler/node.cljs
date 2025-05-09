@@ -95,7 +95,7 @@
                      :as opts}]
   (let [contents (or in-str (slurp in-file))
         opts (->opts opts)]
-    (-> (compile-string contents opts)
+    (-> (compile-string contents (assoc opts :ns nil))
         (.then (fn [{:keys [javascript jsx] :as opts}]
                  (let [paths (:paths @utils/!cfg ["." "src"])
                        out-file (path/resolve output-dir
