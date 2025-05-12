@@ -342,10 +342,12 @@
                                :auto-resolve-ns true
                                :auto-resolve @*aliases*)))
 
-(defn transpile-string-internal [s env]
+(defn transpile-internal [s env]
   (let [env (merge {:ns-state (atom {})
                     :context :statement} env)
-        forms (read-forms s)
+        forms (if (string? s)
+                (read-forms s)
+                [s])
         max-form-idx (dec (count forms))
         return? (= :return (:context env))
         env (if return? (assoc env :context :statement) env)]
@@ -403,7 +405,7 @@
                    cc/*cljs-ns* (:ns opts cc/*cljs-ns*)
                    cc/*async* (:async opts)
                    cc/*cljs-ns* (:ns opts cc/*cljs-ns*)]
-           (let [transpiled (transpile-string-internal x (assoc opts
+           (let [transpiled (transpile-internal x (assoc opts
                                                                 :core-alias core-alias
                                                                 :imports imports
                                                                 :jsx false

@@ -1,8 +1,8 @@
 (ns cherry.embed
   "Experimental."
   (:refer-clojure :exclude [eval])
-  (:require [goog.object]
-            [cherry.compiler :as cherry])
+  (:require [cherry.compiler :as cherry]
+            [goog.object])
   (:require-macros [cherry.embed :refer [preserve-ns]]))
 
 (defn ^:no-doc vbk [obj ks]
@@ -36,7 +36,11 @@
 (defn eval-form
   ([form] (eval-form form nil))
   ([form opts]
-   (js/eval (compile-form form opts))))
+   (let [js (compile-form form opts)]
+     ;; (println "----")
+     ;; (println js)
+     ;; (println "---")
+     (js/eval js))))
 
 (defn compile-string
   ([expr] (compile-string expr nil))
@@ -48,4 +52,8 @@
 (defn eval-string
   ([expr] (eval-string expr nil))
   ([expr opts]
-   (js/eval (compile-string expr opts))))
+   (let [js (compile-string expr opts)]
+     ;; (println "----")
+     ;; (println js)
+     ;; (println "---")
+     (js/eval js))))

@@ -31,9 +31,9 @@
      (:body (cherry/compile-string* expr (merge {:elide-imports true
                                                  :core-alias nil}
                                                 opts)))
-     (cherry/transpile-form-internal expr (merge {:elide-imports true
-                                                  :core-alias nil}
-                                                 opts)))))
+     (cherry/transpile-internal expr (merge {:elide-imports true
+                                             :core-alias nil}
+                                            opts)))))
 
 (defn js!
   ([expr] (js! expr nil))
