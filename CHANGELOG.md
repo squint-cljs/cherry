@@ -1,6 +1,6 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
-## 0.4.27 (2025-05-12)
+## 0.4.28 (2025-05-12)
 
 - Fix [#154](https://github.com/squint-cljs/cherry/issues/154): `cherry.embed/eval-form`
 
