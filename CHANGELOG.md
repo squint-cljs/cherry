@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.4.27 (2025-05-12)
+
+- Fix [#154](https://github.com/squint-cljs/cherry/issues/154): `cherry.embed/eval-form`
+
 ## 0.4.27 (2025-05-09)
 
 - [#151](https://github.com/squint-cljs/cherry/issues/151): Bump squint compiler common which fixes several issues, among which pragma support
