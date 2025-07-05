@@ -1,6 +1,6 @@
 import './style.css'
 import javascriptLogo from './javascript.svg'
-import { setupCounter } from './counter.js'
+import { setup_counter } from './counter.mjs'
 
 document.querySelector('#app').innerHTML = `
   <div>
@@ -20,4 +20,4 @@ document.querySelector('#app').innerHTML = `
   </div>
 `
 
-setupCounter(document.querySelector('#counter'))
+setup_counter(document.querySelector('#counter'))
