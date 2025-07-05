@@ -1,4 +1,4 @@
-(ns cherry)
+(ns my-function)
 
 (defn my-cool-fn [x]
   (str
