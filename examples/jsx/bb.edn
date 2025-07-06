@@ -1,4 +1,4 @@
-{:pods {org.babashka/fswatcher {:version "0.0.3"}}
+{:pods {org.babashka/fswatcher {:version "0.0.7"}}
  :paths ["."]
  :tasks
  {:requires ([tasks :as t])
