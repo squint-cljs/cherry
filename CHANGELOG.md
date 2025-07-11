@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.4.29 (2025-07-11)
+
+- Fix [#156](https://github.com/squint-cljs/cherry/issues/156): `not=`, used incorrectly inlined version of squint
+
 ## 0.4.28 (2025-05-12)
 
 - Fix [#154](https://github.com/squint-cljs/cherry/issues/154): `cherry.embed/eval-form`

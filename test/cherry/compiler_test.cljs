@@ -526,6 +526,9 @@ IReset (-reset! [this v]
                (str/index-of javascript "foo = function")
                (str/index-of javascript "use serverless")))))))
 
+(deftest not=-test
+  (is (false? (jsv! "(not= {:a 1} {:a 1})"))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test
                        'cherry.html-test 'cherry.embed-test))
