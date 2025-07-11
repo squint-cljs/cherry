@@ -2,7 +2,7 @@
 
 ## 0.4.29 (2025-07-11)
 
-- Fix `not=`, used incorrectly inlined version of squint
+- Fix [#156](https://github.com/squint-cljs/cherry/issues/156): `not=`, used incorrectly inlined version of squint
 
 ## 0.4.28 (2025-05-12)
 
