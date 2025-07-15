@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## 0.4.30 (2025-07-15)
+
+- Bump squint common compiler code, fixes bugs
+
 ## 0.4.29 (2025-07-11)
 
 - Fix [#156](https://github.com/squint-cljs/cherry/issues/156): `not=`, used incorrectly inlined version of squint
