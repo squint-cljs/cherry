@@ -455,13 +455,19 @@
   ([s opts state]
    (compile-internal s (merge state opts))))
 
+#?(:cljs (defn symbolize-macro-config [m]
+           (-> (update-keys m symbol)
+               (update-vals (fn [ns]
+                              (update-keys ns symbol))))))
+
 #?(:cljs
    (defn clj-ize-opts [opts]
      (cond-> opts
        (:context opts) (update :context keyword)
        (:ns opts) (update :ns symbol)
        (:elide_imports opts) (assoc :elide-imports (:elide_imports opts))
-       (:elide_exports opts) (assoc :elide-exports (:elide_exports opts)))))
+       (:elide_exports opts) (assoc :elide-exports (:elide_exports opts))
+       (:macros opts) (update :macros symbolize-macro-config))))
 
 #?(:cljs
    (defn compileStringEx [s opts state]

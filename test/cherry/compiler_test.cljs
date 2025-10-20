@@ -530,10 +530,11 @@ IReset (-reset! [this v]
   (is (false? (jsv! "(not= {:a 1} {:a 1})"))))
 
 (deftest macro-state-test
-  (let [state (cherry/compile-string* "(ns foo (:require [foo.bar :refer [mymacro]]))" {:macros {'foo.bar {'mymacro (fn [_ _ x] `(do ~x ~x))}}})
-        state (cherry/compile-string* "(mymacro (+ 1 2 3))" {:macros {'foo.bar {'mymacro (fn [_ _ x] `(+ ~x ~x))}}
-                                                             :context :expr} state)
-        body (:body state)]
+  (let [js-opts (clj->js {:macros {'foo.bar {'mymacro (fn [_ _ x] `(+ ~x ~x))}}
+                          :context :expr})
+        state (cherry/compileStringEx "(ns foo (:require [foo.bar :refer [mymacro]]))" js-opts nil)
+        state (cherry/compileStringEx "(mymacro (+ 1 2 3))" js-opts state)
+        body (aget state "body")]
     (is (= 12 (js/eval body)))))
 
 (defn init []
