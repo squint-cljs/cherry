@@ -222,7 +222,8 @@
                                         (get-in ns-state [:macros resolved-ns nms]))))
                                    (let [refers (:refers current-ns-state)]
                                      (when-let [macro-ns (get refers nms)]
-                                       (get-in ns-state [:macros macro-ns nms])))))))]
+                                       (or (some-> env :macros (get (symbol macro-ns)) (get nms))
+                                           (get-in ns-state [:macros macro-ns nms]))))))))]
                (if macro
                  (let [;; fix for calling macro with more than 20 args
                        #?@(:cljs [macro (or (.-afn ^js macro) macro)])
