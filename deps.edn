@@ -4,7 +4,7 @@
         org.babashka/sci {:mvn/version "0.6.37"}
         io.github.squint-cljs/squint
         #_{:local/root "/Users/borkdude/dev/squint"}
-        {:git/sha "5fedb51d033472641b8daf911686330c0334b1f3"}
+        {:git/sha "e832512f5df33e393f2405889fe80e4847a2969d"}
         funcool/promesa {:mvn/version "11.0.678"}}
 
  :aliases
