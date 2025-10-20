@@ -529,6 +529,13 @@ IReset (-reset! [this v]
 (deftest not=-test
   (is (false? (jsv! "(not= {:a 1} {:a 1})"))))
 
+(deftest macro-state-test
+  (let [state (cherry/compile-string* "(ns foo (:require [foo.bar :refer [mymacro]]))" {:macros {'foo.bar {'mymacro (fn [_ _ x] `(do ~x ~x))}}})
+        state (cherry/compile-string* "(mymacro (+ 1 2 3))" {:macros {'foo.bar {'mymacro (fn [_ _ x] `(+ ~x ~x))}}
+                                                             :context :expr} state)
+        body (:body state)]
+    (is (= 12 (js/eval body)))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test
                        'cherry.html-test 'cherry.embed-test))
