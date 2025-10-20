@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## Unreleased
+
+- Fix [#159](https://github.com/squint-cljs/cherry/issues/159): Runtime macro resolution for npm package
+
 ## 0.4.30 (2025-07-15)
 
 - Bump squint common compiler code, fixes bugs

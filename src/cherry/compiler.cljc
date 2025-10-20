@@ -342,8 +342,38 @@
                                :auto-resolve-ns true
                                :auto-resolve @*aliases*)))
 
+(defn build-macro-refers
+  "Build `:refers` map for all macros in :macros, to make available unqualified."
+  [macros]
+  (when macros
+    (reduce-kv
+     (fn [acc ns-sym macro-map]
+       (reduce-kv
+        (fn [inner-acc macro-sym _macro-fn]
+          (assoc inner-acc macro-sym ns-sym))
+        acc
+        macro-map))
+     {}
+     macros)))
+
 (defn transpile-internal [s env]
-  (let [env (merge {:ns-state (atom {})
+  (let [_  (when-let [macros (:macros env)]
+             (when-let [ns-state (:ns-state env)]
+               (let [refers (build-macro-refers macros)]
+                 (add-watch ns-state ::macro-refers
+                            (fn [_key _ref old-state new-state]
+                              (let [new-current (:current new-state)
+                                    old-current (:current old-state)]
+                                (when (and new-current
+                                          (not= new-current old-current)
+                                          (not (get-in new-state [new-current :refers])))
+                                  (swap! ns-state assoc-in [new-current :refers] refers)))))
+                 (swap! ns-state (fn [state]
+                                   (-> state
+                                       (assoc :current cc/*cljs-ns*)
+                                       (assoc-in [cc/*cljs-ns* :refers] refers)
+                                       (assoc :macros macros)))))))
+        env (merge {:ns-state (atom {})
                     :context :statement} env)
         forms (if (string? s)
                 (read-forms s)
@@ -463,6 +493,29 @@
        (:elide_exports opts) (assoc :elide-exports (:elide_exports opts)))))
 
 #?(:cljs
+   (defn symbolize-macros-map
+     "Convert a macros map from js->clj (string keys) to symbol keys.
+     When JavaScript passes macros like {macros: {'my.ns': {'my-macro': fn}}},
+     js->clj converts to {:macros {\"my.ns\" {\"my-macro\" fn}}}.
+     Cherry's macro lookup expects {:macros {my.ns {my-macro fn}}} (symbols).
+
+     Input: {\"my.ns\" {\"my-macro\" fn, \"other\" fn2}}
+     Output: {my.ns {my-macro fn, other fn2}}"
+     [macros-map]
+     (when macros-map
+       (reduce-kv
+        (fn [acc ns-str macro-map]
+          (assoc acc
+                 (symbol ns-str)
+                 (reduce-kv
+                  (fn [inner-acc macro-str macro-fn]
+                    (assoc inner-acc (symbol macro-str) macro-fn))
+                  {}
+                  macro-map)))
+        {}
+        macros-map))))
+
+#?(:cljs
    (defn compileStringEx [s opts state]
      (let [opts (js->clj opts :keywordize-keys true)
            state (js->clj state :keywordize-keys true)]
@@ -472,8 +525,10 @@
   ([s] (compile-string s nil))
   ([s opts]
    (let [opts #?(:cljs (if (object? opts)
-                         (cond-> (js->clj opts :keywordize-keys true)
-                           :context (update :context keyword))
+                         (let [converted (js->clj opts :keywordize-keys true)]
+                           (cond-> converted
+                             :context (update :context keyword)
+                             (:macros converted) (update :macros symbolize-macros-map)))
                          opts)
                  :default opts)
          {:keys [javascript]}
