@@ -6,9 +6,9 @@
    [babashka.cli :as cli]
    [cherry.compiler :as cc]
    [cherry.compiler.node :as compiler]
-   [squint.internal.node.utils :as utils]
+   [clojure.string :as str]
    [shadow.esm :as esm]
-   [clojure.string :as str]))
+   [squint.internal.node.utils :as utils]))
 
 (defn info [& xs]
   (apply *print-err-fn* xs))
@@ -36,6 +36,7 @@
         file))))
 
 (defn files-from-path [path]
+  (prn :path path)
   (let [files (fs/readdirSync path)]
     (vec (mapcat (fn [f]
                    (let [f (path/resolve path f)]
