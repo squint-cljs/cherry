@@ -174,7 +174,7 @@ Options:
       (println (t/compile! e))))
 
 (def table
-  [{:cmds ["run"]        :fn run :cmds-opts [:file]}
+  [{:cmds ["run"]        :fn run :args->opts [:file]}
    {:cmds ["compile"]    :fn (fn [{:keys [opts rest-cmds]}]
                                (compile-files opts rest-cmds))}
    {:cmds []             :fn fallback}])

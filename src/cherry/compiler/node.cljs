@@ -92,7 +92,6 @@
 (defn compile-file [{:keys [in-file in-str out-file extension output-dir]
                      :or {output-dir ""}
                      :as opts}]
-  (prn :in-file in-file)
   (let [contents (or in-str (slurp in-file))
         opts (->opts opts)]
     (-> (compile-string contents (assoc opts :ns nil))
