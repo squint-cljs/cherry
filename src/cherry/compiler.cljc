@@ -227,7 +227,11 @@
                (if macro
                  (let [;; fix for calling macro with more than 20 args
                        #?@(:cljs [macro (or (.-afn ^js macro) macro)])
-                       new-expr (apply macro expr {} (rest expr))]
+                       new-expr (apply macro expr (assoc env
+                                                         ;; Added for CLJS compat
+                                                         :ns {:name cc/*cljs-ns*}
+                                                         :utils {:emit emit})
+                                       (rest expr))]
                    (emit new-expr env))
                  (cond
                    (and (= \. (.charAt head-str 0))
@@ -455,19 +459,18 @@
   ([s opts state]
    (compile-internal s (merge state opts))))
 
-#?(:cljs (defn symbolize-macro-config [m]
-           (-> (update-keys m symbol)
-               (update-vals (fn [ns]
-                              (update-keys ns symbol))))))
+(defn- symbolize-macro-config [m]
+  (-> (update-keys m symbol)
+      (update-vals (fn [ns]
+                     (update-keys ns symbol)))))
 
-#?(:cljs
-   (defn clj-ize-opts [opts]
-     (cond-> opts
-       (:context opts) (update :context keyword)
-       (:ns opts) (update :ns symbol)
-       (:elide_imports opts) (assoc :elide-imports (:elide_imports opts))
-       (:elide_exports opts) (assoc :elide-exports (:elide_exports opts))
-       (:macros opts) (update :macros symbolize-macro-config))))
+(defn- clj-ize-opts [opts]
+  (cond-> opts
+    (:context opts) (update :context keyword)
+    (:ns opts) (update :ns symbol)
+    (:elide_imports opts) (assoc :elide-imports (:elide_imports opts))
+    (:elide_exports opts) (assoc :elide-exports (:elide_exports opts))
+    (:macros opts) (update :macros symbolize-macro-config)))
 
 #?(:cljs
    (defn compileStringEx [s opts state]
@@ -478,13 +481,8 @@
 (defn compile-string
   ([s] (compile-string s nil))
   ([s opts]
-   (let [opts #?(:cljs (if (object? opts)
-                         (cond-> (js->clj opts :keywordize-keys true)
-                           :context (update :context keyword))
-                         opts)
-                 :default opts)
-         {:keys [javascript]}
-         (compile-string* s opts)]
+   (let [{:keys [javascript]}
+         (compile-string* s (clj-ize-opts opts))]
      javascript)))
 
 (defn compile-form*
