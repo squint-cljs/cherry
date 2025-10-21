@@ -2,12 +2,11 @@
   (:require
    ["fs" :as fs]
    ["path" :as path]
-   #_[sci.core :as sci]
+   [cherry.compiler :as compiler]
    [clojure.string :as str]
    [edamame.core :as e]
    [shadow.esm :as esm]
-   [squint.internal.node.utils :as utils]
-   [cherry.compiler :as compiler]))
+   [squint.internal.node.utils :as utils]))
 
 (def sci (atom nil))
 
@@ -84,9 +83,7 @@
 (defn adjust-file-for-paths [in-file paths]
   (let [out-file (reduce (fn [acc path]
                            (if (in-dir? path in-file)
-                             (do
-                               (prn :path path :in-file in-file)
-                               (reduced (path/relative path in-file)))
+                             (reduced (path/relative path in-file))
                              acc))
                          in-file
                          paths)]
@@ -95,6 +92,7 @@
 (defn compile-file [{:keys [in-file in-str out-file extension output-dir]
                      :or {output-dir ""}
                      :as opts}]
+  (prn :in-file in-file)
   (let [contents (or in-str (slurp in-file))
         opts (->opts opts)]
     (-> (compile-string contents (assoc opts :ns nil))
