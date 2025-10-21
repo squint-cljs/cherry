@@ -1,8 +1,10 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
-## Unreleased
+## 0.4.31 (2025-10-21)
 
-- Bump squint
+- Bump squint compiler common component and standard library
+- Bump other deps
+- Optimize `=`, `str`, `not=`
 
 ## 0.4.31 (2025-10-20)
 
