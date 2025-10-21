@@ -36,7 +36,6 @@
         file))))
 
 (defn files-from-path [path]
-  (prn :path path)
   (let [files (fs/readdirSync path)]
     (vec (mapcat (fn [f]
                    (let [f (path/resolve path f)]

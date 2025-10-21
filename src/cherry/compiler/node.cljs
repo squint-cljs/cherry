@@ -84,7 +84,9 @@
 (defn adjust-file-for-paths [in-file paths]
   (let [out-file (reduce (fn [acc path]
                            (if (in-dir? path in-file)
-                             (reduced (path/relative path in-file))
+                             (do
+                               (prn :path path :in-file in-file)
+                               (reduced (path/relative path in-file)))
                              acc))
                          in-file
                          paths)]
