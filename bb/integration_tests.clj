@@ -4,13 +4,15 @@
             [clojure.test :as t :refer [deftest is]]))
 
 (deftest macro-test
-  (let [out (:out (sh "npx cherry run macro_test.cljs" {:err :inherit
-                                                        :dir "test-resources/test_project"}))]
+  (let [out (:out (sh {:err :inherit
+                       :dir "test-resources/test_project"}
+                   "npx cherry run macro_test.cljs"))]
     (is (str/includes? out "22"))))
 
 (deftest equality-test
-  (let [out (:out (sh "npx cherry run equality_test.cljs" {:err :inherit
-                                                           :dir "test-resources/test_project"}))]
+  (let [out (:out (sh {:err :inherit
+                       :dir "test-resources/test_project"}
+                      "npx cherry run equality_test.cljs"))]
     (is (str/includes? out "[false true]"))))
 
 (deftest repl-api-test
