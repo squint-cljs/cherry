@@ -6,9 +6,9 @@
    [babashka.cli :as cli]
    [cherry.compiler :as cc]
    [cherry.compiler.node :as compiler]
-   [squint.internal.node.utils :as utils]
+   [clojure.string :as str]
    [shadow.esm :as esm]
-   [clojure.string :as str]))
+   [squint.internal.node.utils :as utils]))
 
 (defn info [& xs]
   (apply *print-err-fn* xs))
@@ -174,7 +174,7 @@ Options:
       (println (t/compile! e))))
 
 (def table
-  [{:cmds ["run"]        :fn run :cmds-opts [:file]}
+  [{:cmds ["run"]        :fn run :args->opts [:file]}
    {:cmds ["compile"]    :fn (fn [{:keys [opts rest-cmds]}]
                                (compile-files opts rest-cmds))}
    {:cmds []             :fn fallback}])

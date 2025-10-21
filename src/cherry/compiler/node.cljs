@@ -2,12 +2,11 @@
   (:require
    ["fs" :as fs]
    ["path" :as path]
-   #_[sci.core :as sci]
+   [cherry.compiler :as compiler]
    [clojure.string :as str]
    [edamame.core :as e]
    [shadow.esm :as esm]
-   [squint.internal.node.utils :as utils]
-   [cherry.compiler :as compiler]))
+   [squint.internal.node.utils :as utils]))
 
 (def sci (atom nil))
 

@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## Unreleased
+
+- Bump squint
+
 ## 0.4.31 (2025-10-20)
 
 - Support `:macros` option + `:refer` so you can use unqualified macros using compiler state (see `macro-state-test`)
