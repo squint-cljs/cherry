@@ -537,6 +537,16 @@ IReset (-reset! [this v]
         body (aget state "body")]
     (is (= 12 (js/eval body)))))
 
+(deftest assert-test
+  (testing "assert with true condition does not throw"
+    (is (= 42 (jsv! "(do (assert true) 42)"))))
+  (testing "assert with false condition throws"
+    (is (thrown-with-msg? js/Error #"Assert failed"
+                          (jsv! "(assert false)"))))
+  (testing "assert with false and message throws with message"
+    (is (thrown-with-msg? js/Error #"custom message"
+                          (jsv! "(assert false \"custom message\")")))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test
                        'cherry.html-test 'cherry.embed-test))
