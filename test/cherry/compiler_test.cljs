@@ -6,6 +6,7 @@
    [cherry.html-test]
    [cherry.jsx-test]
    [cherry.squint-and-cherry-test]
+   [cherry.this-as-test]
    [cherry.test-utils :refer [js! jss! jsv!]]
    [clojure.string :as str]
    [clojure.test :as t :refer [async deftest is testing]]))
@@ -538,5 +539,5 @@ IReset (-reset! [this v]
     (is (= 12 (js/eval body)))))
 
 (defn init []
-  (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test
+  (cljs.test/run-tests 'cherry.compiler-test 'cherry.this-as-test 'cherry.jsx-test 'cherry.squint-and-cherry-test
                        'cherry.html-test 'cherry.embed-test))
