@@ -291,7 +291,13 @@
                       (bar [_] :bar))
                     (def x (->Foo 1))
                     (set! (.-x x) 2)
-                    (foo x))))))
+                    (foo x)))))
+  (is (= [:foo 2]
+         (jsv! "(do (deftype Foo [^:mutable x]
+                      Object
+                      (getValue [this] (.-x this)))
+                    (def x (->Foo [:foo 2]))
+                    (.getValue x))"))))
 
 (deftest set-test
   (is (= #{1 2 3 4 5 6} (jsv! '(into #{1 2 3} #{4 5 6})))))

@@ -287,7 +287,7 @@
 
 (core/defn- adapt-obj-params [type [[this & args :as _sig] & body]]
   (core/list (vec args)
-             (list* 'cljs.core/this-as self-sym (list* 'cljs.core/this-as (vary-meta this assoc :tag type) body))))
+             (list 'cljs.core/this-as self-sym (list* 'cljs.core/this-as (vary-meta this assoc :tag type) body))))
 
 (core/defn- add-obj-methods [type type-sym sigs]
   (map (core/fn [[f & meths :as form]]
