@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## Unreleased
+
+- Fix [#163](https://github.com/squint-cljs/cherry/issues/163): Add assert to macros
+
 ## 0.4.32 (2025-10-21)
 
 - Bump squint compiler common component and standard library
