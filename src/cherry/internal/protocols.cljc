@@ -1,10 +1,14 @@
 (ns cherry.internal.protocols
   (:require [clojure.core :as core]))
 
-;; TODO: this is a hack to enable the implementation of core protocols
-(def core-protocols #{'IDeref 
-                      'IReset
-                      'ISwap})
+(def core-protocols #{'ICounted 'IEmptyableCollection 'ICollection 'IIndexed 'ISeq 'INext
+                      'ILookup 'IAssociative 'IMap 'IMapEntry 'ISet 'IStack 'IVector 'IDeref
+                      'IMeta 'IWithMeta 'IReduce 'IKVReduce 'IEquiv 'IHash
+                      'ISeqable 'IReversible
+                      'IPrintWithWriter 'IPending 'IWatchable 'IEditableCollection 'ITransientCollection
+                      'ITransientAssociative 'ITransientMap 'ITransientVector 'ITransientSet
+                      'IComparable 'INamed 'ICloneable
+                      'IReset 'ISwap})
 (defn- ->core [psym]
   (if (contains? core-protocols psym)
     (symbol (str "cljs$core$" psym))

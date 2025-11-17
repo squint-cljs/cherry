@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fix [#163](https://github.com/squint-cljs/cherry/issues/163): Add assert to macros
+- Fix [#165](https://github.com/squint-cljs/cherry/issues/165): Fix ClojureScript protocol dispatch
 
 ## 0.4.32 (2025-10-21)
 
