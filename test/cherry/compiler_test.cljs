@@ -537,6 +537,16 @@ IReset (-reset! [this v]
         body (aget state "body")]
     (is (= 12 (js/eval body)))))
 
+(deftest protocol-export-test
+  (testing "Protocol dispatch function accessible at module level"
+    (is (= "Alice says hello to Bob"
+           (jsv! "(do (defprotocol Greeter (greet [this name]))
+                      (deftype Person [first-name]
+                        Greeter
+                        (greet [this name]
+                          (str first-name \" says hello to \" name)))
+                      (greet (Person. \"Alice\") \"Bob\"))")))))
+
 (deftest assert-test
   (testing "assert with true condition does not throw"
     (is (= 42 (jsv! "(do (assert true) 42)"))))

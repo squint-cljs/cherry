@@ -183,10 +183,11 @@
                                  fname (vary-meta fname assoc
                                          :protocol p
                                          :doc doc)]
-                        `(let [~dyn-name (core/fn
-                                           ~@(map (core/fn [sig]
-                                                    (expand-dyn fname sig))
-                                               sigs))]
+                        `(do
+                           (def ~dyn-name (core/fn
+                                            ~@(map (core/fn [sig]
+                                                     (expand-dyn fname sig))
+                                                sigs)))
                            (defn ~fname
                              ~@(map (core/fn [sig]
                                       (expand-sig fname dyn-name
