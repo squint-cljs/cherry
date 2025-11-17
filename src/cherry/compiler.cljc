@@ -105,6 +105,7 @@
                              'js-template defclass/js-template
                              'and squint-macros/core-and
                              'or squint-macros/core-or
+                             'assert squint-macros/core-assert
                              }
                             cc/common-macros))
 
