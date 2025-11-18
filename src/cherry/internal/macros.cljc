@@ -560,3 +560,11 @@
   [_ _ bindings & body]
   ;; (cljs.analyzer/confirm-bindings &env names)
   `(with-redefs ~bindings ~@body))
+
+(defn core-satisfies?
+  "Returns true if x satisfies protocol"
+  [_ _ protocol x]
+  `(boolean
+    (when-let [proto# (js/Object.getPrototypeOf ~x)]
+      (or (aget proto# ~(str (name protocol) "$"))
+          (aget proto# ~(str "cljs$core$" (name protocol) "$"))))))
