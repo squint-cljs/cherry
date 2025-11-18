@@ -553,6 +553,16 @@ IReset (-reset! [this v]
     (is (thrown-with-msg? js/Error #"custom message"
                           (jsv! "(assert false \"custom message\")")))))
 
+(deftest satisfies?-test
+  (testing "satisfies? returns true for implemented custom protocol"
+    (is (true? (jsv! "(defprotocol IFoo (-foo [_])) (deftype Bar [] IFoo (-foo [_] 42)) (satisfies? IFoo (Bar.))"))))
+  (testing "satisfies? returns false for non-implemented custom protocol"
+    (is (false? (jsv! "(defprotocol IFoo (-foo [_])) (deftype Bar []) (satisfies? IFoo (Bar.))"))))
+  (testing "satisfies? returns true for ClojureScript core protocol"
+    (is (true? (jsv! "(deftype T [] ICounted (-count [_] 42)) (satisfies? ICounted (T.))"))))
+  (testing "satisfies? returns false for non-implemented ClojureScript protocol"
+    (is (false? (jsv! "(deftype T []) (satisfies? ICounted (T.))")))))
+
 (deftest protocol-dispatch-test
   (testing "ICounted" (is (= 42 (jsv! "(deftype T [] ICounted (-count [_] 42)) (count (T.))"))))
   (testing "IEmptyableCollection" (is (= 0 (jsv! "(deftype T [] IEmptyableCollection (-empty [_] []) ICounted (-count [_] 0)) (count (empty (T.)))"))))

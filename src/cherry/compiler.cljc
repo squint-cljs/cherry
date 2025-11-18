@@ -106,6 +106,7 @@
                              'and squint-macros/core-and
                              'or squint-macros/core-or
                              'assert squint-macros/core-assert
+                             'satisfies? macros/core-satisfies?
                              }
                             cc/common-macros))
 
