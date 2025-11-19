@@ -601,6 +601,16 @@ IReset (-reset! [this v]
   (testing "IReset" (is (= 5 (jsv! "(deftype T [a] IReset (-reset! [_ v] (reset! a v))) (reset! (T. (atom 0)) 5)"))))
   (testing "ISwap" (is (= 2 (jsv! "(deftype T [a] ISwap (-swap! [_ f] (swap! a f)) (-swap! [_ f x] (swap! a f x)) (-swap! [_ f x y] (swap! a f x y)) (-swap! [_ f x y z] (swap! a f x y z))) (swap! (T. (atom 1)) inc)")))))
 
+(deftest protocol-export-test
+  (testing "Protocol dispatch function accessible at module level"
+    (is (= "Alice says hello to Bob"
+           (jsv! "(do (defprotocol Greeter (greet [this name]))
+                      (deftype Person [first-name]
+                        Greeter
+                        (greet [this name]
+                          (str first-name \" says hello to \" name)))
+                      (greet (Person. \"Alice\") \"Bob\"))")))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test
                        'cherry.html-test 'cherry.embed-test))
