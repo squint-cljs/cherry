@@ -29,7 +29,7 @@
       (core/inc (core/quot c 32)))))
 
 (core/defn- prepare-protocol-masks [env impls]
-  (core/let [resolve  identity #_(partial resolve-var env)
+  (core/let [resolve  (fn [sym] (if (namespace sym) sym (symbol "cljs.core" (name sym)))) #_(partial resolve-var env)
              impl-map (p/->impl-map impls)
              fpp-pbs  (seq
                        (keep fast-path-protocols
