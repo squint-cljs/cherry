@@ -1,4 +1,5 @@
 (ns cherry.internal.deftype
+  (:refer-clojure :exclude [fast-path-protocols fast-path-protocol-partitions-count])
   (:require [clojure.core :as core]
             [cherry.internal.protocols :as p]))
 
@@ -143,7 +144,7 @@
        (set! (.-getBasis ~t) (fn [] '[~@fields]))
        (set! (.-cljs$lang$type ~t) true)
        (set! (.-cljs$lang$ctorStr ~t) ~(core/str r))
-       (set! (.-cljs$lang$ctorPrWriter ~t) (fn [this# writer# opt#] (-write writer# ~(core/str r))))
+       (set! (.-cljs$lang$ctorPrWriter ~t) (fn [this# writer# opt#] (cljs.core/-write writer# ~(core/str r))))
 
        ~(build-positional-factory t r fields)
        ~t)))
