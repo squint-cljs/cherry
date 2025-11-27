@@ -128,10 +128,10 @@
   should not be used when defining your own types.
   Given (deftype TypeName ...), a factory function called ->TypeName
   will be defined, taking positional parameters for the fields"
-  [&env _&form t fields & impls]
+  [_&form &env t fields & impls]
   #_(validate-fields "deftype" t fields)
   (core/let [env &env
-             r t #_(:name (cljs.analyzer/resolve-var (dissoc env :locals) t))
+             r (symbol (str (-> env :ns :name)) (str t))
              [fpps pmasks] (prepare-protocol-masks env impls)
              protocols (collect-protocols impls env)
              t (vary-meta t assoc
