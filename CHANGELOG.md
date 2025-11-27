@@ -1,12 +1,12 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
-## Unreleased
+## 0.5.33 (2025-11-27)
 
-- Fix [#163](https://github.com/squint-cljs/cherry/issues/163): Add assert to macros
-- Fix [#165](https://github.com/squint-cljs/cherry/issues/165): Fix ClojureScript protocol dispatch
+- Fix [#163](https://github.com/squint-cljs/cherry/issues/163): Add assert to macros ([@willcohen](https://github.com/willcohen))
+- Fix [#165](https://github.com/squint-cljs/cherry/issues/165): Fix ClojureScript protocol dispatch functions ([@willcohen](https://github.com/willcohen))
 - Fix [#167](https://github.com/squint-cljs/cherry/issues/167): Protocol dispatch functions inside IIFEs; bump squint [accordingly](https://github.com/squint-cljs/squint/commit/db0e3c7b831568a3766e9ade0e2a05490446bfe5)
-- Fix [#169](https://github.com/squint-cljs/cherry/issues/169): `extend-type` on `Object`
-- Fix [#171](https://github.com/squint-cljs/cherry/issues/171): Add `satisfies?` macro
+- Fix [#169](https://github.com/squint-cljs/cherry/issues/169): fix `extend-type` on `Object`
+- Fix [#171](https://github.com/squint-cljs/cherry/issues/171): Add `satisfies?` macro ([@willcohen](https://github.com/willcohen))
 
 ## 0.4.32 (2025-10-21)
 
