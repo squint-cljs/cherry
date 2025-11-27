@@ -652,6 +652,14 @@ IReset (-reset! [this v]
                           (str first-name \" says hello to \" name)))
                       (greet (Person. \"Alice\") \"Bob\"))")))))
 
+(deftest protocol-prn-test
+  (is (= ["user/Person" "nth not supported on this type user/Person"]
+         (jsv! "(deftype Person [first-name]
+                  Object
+                    (toString [this]
+                          \"dude\"))
+                [(pr-str Person) (try (nth (->Person nil) 1) (catch :default e (ex-message e)))] "))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test
                        'cherry.html-test 'cherry.embed-test))

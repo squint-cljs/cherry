@@ -88,7 +88,7 @@
     `(defn ~fn-name
        ~docstring
        [~@fields]
-       (new ~rname ~@field-values))))
+       (new ~rsym ~@field-values))))
 
 (core/defn core-deftype
   "(deftype name [fields*]  options* specs*)
