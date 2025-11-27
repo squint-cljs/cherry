@@ -9,7 +9,8 @@
 ;;   software.
 
 (ns cherry.internal.macros
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [cherry.internal.deftype :as deftype]))
 
 (defn core->
   [_ _ x & forms]
@@ -564,7 +565,22 @@
 (defn core-satisfies?
   "Returns true if x satisfies protocol"
   [_ _ protocol x]
-  `(boolean
-    (when-let [proto# (js/Object.getPrototypeOf ~x)]
-      (or (aget proto# ~(str (name protocol) "$"))
-          (aget proto# ~(str "cljs$core$" (name protocol) "$"))))))
+  (let [xsym (if (symbol? x) x (gensym "x__"))
+        pname (name protocol)
+        protocol-props [(str pname "$") (str "cljs$core$" pname "$")]
+        protocol-fqn (if (namespace protocol) protocol (symbol "cljs.core" pname))
+        [part bit] (get deftype/fast-path-protocols protocol-fqn)
+        proto-sym (gensym "proto__")
+        mask-sym (gensym "mask__")
+        body `(boolean
+               (or ~(when (and part bit)
+                      `(when-let [~mask-sym (and ~xsym (aget ~xsym ~(str "cljs$lang$protocol_mask$partition" part "$")))]
+                         (not= 0 (cljs.core/bit-and ~mask-sym ~bit))))
+                   (when-let [~proto-sym (and ~xsym (js/Object.getPrototypeOf ~xsym))]
+                     (or ~@(mapcat (fn [prop]
+                                     [`(aget ~proto-sym ~prop)])
+                                   protocol-props)))
+                   (when (cljs.core/exists? ~protocol)
+                     (let [type# (cljs.core/goog_typeOf ~xsym)]
+                       (or (aget ~protocol type#) (aget ~protocol "_"))))))]
+    (if (symbol? x) body `(let [~xsym ~x] ~body))))

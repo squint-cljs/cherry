@@ -1,4 +1,5 @@
 (ns cherry.internal.deftype
+  (:refer-clojure :exclude [fast-path-protocols fast-path-protocol-partitions-count])
   (:require [clojure.core :as core]
             [cherry.internal.protocols :as p]))
 
@@ -29,7 +30,7 @@
       (core/inc (core/quot c 32)))))
 
 (core/defn- prepare-protocol-masks [env impls]
-  (core/let [resolve  identity #_(partial resolve-var env)
+  (core/let [resolve  (fn [sym] (if (namespace sym) sym (symbol "cljs.core" (name sym)))) #_(partial resolve-var env)
              impl-map (p/->impl-map impls)
              fpp-pbs  (seq
                        (keep fast-path-protocols
@@ -87,7 +88,7 @@
     `(defn ~fn-name
        ~docstring
        [~@fields]
-       (new ~rname ~@field-values))))
+       (new ~rsym ~@field-values))))
 
 (core/defn core-deftype
   "(deftype name [fields*]  options* specs*)
@@ -127,10 +128,10 @@
   should not be used when defining your own types.
   Given (deftype TypeName ...), a factory function called ->TypeName
   will be defined, taking positional parameters for the fields"
-  [&env _&form t fields & impls]
+  [_&form &env t fields & impls]
   #_(validate-fields "deftype" t fields)
   (core/let [env &env
-             r t #_(:name (cljs.analyzer/resolve-var (dissoc env :locals) t))
+             r (symbol (str (-> env :ns :name)) (str t))
              [fpps pmasks] (prepare-protocol-masks env impls)
              protocols (collect-protocols impls env)
              t (vary-meta t assoc
@@ -143,7 +144,7 @@
        (set! (.-getBasis ~t) (fn [] '[~@fields]))
        (set! (.-cljs$lang$type ~t) true)
        (set! (.-cljs$lang$ctorStr ~t) ~(core/str r))
-       (set! (.-cljs$lang$ctorPrWriter ~t) (fn [this# writer# opt#] (-write writer# ~(core/str r))))
+       (set! (.-cljs$lang$ctorPrWriter ~t) (fn [this# writer# opt#] (cljs.core/-write writer# ~(core/str r))))
 
        ~(build-positional-factory t r fields)
        ~t)))

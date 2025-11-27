@@ -1,5 +1,8 @@
 cljs$lang$protocol_mask$partition0$
 cljs$lang$protocol_mask$partition1$
+cljs$lang$ctorPrWriter
+cljs$lang$ctorStr
+cljs$lang$type
 cljs$core$ICounted$
 cljs$core$ICounted$_count$arity$1
 cljs$core$IEmptyableCollection$

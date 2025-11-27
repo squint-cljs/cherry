@@ -561,7 +561,48 @@ IReset (-reset! [this v]
   (testing "satisfies? returns true for ClojureScript core protocol"
     (is (true? (jsv! "(deftype T [] ICounted (-count [_] 42)) (satisfies? ICounted (T.))"))))
   (testing "satisfies? returns false for non-implemented ClojureScript protocol"
-    (is (false? (jsv! "(deftype T []) (satisfies? ICounted (T.))")))))
+    (is (false? (jsv! "(deftype T []) (satisfies? ICounted (T.))"))))
+  (testing "satisfies? handles nil without throwing TypeError"
+    (is (false? (jsv! "(defprotocol IFoo (-foo [_])) (satisfies? IFoo nil)"))))
+  (testing "satisfies? generates protocol_mask fast-path for core protocols"
+    (is (str/includes?
+         (jss! "(deftype T [] ICounted (-count [_] 42)) (satisfies? ICounted (T.))")
+         "protocol_mask$partition")))
+  (testing "satisfies? uses bitwise AND for fast-path check"
+    (is (str/includes?
+         (jss! "(deftype T [] ICounted (-count [_] 42)) (satisfies? ICounted (T.))")
+         " & ")))
+  (testing "Protocol extended to nil"
+    (is (true? (jsv! "(defprotocol IFoo (-foo [_]))
+                      (extend-type nil IFoo (-foo [_] :nil-impl))
+                      (satisfies? IFoo nil)"))))
+  (testing "String primitive satisfies protocol"
+    (is (true? (jsv! "(defprotocol IFoo (-foo [_]))
+                      (extend-type string IFoo (-foo [_] :string-impl))
+                      (satisfies? IFoo \"hello\")"))))
+  (testing "Number primitive does not satisfy protocol"
+    (is (false? (jsv! "(defprotocol IFoo (-foo [_]))
+                       (extend-type string IFoo (-foo [_] :string-impl))
+                       (satisfies? IFoo 42)")))
+    (is (true? (jsv! "(defprotocol IFoo (-foo [_]))
+                      (extend-type string IFoo (-foo [_] :string-impl))
+                      (satisfies? IFoo \"hello\")"))))
+  (testing "Boolean primitive does not satisfy protocol"
+    (is (false? (jsv! "(defprotocol IFoo (-foo [_]))
+                       (extend-type string IFoo (-foo [_] :string-impl))
+                       (satisfies? IFoo true)")))
+    (is (true? (jsv! "(defprotocol IFoo (-foo [_]))
+                      (extend-type string IFoo (-foo [_] :string-impl))
+                      (satisfies? IFoo \"test\")")))) 
+  (testing "Protocol extended to Object affects all objects"
+    (is (true? (jsv! "(defprotocol IFoo (-foo [_]))
+                      (extend-type object IFoo (-foo [_] :obj-impl))
+                      (deftype Bar [])
+                      (satisfies? IFoo (Bar.))"))))
+  (testing "Protocol extended to default catches all types"
+    (is (true? (jsv! "(defprotocol IFoo (-foo [_]))
+                      (extend-type default IFoo (-foo [_] :default-impl))
+                      (satisfies? IFoo #js {})")))))
 
 (deftest protocol-dispatch-test
   (testing "ICounted" (is (= 42 (jsv! "(deftype T [] ICounted (-count [_] 42)) (count (T.))"))))
@@ -610,6 +651,14 @@ IReset (-reset! [this v]
                         (greet [this name]
                           (str first-name \" says hello to \" name)))
                       (greet (Person. \"Alice\") \"Bob\"))")))))
+
+(deftest protocol-prn-test
+  (is (= ["user/Person" "nth not supported on this type user/Person"]
+         (jsv! "(deftype Person [first-name]
+                  Object
+                    (toString [this]
+                          \"dude\"))
+                [(pr-str Person) (try (nth (->Person nil) 1) (catch :default e (ex-message e)))] "))))
 
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test

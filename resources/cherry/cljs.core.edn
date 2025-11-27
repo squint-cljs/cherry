@@ -301,6 +301,7 @@
          prn
          prn_str
          prn_str_with_opts
+         _write
          qualified_ident_QMARK_
          qualified_keyword_QMARK_
          qualified_symbol_QMARK_
