@@ -40,7 +40,7 @@
      ;; (println "----")
      ;; (println js)
      ;; (println "---")
-     (js/eval js))))
+     (js/eval.call js/globalThis js))))
 
 (defn compile-string
   ([expr] (compile-string expr nil))
@@ -56,4 +56,4 @@
      ;; (println "----")
      ;; (println js)
      ;; (println "---")
-     (js/eval js))))
+     (js/eval.call js/globalThis js))))
