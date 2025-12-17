@@ -3,9 +3,7 @@
  {:cherry
   {:js-options {;; don't bundle any npm libs
                 :js-provider :import}
-   :compiler-options {:infer-externs :auto
-                      :lite-mode true
-                      :elide-to-string true}
+   :compiler-options {:infer-externs :auto}
    :devtools {:enabled false :console-support false}
    :target :esm
    :runtime :browser
