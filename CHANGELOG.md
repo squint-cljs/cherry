@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## Unreleased
+
+- Fix `cherry compile` CLI command not receiving file arguments
+
 ## 0.5.33 (2025-11-27)
 
 - Fix [#163](https://github.com/squint-cljs/cherry/issues/163): Add assert to macros ([@willcohen](https://github.com/willcohen))
