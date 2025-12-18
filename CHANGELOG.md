@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Fix `cherry compile` CLI command not receiving file arguments
+- Bump shadow-cljs to `3.3.4`
 
 ## 0.5.33 (2025-11-27)
 
