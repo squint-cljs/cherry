@@ -1,6 +1,6 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
-## Unreleased
+## 0.5.34 (2025-12-18)
 
 - Fix `cherry compile` CLI command not receiving file arguments
 - Bump shadow-cljs to `3.3.4`
