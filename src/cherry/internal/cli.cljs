@@ -175,8 +175,8 @@ Options:
 
 (def table
   [{:cmds ["run"]        :fn run :args->opts [:file]}
-   {:cmds ["compile"]    :fn (fn [{:keys [opts rest-cmds]}]
-                               (compile-files opts rest-cmds))}
+   {:cmds ["compile"]    :fn (fn [{:keys [opts args]}]
+                               (compile-files opts args))}
    {:cmds []             :fn fallback}])
 
 (defn init []

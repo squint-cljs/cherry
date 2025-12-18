@@ -19,6 +19,14 @@
   (let [out (:out (p/shell {:out :string} "node test-resources/js_api.mjs"))]
     (is (= ["1" "1"]  (str/split-lines out)))))
 
+(deftest compile-test
+  (let [tmp-file "/tmp/cherry-compile-test.cljs"
+        out-file "/tmp/cherry-compile-test.mjs"]
+    (spit tmp-file "(ns compile-test)\n(defn hello [] (js/console.log \"hello\"))")
+    (shell "rm" "-f" out-file)
+    (sh "npx" "cherry" "compile" tmp-file)
+    (is (.exists (java.io.File. out-file)) "compile should create output file")))
+
 (defn run-tests []
   (shell {:dir "test-resources/test_project"} "npm install")
   (let [{:keys [fail error]} (t/run-tests 'integration-tests)]
