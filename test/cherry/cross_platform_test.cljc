@@ -1,7 +1,7 @@
 (ns cherry.cross-platform-test
-  (:require [clojure.test :as t #?@(:clj [:refer [deftest is testing]])]
+  (:require [clojure.test :as t #?@(:clj [:refer [deftest is testing are]])]
             [clojure.string :as str])
-  #?(:cljs (:require-macros [clojure.test :as t :refer [deftest is testing]])))
+  #?(:cljs (:require-macros [clojure.test :as t :refer [deftest is testing are]])))
 
 (deftest arithmetic-test
   (testing "basic arithmetic with referred macros"
@@ -15,6 +15,69 @@
   (testing "value equality"
     (is (= [1 2 3] [1 2 3]))
     (is (= {:a 1} {:a 1}))))
+
+(deftest are-test
+  (testing "table-driven tests"
+    (are [x y expected] (= expected (+ x y))
+      1 1 2
+      2 3 5
+      10 20 30)))
+
+#?(:cljs
+   (deftest are-runs-all-cases-test
+     (testing "are runs every case"
+       (let [saved-env (t/get-current-env)
+             saved-counters (:report-counters saved-env)]
+         (t/set-env! (assoc (t/empty-env) :testing-vars (:testing-vars saved-env)))
+         (let [pass-before (get-in (t/get-current-env) [:report-counters :pass] 0)]
+           (are [x] (pos? x)
+             1 2 3 4 5)
+           (let [pass-after (get-in (t/get-current-env) [:report-counters :pass] 0)
+                 pass-count (- pass-after pass-before)]
+             (t/set-env! (assoc saved-env :report-counters saved-counters))
+             (when-not (= 5 pass-count)
+               (throw (js/Error. (str "are should run all 5 cases, but ran " pass-count))))
+             (is true "are correctly runs all cases")))))))
+
+(deftest exception-test
+  (testing "thrown?"
+    (is (thrown? #?(:clj Exception :cljs js/Error)
+                 (throw #?(:clj (Exception. "test") :cljs (js/Error. "test"))))))
+  (testing "thrown-with-msg?"
+    (is (thrown-with-msg? #?(:clj Exception :cljs js/Error)
+                          #"test"
+                          (throw #?(:clj (Exception. "test") :cljs (js/Error. "test")))))))
+
+#?(:cljs
+   (deftest verify-thrown-reports-missing-exception
+     (testing "thrown? fails when no exception thrown"
+       (let [saved-env (t/get-current-env)
+             saved-counters (:report-counters saved-env)]
+         (t/set-env! (assoc (t/empty-env) :testing-vars (:testing-vars saved-env)))
+         (let [fail-before (get-in (t/get-current-env) [:report-counters :fail] 0)]
+           (is (thrown? js/Error (+ 1 1)))
+           (let [fail-after (get-in (t/get-current-env) [:report-counters :fail] 0)]
+             (t/set-env! (assoc saved-env :report-counters saved-counters))
+             (when-not (> fail-after fail-before)
+               (throw (js/Error. (str "thrown? should fail when no exception - fail-before: " fail-before
+                                      " fail-after: " fail-after))))
+             (is true "thrown? correctly fails when no exception")))))))
+
+#?(:cljs
+   (deftest verify-thrown-with-msg-checks-pattern
+     (testing "thrown-with-msg? fails on wrong message pattern"
+       (let [saved-env (t/get-current-env)
+             saved-counters (:report-counters saved-env)]
+         (t/set-env! (assoc (t/empty-env) :testing-vars (:testing-vars saved-env)))
+         (let [fail-before (get-in (t/get-current-env) [:report-counters :fail] 0)]
+           (is (thrown-with-msg? js/Error #"WRONG PATTERN"
+                                 (throw (js/Error. "actual message"))))
+           (let [fail-after (get-in (t/get-current-env) [:report-counters :fail] 0)]
+             (t/set-env! (assoc saved-env :report-counters saved-counters))
+             (when-not (> fail-after fail-before)
+               (throw (js/Error. (str "thrown-with-msg? should fail on wrong pattern - fail-before: " fail-before
+                                      " fail-after: " fail-after))))
+             (is true "thrown-with-msg? correctly fails on wrong pattern")))))))
 
 #?(:cljs
    (deftest verify-is-reports-failures
@@ -64,6 +127,11 @@
      (t/set-env! (t/empty-env))
      (t/test-var arithmetic-test)
      (t/test-var equality-test)
+     (t/test-var are-test)
+     (t/test-var are-runs-all-cases-test)
+     (t/test-var exception-test)
+     (t/test-var verify-thrown-reports-missing-exception)
+     (t/test-var verify-thrown-with-msg-checks-pattern)
      (t/test-var verify-is-reports-failures)
      (t/test-var verify-assert-expr-default-reports-failures)
      (t/test-var testing-context-test)
