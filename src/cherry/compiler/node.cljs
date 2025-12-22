@@ -6,6 +6,7 @@
    [clojure.string :as str]
    [edamame.core :as e]
    [shadow.esm :as esm]
+   [squint.compiler-common :as cc]
    [squint.internal.node.utils :as utils]))
 
 (def sci (atom nil))
@@ -35,11 +36,12 @@
                         (.then prev
                                (fn [_]
                                  (let [[macro-ns & {:keys [refer as]}] require-macros
+                                       actual-ns (cc/resolve-macro-ns macro-ns)
                                        macros (js/Promise.resolve
-                                               (do (eval-form (cond-> (list 'require (list 'quote macro-ns))
+                                               (do (eval-form (cond-> (list 'require (list 'quote actual-ns))
                                                                 reload (concat [:reload])))
                                                    (let [publics (eval-form
-                                                                  `(ns-publics '~macro-ns))
+                                                                  `(ns-publics '~actual-ns))
                                                          macros (keep (fn [[k v]]
                                                                         (when (:macro (meta v))
                                                                           [k (deref v)])) publics)
@@ -48,8 +50,9 @@
                                    (.then macros
                                           (fn [macros]
                                             (swap! ns-state (fn [ns-state]
-                                                              (cond-> (assoc-in ns-state [:macros macro-ns] macros)
-                                                                as (assoc-in [the-ns-name :aliases as] macro-ns)
+                                                              (cond-> (assoc-in ns-state [:macros actual-ns] macros)
+                                                                as (-> (assoc-in [the-ns-name :aliases as] macro-ns)
+                                                                       (assoc-in [the-ns-name :macro-aliases as] macro-ns))
                                                                 refer (update-in [the-ns-name :refers]
                                                                                  merge
                                                                                  (zipmap refer (repeat macro-ns))))))
