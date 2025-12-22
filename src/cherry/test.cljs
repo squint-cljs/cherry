@@ -6,7 +6,9 @@
 (defn empty-env []
   {:report-counters {:test 0 :pass 0 :fail 0 :error 0}
    :testing-vars ()
-   :testing-contexts ()})
+   :testing-contexts ()
+   :once-fixtures []
+   :each-fixtures []})
 
 (defn get-current-env []
   (or *current-env* (empty-env)))
@@ -78,16 +80,49 @@
   (and (zero? (:fail results 0))
        (zero? (:error results 0))))
 
+(defn compose-fixtures [f1 f2]
+  (fn [g] (f1 (fn [] (f2 g)))))
+
+(defn join-fixtures [fixtures]
+  (reduce compose-fixtures (fn [f] (f)) fixtures))
+
+(defn get-each-fixtures []
+  (get-in (get-current-env) [:each-fixtures] []))
+
+(defn set-each-fixtures! [fixtures]
+  (update-current-env! [:each-fixtures] (constantly fixtures)))
+
+(defn get-once-fixtures []
+  (get-in (get-current-env) [:once-fixtures] []))
+
+(defn set-once-fixtures! [fixtures]
+  (update-current-env! [:once-fixtures] (constantly fixtures)))
+
 (defn test-var [v]
   (when (fn? v)
     (let [test-name (or (:name (meta v)) "anonymous")
+          each-fixtures (get-each-fixtures)
+          wrapped-test (if (seq each-fixtures)
+                         (fn [] ((join-fixtures each-fixtures) v))
+                         v)
           pop-test-name! #(update-current-env! [:testing-vars] rest)]
       (update-current-env! [:testing-vars] conj test-name)
       (inc-report-counter! :test)
       (try
-        (let [result (v)]
+        (let [result (wrapped-test)]
           (pop-test-name!)
           result)
         (catch :default e
           (pop-test-name!)
           (report {:type :error :message (.-message e) :expected nil :actual e}))))))
+
+(defn run-tests
+  "Runs test-vars with once-fixtures."
+  [& test-vars]
+  (let [once-fixtures (get-once-fixtures)
+        run-all (fn []
+                  (doseq [v test-vars]
+                    (test-var v)))]
+    (if (seq once-fixtures)
+      ((join-fixtures once-fixtures) run-all)
+      (run-all))))
