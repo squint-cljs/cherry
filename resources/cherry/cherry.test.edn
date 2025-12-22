@@ -1,0 +1,11 @@
+{:vars #{report
+         successful_QMARK_
+         empty_env
+         get_current_env
+         set_env_BANG_
+         clear_env_BANG_
+         update_current_env_BANG_
+         inc_report_counter_BANG_
+         testing_contexts_str
+         testing_vars_str
+         test_var}}
