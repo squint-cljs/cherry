@@ -80,6 +80,20 @@
   (and (zero? (:fail results 0))
        (zero? (:error results 0))))
 
+(defn async? [x]
+  (instance? js/Promise x))
+
+(defn wrap-async
+  "Wraps setup/teardown fns into async-aware fixture.
+  Teardown waits for Promise resolution if test is async."
+  [setup teardown]
+  (fn [test-fn]
+    (setup)
+    (let [result (test-fn)]
+      (if (async? result)
+        (.finally result teardown)
+        (do (teardown) result)))))
+
 (defn compose-fixtures [f1 f2]
   (fn [g] (f1 (fn [] (f2 g)))))
 
@@ -110,19 +124,29 @@
       (inc-report-counter! :test)
       (try
         (let [result (wrapped-test)]
-          (pop-test-name!)
-          result)
+          (if (async? result)
+            (-> result
+                (.then (fn [r] (pop-test-name!) r))
+                (.catch (fn [e]
+                          (report {:type :error :message (.-message e) :expected nil :actual e})
+                          (pop-test-name!))))
+            (do (pop-test-name!) result)))
         (catch :default e
           (pop-test-name!)
           (report {:type :error :message (.-message e) :expected nil :actual e}))))))
 
 (defn run-tests
-  "Runs test-vars with once-fixtures."
+  "Runs test-vars with once-fixtures. Returns Promise if any test is async."
   [& test-vars]
   (let [once-fixtures (get-once-fixtures)
         run-all (fn []
-                  (doseq [v test-vars]
-                    (test-var v)))]
+                  (reduce
+                   (fn [chain v]
+                     (if (async? chain)
+                       (.then chain (fn [_] (test-var v)))
+                       (test-var v)))
+                   nil
+                   test-vars))]
     (if (seq once-fixtures)
       ((join-fixtures once-fixtures) run-all)
       (run-all))))

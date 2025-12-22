@@ -1,7 +1,7 @@
 (ns cherry.cross-platform-test
   (:require [clojure.test :as t #?@(:clj [:refer [deftest is testing are]])]
             [clojure.string :as str])
-  #?(:cljs (:require-macros [clojure.test :as t :refer [deftest is testing are]])))
+  #?(:cljs (:require-macros [clojure.test :as t :refer [deftest deftest- is testing are]])))
 
 (defonce test-db (atom nil))
 
@@ -172,6 +172,18 @@
          (is (= 1 @teardown-count) "teardown runs exactly once")))))
 
 #?(:cljs
+   (deftest ^:async async-test
+     (testing "async with setTimeout"
+       (js-await
+        (js/Promise.
+         (fn [resolve]
+           (js/setTimeout
+            (fn []
+              (is (= 1 1))
+              (resolve))
+            10)))))))
+
+#?(:cljs
    (deftest verify-is-reports-failures
      (testing "is reports failures"
        (let [saved-env (t/get-current-env)
@@ -226,13 +238,82 @@
          (let [test-after (get-in (t/get-current-env) [:report-counters :test] 0)]
            (is (= 1 (- test-after test-before))))))))
 
+#?(:cljs
+   (deftest ^:async wrap-async-fixture-test
+     (testing "wrap-async waits for async test before teardown"
+       (let [log (atom [])
+             fixture (t/wrap-async
+                      #(swap! log conj :setup)
+                      #(swap! log conj :teardown))
+             async-test (fn []
+                          (js/Promise.
+                           (fn [resolve]
+                             (js/setTimeout
+                              (fn []
+                                (swap! log conj :test-done)
+                                (resolve))
+                              20))))
+             result (fixture async-test)]
+         (is (instance? js/Promise result))
+         (js-await result)
+         (js-await (js/Promise. (fn [resolve] (js/setTimeout resolve 30))))
+         (is (= [:setup :test-done :teardown] @log)
+             "teardown should wait for async test")))))
+
+#?(:cljs
+   (deftest- ^:async private-async-helper
+     (js-await (js/Promise. (fn [resolve] (js/setTimeout resolve 5))))
+     (is true)))
+
+#?(:cljs
+   (deftest deftest-private-async-test
+     (testing "deftest- works with ^:async"
+       (let [result (t/test-var private-async-helper)]
+         (is (instance? js/Promise result) "deftest- ^:async returns Promise")))))
+
+#?(:cljs
+   (deftest ^:async run-tests-async-test
+     (testing "run-tests chains async tests correctly"
+       (let [log (atom [])
+             saved-fixtures (t/get-once-fixtures)]
+         (t/set-once-fixtures! [(t/wrap-async
+                                 #(swap! log conj :setup)
+                                 #(swap! log conj :teardown))])
+         (let [sync-first (with-meta
+                            (fn []
+                              (swap! log conj :test-1)
+                              (is (= 1 1) "sync-first assertion"))
+                            {:name 'sync-first})
+               async-delayed (with-meta
+                               (fn []
+                                 (js/Promise.
+                                  (fn [resolve]
+                                    (js/setTimeout
+                                     (fn []
+                                       (swap! log conj :test-2)
+                                       (is (pos? 42) "async-delayed assertion")
+                                       (resolve))
+                                     20))))
+                               {:name 'async-delayed})
+               sync-last (with-meta
+                           (fn []
+                             (swap! log conj :test-3)
+                             (is (string? "yes") "sync-last assertion"))
+                           {:name 'sync-last})
+               result (t/run-tests sync-first async-delayed sync-last)]
+           (js-await result)
+           (js-await (js/Promise. (fn [resolve] (js/setTimeout resolve 30))))
+           (is (= [:setup :test-1 :test-2 :test-3 :teardown] @log)
+               "run-tests should chain async tests in order")
+           (t/set-once-fixtures! saved-fixtures))))))
+
 #?(:clj
    (defn -main []
      (let [result (t/run-tests 'cherry.cross-platform-test)]
        (when-not (t/successful? result)
          (System/exit 1))))
    :cljs
-   (defn -main []
+   (defn ^:async -main []
      (t/set-env! (t/empty-env))
      (t/test-var arithmetic-test)
      (t/test-var equality-test)
@@ -245,11 +326,15 @@
      (t/test-var fixtures-test)
      (t/test-var each-fixtures-applied-test)
      (t/test-var once-fixtures-with-run-tests-test)
+     (js-await (t/test-var async-test))
      (t/test-var verify-is-reports-failures)
      (t/test-var verify-assert-expr-default-reports-failures)
      (t/test-var testing-context-test)
      (t/test-var successful-test)
      (t/test-var test-var-counter-test)
+     (js-await (t/test-var wrap-async-fixture-test))
+     (t/test-var deftest-private-async-test)
+     (js-await (t/test-var run-tests-async-test))
      (t/report {:type :summary})
      (let [results (:report-counters (t/get-current-env))]
        (when-not (t/successful? results)
