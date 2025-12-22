@@ -86,3 +86,8 @@
             (str "are: arg count (" (count args) ") must be divisible by binding count (" binding-count ")"))
     `(do ~@(for [arg-group (partition binding-count args)]
              `(clojure.test/is (let [~@(interleave bindings arg-group)] ~expr))))))
+
+(defmacro use-fixtures [type & fns]
+  (case type
+    :once `(clojure.test/set-once-fixtures! [~@fns])
+    :each `(clojure.test/set-each-fixtures! [~@fns])))

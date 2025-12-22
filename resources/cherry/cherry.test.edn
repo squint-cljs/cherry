@@ -8,4 +8,11 @@
          inc_report_counter_BANG_
          testing_contexts_str
          testing_vars_str
-         test_var}}
+         test_var
+         compose_fixtures
+         join_fixtures
+         get_each_fixtures
+         set_each_fixtures_BANG_
+         get_once_fixtures
+         set_once_fixtures_BANG_
+         run_tests}}

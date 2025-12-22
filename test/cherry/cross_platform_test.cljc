@@ -3,6 +3,8 @@
             [clojure.string :as str])
   #?(:cljs (:require-macros [clojure.test :as t :refer [deftest is testing are]])))
 
+(defonce test-db (atom nil))
+
 (deftest arithmetic-test
   (testing "basic arithmetic with referred macros"
     (is (= 4 (+ 2 2)))
@@ -79,6 +81,96 @@
                                       " fail-after: " fail-after))))
              (is true "thrown-with-msg? correctly fails on wrong pattern")))))))
 
+(deftest join-fixtures-empty-test
+  (testing "join-fixtures with empty list just calls test"
+    (let [called (atom false)
+          joined (t/join-fixtures [])]
+      (joined (fn [] (reset! called true)))
+      (is @called "test function should be called even with no fixtures"))))
+
+(deftest fixtures-test
+  (testing "compose-fixtures nests first around second"
+    (let [users-fixture (fn [f]
+                          (reset! test-db {:users {}})
+                          (f)
+                          (reset! test-db nil))
+          data-fixture (fn [f]
+                         (swap! test-db assoc-in [:users :user-1] {:name "Alice"})
+                         (f))
+          composed (t/compose-fixtures users-fixture data-fixture)]
+      (composed (fn []
+                  (is (= "Alice" (get-in @test-db [:users :user-1 :name])))))
+      (is (nil? @test-db) "fixture teardown clears database")))
+  (testing "join-fixtures does the same for a collection"
+    (let [users-fixture (fn [f]
+                          (reset! test-db {})
+                          (f)
+                          (reset! test-db nil))
+          alice-fixture (fn [f]
+                          (swap! test-db assoc :user-1 {:name "Alice" :age 30})
+                          (f))
+          bob-fixture (fn [f]
+                        (swap! test-db assoc :user-2 {:name "Bob" :age 25})
+                        (f))
+          joined (t/join-fixtures [users-fixture alice-fixture bob-fixture])]
+      (joined (fn []
+                (is (= "Alice" (get-in @test-db [:user-1 :name])))
+                (is (= "Bob" (get-in @test-db [:user-2 :name])))
+                (is (= 2 (count @test-db)))))
+      (is (nil? @test-db) "fixture teardown clears database"))))
+
+#?(:cljs
+   (deftest each-fixtures-applied-test
+     (testing "each fixtures provide fresh database for each test"
+       (let [fixture (fn [test-fn]
+                       (reset! test-db {:user-1 {:name "Alice" :age 30}})
+                       (test-fn)
+                       (reset! test-db nil))
+             test-1 (with-meta
+                      (fn []
+                        (is (= "Alice" (get-in @test-db [:user-1 :name])))
+                        (swap! test-db assoc :user-1 {:name "Modified"}))
+                      {:name 'test-1})
+             test-2 (with-meta
+                      (fn []
+                        (is (= "Alice" (get-in @test-db [:user-1 :name])) "fixture gives fresh DB"))
+                      {:name 'test-2})]
+         (t/set-each-fixtures! [fixture])
+         (t/test-var test-1)
+         (t/test-var test-2)
+         (t/set-each-fixtures! [])
+         (is (nil? @test-db) "fixture teardown clears database")))))
+
+#?(:cljs
+   (deftest once-fixtures-with-run-tests-test
+     (testing "once fixtures set up database once for all tests"
+       (let [saved-env (t/get-current-env)
+             setup-count (atom 0)
+             teardown-count (atom 0)
+             fixture (fn [test-fn]
+                       (swap! setup-count inc)
+                       (reset! test-db {:user-1 {:name "Alice" :age 30}
+                                        :user-2 {:name "Bob" :age 25}})
+                       (test-fn)
+                       (reset! test-db nil)
+                       (swap! teardown-count inc))
+             test-1 (with-meta
+                      (fn []
+                        (is (= "Alice" (get-in @test-db [:user-1 :name])))
+                        (is (= 30 (get-in @test-db [:user-1 :age]))))
+                      {:name 'test-1})
+             test-2 (with-meta
+                      (fn []
+                        (is (= "Bob" (get-in @test-db [:user-2 :name])))
+                        (is (= 25 (get-in @test-db [:user-2 :age]))))
+                      {:name 'test-2})]
+         (t/set-env! (t/empty-env))
+         (t/set-once-fixtures! [fixture])
+         (t/run-tests test-1 test-2)
+         (t/set-env! saved-env)
+         (is (= 1 @setup-count) "setup runs exactly once")
+         (is (= 1 @teardown-count) "teardown runs exactly once")))))
+
 #?(:cljs
    (deftest verify-is-reports-failures
      (testing "is reports failures"
@@ -117,6 +209,23 @@
     (testing "inner context"
       (is (str/includes? (t/testing-contexts-str) "inner context")))))
 
+#?(:cljs
+   (deftest successful-test
+     (testing "successful? is false with failures"
+       (is (not (t/successful? {:fail 1 :error 0}))))
+     (testing "successful? is false with errors"
+       (is (not (t/successful? {:fail 0 :error 1}))))
+     (testing "successful? is true when both zero"
+       (is (t/successful? {:fail 0 :error 0})))))
+
+#?(:cljs
+   (deftest test-var-counter-test
+     (testing "test-var increments :test counter"
+       (let [test-before (get-in (t/get-current-env) [:report-counters :test] 0)]
+         (t/test-var (fn [] nil))
+         (let [test-after (get-in (t/get-current-env) [:report-counters :test] 0)]
+           (is (= 1 (- test-after test-before))))))))
+
 #?(:clj
    (defn -main []
      (let [result (t/run-tests 'cherry.cross-platform-test)]
@@ -132,9 +241,15 @@
      (t/test-var exception-test)
      (t/test-var verify-thrown-reports-missing-exception)
      (t/test-var verify-thrown-with-msg-checks-pattern)
+     (t/test-var join-fixtures-empty-test)
+     (t/test-var fixtures-test)
+     (t/test-var each-fixtures-applied-test)
+     (t/test-var once-fixtures-with-run-tests-test)
      (t/test-var verify-is-reports-failures)
      (t/test-var verify-assert-expr-default-reports-failures)
      (t/test-var testing-context-test)
+     (t/test-var successful-test)
+     (t/test-var test-var-counter-test)
      (t/report {:type :summary})
      (let [results (:report-counters (t/get-current-env))]
        (when-not (t/successful? results)
