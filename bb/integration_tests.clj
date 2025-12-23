@@ -7,7 +7,8 @@
   (let [out (:out (sh {:err :inherit
                        :dir "test-resources/test_project"}
                    "npx cherry run macro_test.cljs"))]
-    (is (str/includes? out "22"))))
+    (is (str/includes? out "22"))
+    (is (str/includes? out "1"))))
 
 (deftest equality-test
   (let [out (:out (sh {:err :inherit

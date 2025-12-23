@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## Unreleased
+
+- Multiple `:require-macros` clauses with `:refer` now properly accumulate instead of overwriting each other
+
 ## 0.5.34 (2025-12-18)
 
 - Fix `cherry compile` CLI command not receiving file arguments
