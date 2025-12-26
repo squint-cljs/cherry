@@ -222,8 +222,9 @@
                                      (or
                                       ;; used by cherry embed:
                                       (some-> env :macros (get nss) (get nms))
-                                      (let [resolved-ns (get-in current-ns-state [:aliases nss] nss)]
-                                        (get-in ns-state [:macros resolved-ns nms]))))
+                                      (let [resolved-ns (get-in current-ns-state [:aliases nss] nss)
+                                              macro-ns (cc/resolve-macro-ns resolved-ns)]
+                                        (get-in ns-state [:macros macro-ns nms]))))
                                    (let [refers (:refers current-ns-state)]
                                      (when-let [macro-ns (get refers nms)]
                                        (or (some-> env :macros (get (symbol macro-ns)) (get nms))

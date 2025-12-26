@@ -6,7 +6,7 @@
 (deftest macro-test
   (let [out (:out (sh {:err :inherit
                        :dir "test-resources/test_project"}
-                   "npx cherry run macro_test.cljs"))]
+                      "npx cherry run macro_test.cljs"))]
     (is (str/includes? out "22"))
     (is (str/includes? out "1"))))
 
@@ -27,6 +27,16 @@
     (shell "rm" "-f" out-file)
     (sh "npx" "cherry" "compile" tmp-file)
     (is (.exists (java.io.File. out-file)) "compile should create output file")))
+
+(deftest cross-platform-jvm-test
+  (let [{:keys [exit]} (sh {:err :inherit}
+                           "clojure -M:test -n cherry.cross-platform-test")]
+    (is (zero? exit) "cross-platform test passes on JVM")))
+
+(deftest cross-platform-cherry-test
+  (let [out (:out (sh {:err :inherit}
+                      "node lib/cli.js run test/cherry/cross_platform_test.cljc"))]
+    (is (str/includes? out "0 failures") "cross-platform test passes on Cherry")))
 
 (defn run-tests []
   (shell {:dir "test-resources/test_project"} "npm install")
