@@ -2,12 +2,13 @@
   (:require ["fs" :as fs]
             [cherry.compiler.node :as cn :refer [sci]]
             [sci.core :as sci]
-            [squint.internal.node.utils :refer [resolve-file]]))
+            [squint.internal.node.utils :as utils :refer [resolve-file]]))
 
 (defn slurp [f]
   (fs/readFileSync f "utf-8"))
 
 (def ctx (sci/init {:load-fn (fn [{:keys [namespace]}]
+                               (utils/set-cfg! {:paths ["." "src" "cherry-overrides"]})
                                (let [f (resolve-file namespace)
                                      fstr (slurp f)]
                                  {:source fstr}))

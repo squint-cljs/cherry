@@ -1,0 +1,11 @@
+{:vars #{default_reporter_fn
+         _STAR_default_test_count_STAR_
+         _STAR_default_opts_STAR_
+         _STAR_report_shrinking_STAR_
+         _STAR_report_trials_STAR_
+         _STAR_report_completion_STAR_
+         _STAR_trial_report_period_STAR_
+         trial_report_dots
+         trial_report_periodic
+         assert_check
+         process_options}}
