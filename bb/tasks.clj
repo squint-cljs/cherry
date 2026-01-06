@@ -27,6 +27,10 @@
         set-config (edn/read-string (slurp (io/resource "cherry/clojure.set.edn")))
         pprint-config (edn/read-string (slurp (io/resource "cherry/clojure.pprint.edn")))
         test-config (edn/read-string (slurp (io/resource "cherry/cherry.test.edn")))
+        check-config (edn/read-string (slurp (io/resource "cherry/clojure.test.check.edn")))
+        gen-config (edn/read-string (slurp (io/resource "cherry/clojure.test.check.generators.edn")))
+        prop-config (edn/read-string (slurp (io/resource "cherry/clojure.test.check.properties.edn")))
+        clojure-test-config (edn/read-string (slurp (io/resource "cherry/clojure.test.check.clojure_test.edn")))
         reserved (edn/read-string (slurp (io/resource "cherry/js_reserved.edn")))]
     {:modules
      {:cljs.core {:exports (assoc (->namespace "cljs.core" (:vars core-config) reserved)
@@ -45,7 +49,13 @@
                     :depends-on #{:cljs.core :clojure.string}}
       :clojure.test {:exports (->namespace "cherry.test" (:vars test-config) reserved)
                      :entries '[cherry.test]
-                     :depends-on #{:cljs.core :clojure.string}}}}))
+                     :depends-on #{:cljs.core :clojure.string}}
+      :clojure.test.check {:exports (merge (->namespace "clojure.test.check" (:vars check-config) reserved)
+                                           (->namespace "clojure.test.check.generators" (:vars gen-config) reserved)
+                                           (->namespace "clojure.test.check.properties" (:vars prop-config) reserved)
+                                           (->namespace "clojure.test.check.clojure-test" (:vars clojure-test-config) reserved))
+                           :entries '[clojure.test.check clojure.test.check.generators clojure.test.check.properties clojure.test.check.clojure-test]
+                           :depends-on #{:cljs.core :clojure.string :cljs.pprint}}}}))
 
 (def test-config
   '{:compiler-options {:load-tests true}

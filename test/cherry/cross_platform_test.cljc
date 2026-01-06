@@ -1,7 +1,14 @@
 (ns cherry.cross-platform-test
   (:require [clojure.test :as t #?@(:clj [:refer [deftest is testing are]])]
-            [clojure.string :as str])
-  #?(:cljs (:require-macros [clojure.test :as t :refer [deftest deftest- is testing are]])))
+            [clojure.string :as str]
+            #?@(:cljs [[clojure.test.check :refer [quick-check]]
+                       [clojure.test.check.generators :as gen]
+                       [clojure.test.check.properties :refer [for-all*]]]
+                :clj [[clojure.test.check.generators :as gen]
+                      [clojure.test.check.properties :as prop]]))
+  #?(:cljs (:require-macros [clojure.test :as t :refer [deftest deftest- is testing are]]
+                            [clojure.test.check.clojure-test :refer [defspec]]
+                            [clojure.test.check.properties :refer [for-all]])))
 
 (defonce test-db (atom nil))
 

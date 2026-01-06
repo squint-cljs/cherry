@@ -4,6 +4,7 @@
 
 - Multiple `:require-macros` clauses with `:refer` now properly accumulate instead of overwriting each other
 - Add `cherry.test` with clojure.test-compatible testing macros and async support
+- Add test.check support
 
 ## 0.5.34 (2025-12-18)
 
