@@ -276,7 +276,7 @@
 #?(:cljs
    (deftest ^:async async-test
      (testing "async with setTimeout"
-       (js-await
+       (await
         (js/Promise.
          (fn [resolve]
            (js/setTimeout
@@ -357,14 +357,14 @@
                               20))))
              result (fixture async-test)]
          (is (instance? js/Promise result))
-         (js-await result)
-         (js-await (js/Promise. (fn [resolve] (js/setTimeout resolve 30))))
+         (await result)
+         (await (js/Promise. (fn [resolve] (js/setTimeout resolve 30))))
          (is (= [:setup :test-done :teardown] @log)
              "teardown should wait for async test")))))
 
 #?(:cljs
    (deftest- ^:async private-async-helper
-     (js-await (js/Promise. (fn [resolve] (js/setTimeout resolve 5))))
+     (await (js/Promise. (fn [resolve] (js/setTimeout resolve 5))))
      (is true)))
 
 #?(:cljs
@@ -403,8 +403,8 @@
                              (is (string? "yes") "sync-last assertion"))
                            {:name 'sync-last})
                result (t/run-tests sync-first async-delayed sync-last)]
-           (js-await result)
-           (js-await (js/Promise. (fn [resolve] (js/setTimeout resolve 30))))
+           (await result)
+           (await (js/Promise. (fn [resolve] (js/setTimeout resolve 30))))
            (is (= [:setup :test-1 :test-2 :test-3 :teardown] @log)
                "run-tests should chain async tests in order")
            (t/set-once-fixtures! saved-fixtures))))))
@@ -428,20 +428,20 @@
      (t/test-var fixtures-test)
      (t/test-var each-fixtures-applied-test)
      (t/test-var once-fixtures-with-run-tests-test)
-     (js-await (t/test-var async-test))
+     (await (t/test-var async-test))
      (t/test-var verify-is-reports-failures)
      (t/test-var verify-assert-expr-default-reports-failures)
      (t/test-var testing-context-test)
      (t/test-var successful-test)
      (t/test-var test-var-counter-test)
-     (js-await (t/test-var wrap-async-fixture-test))
+     (await (t/test-var wrap-async-fixture-test))
      (t/test-var deftest-private-async-test)
-     (js-await (t/test-var run-tests-async-test))
+     (await (t/test-var run-tests-async-test))
      (t/test-var per-ns-each-fixtures-test)
      (t/test-var per-ns-once-fixtures-test)
      (t/test-var run-tests-counter-isolation-test)
      (t/test-var report-only-counts-pass-fail-error-test)
-     (js-await (t/test-var async-done-form-test))
+     (await (t/test-var async-done-form-test))
      (t/test-var run-tests-quoted-symbol-test)
      (t/report {:type :summary})
      (let [results (:report-counters (t/get-current-env))]

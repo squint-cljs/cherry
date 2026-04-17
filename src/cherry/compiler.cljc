@@ -53,7 +53,7 @@
                          'return 'delete 'new 'do 'aget 'aset 'while
                          'inc! 'dec! 'dec 'inc 'defined? 'and 'or
                          '? 'try 'break 'throw
-                         'js/await 'js-await 'const 'let 'let* 'letfn* 'ns 'require 'def 'loop*
+                         'js/await 'js-await 'await 'const 'let 'let* 'letfn* 'ns 'require 'def 'loop*
                          'recur 'js* 'case* 'deftype*
                          ;; prefixed to avoid conflicts
                          'clava-compiler-jsx

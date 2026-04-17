@@ -1,8 +1,8 @@
 (ns async)
 
 (defn ^:async status []
-  (let [resp (js/await (js/fetch "https://clojure.org"))
-        status (js/await (.-status resp))]
+  (let [resp (await (js/fetch "https://clojure.org"))
+        status (await (.-status resp))]
     status))
 
-(js/console.log "status:" (js/await (status)))
+(js/console.log "status:" (await (status)))

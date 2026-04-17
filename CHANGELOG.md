@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Accept plain `await` as a special form, in anticipation of CLJS next.
+  The legacy `js-await` and `js/await` spellings continue to work as
+  aliases for now and may be deprecated in a future version.
 - Multiple `:require-macros` clauses with `:refer` now properly accumulate instead of overwriting each other
 - Add `cherry.test` with `clojure.test`-compatible testing API: `deftest`,
   `is`, `testing`, `are`, `deftest-`, `use-fixtures`, `async`, `run-tests`
