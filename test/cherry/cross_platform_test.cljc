@@ -1,7 +1,10 @@
 (ns cherry.cross-platform-test
-  (:require [clojure.test :as t #?@(:clj [:refer [deftest is testing are]])]
-            [clojure.string :as str])
-  #?(:cljs (:require-macros [clojure.test :as t :refer [deftest is testing are async]])))
+  (:require [clojure.test :as t :refer [deftest is testing are
+                                        #?@(:cljs [async])]]
+            [clojure.string :as str]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.clojure-test :as tc-test :refer [defspec]]
+            [clojure.test.check.properties :as prop]))
 
 (defonce test-db (atom nil))
 
@@ -398,6 +401,91 @@
                "run-tests should chain async tests in order")
            (t/set-once-fixtures! saved-fixtures))))))
 
+(defspec simple-integer-property 100
+  (prop/for-all [x gen/small-integer]
+                (= x x)))
+
+(defspec vector-reversal-property 50
+  (prop/for-all [v (gen/vector gen/small-integer)]
+                (= v (reverse (reverse v)))))
+
+(defspec generator-composition 50
+  (prop/for-all [x (gen/fmap inc gen/small-integer)]
+                (> x (- x 1))))
+
+(defspec multiple-generators 50
+  (prop/for-all [x gen/small-integer
+                 y gen/small-integer]
+                (= (+ x y) (+ y x))))
+
+(defspec string-concatenation 50
+  (prop/for-all [s1 gen/string-ascii
+                 s2 gen/string-ascii]
+                (= (count (str s1 s2))
+                   (+ (count s1) (count s2)))))
+
+(defspec map-property 50
+  (prop/for-all [m (gen/map gen/keyword gen/small-integer)]
+                (= (count m) (count (keys m)))))
+
+(defspec set-property 50
+  (prop/for-all [s (gen/set gen/small-integer)]
+                (<= (count s) 100)))
+
+(defspec such-that-property 50
+  (prop/for-all [x (gen/such-that pos? gen/small-integer 100)]
+                (pos? x)))
+
+(defspec pos-int-property 50
+  (prop/for-all [x (gen/large-integer* {:min 1})]
+                (pos? x)))
+
+(defspec neg-int-property 50
+  (prop/for-all [x (gen/large-integer* {:max -1})]
+                (neg? x)))
+
+(defspec nat-property 50
+  (prop/for-all [x gen/nat]
+                (nat-int? x)))
+
+(defspec list-distinct-property 50
+  (prop/for-all [xs (gen/list-distinct gen/small-integer)]
+                (= (count xs) (count (set xs)))))
+
+(defspec recursive-gen-property 20
+  (prop/for-all [tree (gen/recursive-gen
+                       (fn [inner] (gen/vector inner 0 3))
+                       gen/small-integer)]
+                (or (number? tree) (vector? tree))))
+
+(defspec resize-property 50
+  (prop/for-all [v (gen/resize 5 (gen/vector gen/small-integer))]
+                (<= (count v) 10)))
+
+#?(:cljs
+   (defspec verify-quick-check-catches-failures 20
+     (prop/for-all [x gen/small-integer]
+                   (pos? x))))
+
+#?(:cljs
+   (defn verify-failure-detection
+     "Runs verify-quick-check-catches-failures and asserts it catches the bug."
+     []
+     (let [saved-env (t/get-current-env)
+           saved-counters (:report-counters saved-env)]
+       (t/set-env! (assoc (t/empty-env) :testing-vars (:testing-vars saved-env)))
+       (let [fail-before (get-in (t/get-current-env) [:report-counters :fail] 0)]
+         (t/test-var verify-quick-check-catches-failures)
+         (let [fail-after (get-in (t/get-current-env) [:report-counters :fail] 0)]
+           (t/set-env! (assoc saved-env :report-counters saved-counters))
+           (when-not (> fail-after fail-before)
+             (throw (js/Error. "quick-check should have caught failure but didn't!"))))))))
+
+#?(:cljs
+   (defn test-clojure-test-vars []
+     (assert (number? tc-test/*default-test-count*)
+             "*default-test-count* should be a number")))
+
 #?(:clj
    (defn -main []
      (let [result (t/run-tests 'cherry.cross-platform-test)]
@@ -431,6 +519,22 @@
      (t/test-var report-only-counts-pass-fail-error-test)
      (await (t/test-var async-done-form-test))
      (t/test-var run-tests-quoted-symbol-test)
+     (t/test-var simple-integer-property)
+     (t/test-var vector-reversal-property)
+     (t/test-var generator-composition)
+     (t/test-var multiple-generators)
+     (t/test-var string-concatenation)
+     (t/test-var map-property)
+     (t/test-var set-property)
+     (t/test-var such-that-property)
+     (t/test-var pos-int-property)
+     (t/test-var neg-int-property)
+     (t/test-var nat-property)
+     (t/test-var list-distinct-property)
+     (t/test-var recursive-gen-property)
+     (t/test-var resize-property)
+     (test-clojure-test-vars)
+     (verify-failure-detection)
      (t/report {:type :summary})
      (let [results (:report-counters (t/get-current-env))]
        (when-not (t/successful? results)
