@@ -18,6 +18,7 @@
    [cherry.internal.loop :as loop]
    [cherry.internal.macros :as macros]
    [cherry.internal.protocols :as protocols]
+   [squint.internal.test :as test]
    [squint.internal.macros :as squint-macros]
    [clojure.string :as str]
    [edamame.core :as e]
@@ -109,6 +110,9 @@
                              'satisfies? macros/core-satisfies?
                              }
                             cc/common-macros))
+
+(def built-in-macro-nss
+  {'cherry.test test/core-test-macros})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
@@ -222,12 +226,26 @@
                                      (or
                                       ;; used by cherry embed:
                                       (some-> env :macros (get nss) (get nms))
-                                      (let [resolved-ns (get-in current-ns-state [:aliases nss] nss)]
-                                        (get-in ns-state [:macros resolved-ns nms]))))
+                                      (let [macro-alias-ns (get-in current-ns-state [:macro-aliases nss])
+                                            resolved-ns (or macro-alias-ns
+                                                            (get-in current-ns-state [:aliases nss] nss))
+                                              macro-ns (cc/resolve-macro-ns resolved-ns)]
+                                        (or (get-in ns-state [:macros macro-ns nms])
+                                            ;; Built-in fallback. Only consult if the user actually
+                                            ;; required this ns. Check after we know there's a candidate.
+                                            (when-let [m (get-in built-in-macro-nss [macro-ns nms])]
+                                              (when (or (contains? (:aliases current-ns-state) nss)
+                                                        (contains? (:macro-aliases current-ns-state) nss)
+                                                        (contains? (:aliases current-ns-state)
+                                                                   (symbol (cc/alias-munge (str nss)))))
+                                                m))))))
                                    (let [refers (:refers current-ns-state)]
                                      (when-let [macro-ns (get refers nms)]
-                                       (or (some-> env :macros (get (symbol macro-ns)) (get nms))
-                                           (get-in ns-state [:macros macro-ns nms]))))))))]
+                                       (let [resolved (cc/resolve-macro-ns macro-ns)]
+                                         (or (some-> env :macros (get (symbol macro-ns)) (get nms))
+                                             (get-in ns-state [:macros resolved nms])
+                                             (get-in ns-state [:macros macro-ns nms])
+                                             (get-in built-in-macro-nss [resolved nms])))))))))]
                (if macro
                  (let [;; fix for calling macro with more than 20 args
                        #?@(:cljs [macro (or (.-afn ^js macro) macro)])

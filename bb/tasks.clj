@@ -26,6 +26,7 @@
         walk-config (edn/read-string (slurp (io/resource "cherry/clojure.walk.edn")))
         set-config (edn/read-string (slurp (io/resource "cherry/clojure.set.edn")))
         pprint-config (edn/read-string (slurp (io/resource "cherry/clojure.pprint.edn")))
+        test-config (edn/read-string (slurp (io/resource "cherry/cherry.test.edn")))
         reserved (edn/read-string (slurp (io/resource "cherry/js_reserved.edn")))]
     {:modules
      {:cljs.core {:exports (assoc (->namespace "cljs.core" (:vars core-config) reserved)
@@ -41,7 +42,10 @@
                     :depends-on #{:cljs.core}}
       :cljs.pprint {:exports (->namespace "cljs.pprint" (:vars pprint-config) reserved)
                     :entries '[cljs.pprint]
-                    :depends-on #{:cljs.core :clojure.string}}}}))
+                    :depends-on #{:cljs.core :clojure.string}}
+      :clojure.test {:exports (->namespace "cherry.test" (:vars test-config) reserved)
+                     :entries '[cherry.test]
+                     :depends-on #{:cljs.core :clojure.string}}}}))
 
 (def test-config
   '{:compiler-options {:load-tests true}
