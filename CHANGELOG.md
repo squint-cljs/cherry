@@ -4,11 +4,12 @@
 
 - Multiple `:require-macros` clauses with `:refer` now properly accumulate instead of overwriting each other
 - Add `cherry.test` with `clojure.test`-compatible testing API: `deftest`,
-  `is`, `testing`, `are`, `deftest-`, `use-fixtures`, `run-tests` (no-args
-  defaults to current ns; also accepts quoted ns symbols). Macros are
-  compiler built-ins (shared with squint) — no `:require-macros` plumbing
-  needed in user code. Per-namespace fixtures, counter isolation per
-  `run-tests` call, `^:async` test support.
+  `is`, `testing`, `are`, `deftest-`, `use-fixtures`, `async`, `run-tests`
+  (no-args defaults to current ns; also accepts quoted ns symbols). Macros
+  are compiler built-ins (shared with squint) — no `:require-macros`
+  plumbing needed in user code. Per-namespace fixtures, counter isolation
+  per `run-tests` call, `^:async` test support, and `(async done body)`
+  form for tests that resolve when `done` is called.
 
 ## 0.5.34 (2025-12-18)
 

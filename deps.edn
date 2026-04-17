@@ -3,7 +3,7 @@
         org.babashka/sci {:mvn/version "0.10.49"}
         io.github.squint-cljs/squint
         #_{:local/root "/Users/borkdude/dev/squint"}
-        {:git/sha "37de0eee33cc608500cc2df2bb827fcd396dde9e"}}
+        {:git/sha "67d00cdb6133b903c981d010cc5b0777db20cd12"}}
  :aliases
  {:cljs {:extra-paths ["test"]
          :extra-deps {thheller/shadow-cljs {:mvn/version "3.3.4"}

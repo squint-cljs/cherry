@@ -1,7 +1,7 @@
 (ns cherry.cross-platform-test
   (:require [clojure.test :as t #?@(:clj [:refer [deftest is testing are]])]
             [clojure.string :as str])
-  #?(:cljs (:require-macros [clojure.test :as t :refer [deftest deftest- is testing are]])))
+  #?(:cljs (:require-macros [clojure.test :as t :refer [deftest deftest- is testing are async]])))
 
 (defonce test-db (atom nil))
 
@@ -248,6 +248,17 @@
                "no bogus :begin-test-ns key added"))))))
 
 #?(:cljs
+   (deftest async-done-form-test
+     ;; (async done ...) — common cljs.test idiom; body runs, done resolves
+     ;; the wrapping promise, test-var awaits it.
+     (async done
+       (js/setTimeout
+        (fn []
+          (is (= 42 (* 6 7)))
+          (done))
+        5))))
+
+#?(:cljs
    (deftest run-tests-quoted-symbol-test
      (testing "(run-tests 'my.ns) macro converts quoted symbol to a string"
        (let [saved-env (t/get-current-env)]
@@ -430,6 +441,7 @@
      (t/test-var per-ns-once-fixtures-test)
      (t/test-var run-tests-counter-isolation-test)
      (t/test-var report-only-counts-pass-fail-error-test)
+     (js-await (t/test-var async-done-form-test))
      (t/test-var run-tests-quoted-symbol-test)
      (t/report {:type :summary})
      (let [results (:report-counters (t/get-current-env))]
