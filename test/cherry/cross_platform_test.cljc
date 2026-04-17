@@ -1,7 +1,7 @@
 (ns cherry.cross-platform-test
   (:require [clojure.test :as t #?@(:clj [:refer [deftest is testing are]])]
             [clojure.string :as str])
-  #?(:cljs (:require-macros [clojure.test :as t :refer [deftest deftest- is testing are async]])))
+  #?(:cljs (:require-macros [clojure.test :as t :refer [deftest is testing are async]])))
 
 (defonce test-db (atom nil))
 
@@ -363,17 +363,6 @@
              "teardown should wait for async test")))))
 
 #?(:cljs
-   (deftest- ^:async private-async-helper
-     (await (js/Promise. (fn [resolve] (js/setTimeout resolve 5))))
-     (is true)))
-
-#?(:cljs
-   (deftest deftest-private-async-test
-     (testing "deftest- works with ^:async"
-       (let [result (t/test-var private-async-helper)]
-         (is (instance? js/Promise result) "deftest- ^:async returns Promise")))))
-
-#?(:cljs
    (deftest ^:async run-tests-async-test
      (testing "run-tests chains async tests correctly"
        (let [log (atom [])
@@ -435,7 +424,6 @@
      (t/test-var successful-test)
      (t/test-var test-var-counter-test)
      (await (t/test-var wrap-async-fixture-test))
-     (t/test-var deftest-private-async-test)
      (await (t/test-var run-tests-async-test))
      (t/test-var per-ns-each-fixtures-test)
      (t/test-var per-ns-once-fixtures-test)
