@@ -231,7 +231,14 @@
                                                             (get-in current-ns-state [:aliases nss] nss))
                                               macro-ns (cc/resolve-macro-ns resolved-ns)]
                                         (or (get-in ns-state [:macros macro-ns nms])
-                                            (get-in built-in-macro-nss [macro-ns nms])))))
+                                            ;; Built-in fallback. Only consult if the user actually
+                                            ;; required this ns. Check after we know there's a candidate.
+                                            (when-let [m (get-in built-in-macro-nss [macro-ns nms])]
+                                              (when (or (contains? (:aliases current-ns-state) nss)
+                                                        (contains? (:macro-aliases current-ns-state) nss)
+                                                        (contains? (:aliases current-ns-state)
+                                                                   (symbol (cc/alias-munge (str nss)))))
+                                                m))))))
                                    (let [refers (:refers current-ns-state)]
                                      (when-let [macro-ns (get refers nms)]
                                        (let [resolved (cc/resolve-macro-ns macro-ns)]
