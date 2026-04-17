@@ -15,6 +15,8 @@
          set_each_fixtures_BANG_
          get_once_fixtures
          set_once_fixtures_BANG_
+         register_test_BANG_
+         registered_tests
          run_tests
          async_QMARK_
          wrap_async}}

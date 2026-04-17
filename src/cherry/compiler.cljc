@@ -18,6 +18,7 @@
    [cherry.internal.loop :as loop]
    [cherry.internal.macros :as macros]
    [cherry.internal.protocols :as protocols]
+   [squint.internal.test :as test]
    [squint.internal.macros :as squint-macros]
    [clojure.string :as str]
    [edamame.core :as e]
@@ -109,6 +110,9 @@
                              'satisfies? macros/core-satisfies?
                              }
                             cc/common-macros))
+
+(def built-in-macro-nss
+  {'cherry.test test/core-test-macros})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
@@ -226,13 +230,15 @@
                                             resolved-ns (or macro-alias-ns
                                                             (get-in current-ns-state [:aliases nss] nss))
                                               macro-ns (cc/resolve-macro-ns resolved-ns)]
-                                        (get-in ns-state [:macros macro-ns nms]))))
+                                        (or (get-in ns-state [:macros macro-ns nms])
+                                            (get-in built-in-macro-nss [macro-ns nms])))))
                                    (let [refers (:refers current-ns-state)]
                                      (when-let [macro-ns (get refers nms)]
                                        (let [resolved (cc/resolve-macro-ns macro-ns)]
                                          (or (some-> env :macros (get (symbol macro-ns)) (get nms))
                                              (get-in ns-state [:macros resolved nms])
-                                             (get-in ns-state [:macros macro-ns nms])))))))))]
+                                             (get-in ns-state [:macros macro-ns nms])
+                                             (get-in built-in-macro-nss [resolved nms])))))))))]
                (if macro
                  (let [;; fix for calling macro with more than 20 args
                        #?@(:cljs [macro (or (.-afn ^js macro) macro)])
