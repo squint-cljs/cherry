@@ -217,6 +217,21 @@
              "each ns's once-fixture wraps only that ns's tests")))))
 
 #?(:cljs
+   (deftest run-tests-counter-isolation-test
+     (testing "an inner run-tests doesn't disturb the caller's counters"
+       (let [before (:report-counters (t/get-current-env))
+             inner-result (t/run-tests
+                           (with-meta (fn [] (is true)) {:name "inner-1" :ns "x"})
+                           (with-meta (fn [] (is true)) {:name "inner-2" :ns "x"}))
+             after (:report-counters (t/get-current-env))]
+         (is (= before after)
+             "outer counters are restored after run-tests returns")
+         (is (= 2 (:test inner-result))
+             "returned summary reflects only the inner run's tests")
+         (is (= 2 (:pass inner-result))
+             "returned summary reflects only the inner run's passes")))))
+
+#?(:cljs
    (deftest ^:async async-test
      (testing "async with setTimeout"
        (js-await
@@ -382,6 +397,7 @@
      (js-await (t/test-var run-tests-async-test))
      (t/test-var per-ns-each-fixtures-test)
      (t/test-var per-ns-once-fixtures-test)
+     (t/test-var run-tests-counter-isolation-test)
      (t/report {:type :summary})
      (let [results (:report-counters (t/get-current-env))]
        (when-not (t/successful? results)
