@@ -18,6 +18,7 @@
    [cherry.internal.loop :as loop]
    [cherry.internal.macros :as macros]
    [cherry.internal.protocols :as protocols]
+   [cherry.internal.test-check :as test-check]
    [squint.internal.test :as test]
    [squint.internal.macros :as squint-macros]
    [clojure.string :as str]
@@ -112,7 +113,15 @@
                             cc/common-macros))
 
 (def built-in-macro-nss
-  {'cherry.test test/core-test-macros})
+  {'cherry.test test/core-test-macros
+   'clojure.test.check.clojure-test test-check/clojure-test-macros
+   'clojure.test.check.properties test-check/properties-macros})
+
+(def cherry-extra-ns-mappings
+  '{clojure.test.check               "cherry-cljs/lib/clojure.test.check.js"
+    clojure.test.check.generators    "cherry-cljs/lib/clojure.test.check.js"
+    clojure.test.check.properties    "cherry-cljs/lib/clojure.test.check.js"
+    clojure.test.check.clojure-test  "cherry-cljs/lib/clojure.test.check.js"})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
@@ -437,7 +446,8 @@
                                                                 :imports imports
                                                                 :jsx false
                                                                 :need-html-import need-html-import
-                                                                :pragmas pragmas))
+                                                                :pragmas pragmas
+                                                                :built-in-macro-nss built-in-macro-nss))
                  jsx *jsx*
                  _ (when (and jsx jsx-runtime)
                      (swap! imports str
