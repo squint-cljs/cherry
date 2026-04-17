@@ -3,7 +3,12 @@
 ## Unreleased
 
 - Multiple `:require-macros` clauses with `:refer` now properly accumulate instead of overwriting each other
-- Add `cherry.test` with clojure.test-compatible testing macros and async support
+- Add `cherry.test` with `clojure.test`-compatible testing API: `deftest`,
+  `is`, `testing`, `are`, `deftest-`, `use-fixtures`, `run-tests` (no-args
+  defaults to current ns; also accepts quoted ns symbols). Macros are
+  compiler built-ins (shared with squint) — no `:require-macros` plumbing
+  needed in user code. Per-namespace fixtures, counter isolation per
+  `run-tests` call, `^:async` test support.
 
 ## 0.5.34 (2025-12-18)
 

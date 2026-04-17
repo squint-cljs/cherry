@@ -248,6 +248,21 @@
                "no bogus :begin-test-ns key added"))))))
 
 #?(:cljs
+   (deftest run-tests-quoted-symbol-test
+     (testing "(run-tests 'my.ns) macro converts quoted symbol to a string"
+       (let [saved-env (t/get-current-env)]
+         (t/register-test! "synthetic.ns"
+                           (with-meta (fn [] (is true))
+                             {:name "synthetic" :ns "synthetic.ns"}))
+         (t/set-env! (t/empty-env))
+         (let [result (t/run-tests 'synthetic.ns)]
+           (t/set-env! saved-env)
+           (is (= 1 (:test result))
+               "quoted ns symbol must reach the runtime as a string and resolve")
+           (is (= 1 (:pass result))
+               "the inner test ran and its assertion passed"))))))
+
+#?(:cljs
    (deftest ^:async async-test
      (testing "async with setTimeout"
        (js-await
@@ -415,6 +430,7 @@
      (t/test-var per-ns-once-fixtures-test)
      (t/test-var run-tests-counter-isolation-test)
      (t/test-var report-only-counts-pass-fail-error-test)
+     (t/test-var run-tests-quoted-symbol-test)
      (t/report {:type :summary})
      (let [results (:report-counters (t/get-current-env))]
        (when-not (t/successful? results)
