@@ -18,6 +18,7 @@
    [cherry.internal.loop :as loop]
    [cherry.internal.macros :as macros]
    [cherry.internal.protocols :as protocols]
+   [cherry.internal.test-check :as test-check]
    [squint.internal.test :as test]
    [squint.internal.macros :as squint-macros]
    [clojure.string :as str]
@@ -112,7 +113,9 @@
                             cc/common-macros))
 
 (def built-in-macro-nss
-  {'cherry.test test/core-test-macros})
+  {'cherry.test test/core-test-macros
+   'clojure.test.check.clojure-test test-check/clojure-test-macros
+   'clojure.test.check.properties test-check/properties-macros})
 
 (def core-config (resource/edn-resource "cherry/cljs.core.edn"))
 
