@@ -38,6 +38,14 @@
                       "node lib/cli.js run test/cherry/cross_platform_test.cljc"))]
     (is (str/includes? out "0 failures") "cross-platform test passes on Cherry")))
 
+(deftest cljc-macro-reads-data-ns-via-require-macros-test
+  (let [{:keys [out exit]} (sh {:dir "test-resources/test_project"
+                                :out :string :err :inherit}
+                               "npx cherry run macro_data_via_require_macros_test.cljs")]
+    (is (zero? exit) "compile + run completes without sci error")
+    (is (str/includes? out ":fn-key :add") "macro expanded — add called")
+    (is (str/includes? out ":fn-key :mul") "macro expanded — mul called")))
+
 (defn run-tests []
   (shell {:dir "test-resources/test_project"} "npm install")
   (let [{:keys [fail error]} (t/run-tests 'integration-tests)]
