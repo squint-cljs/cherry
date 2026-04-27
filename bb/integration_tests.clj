@@ -46,6 +46,16 @@
     (is (str/includes? out ":fn-key :add") "macro expanded — add called")
     (is (str/includes? out ":fn-key :mul") "macro expanded — mul called")))
 
+(deftest cljc-macro-via-require-expands-at-compile-time-test
+  (let [dir "test-resources/test_project"
+        out-mjs (str dir "/macro_data_via_require_test.mjs")]
+    (shell "rm" "-f" out-mjs)
+    (sh {:dir dir :err :inherit}
+        "npx cherry compile src/macro_data.cljc src/macro_data_macros.cljc macro_data_via_require_test.cljc")
+    (let [emitted (slurp out-mjs)]
+      (is (str/includes? emitted "var add = function") "macro expanded inline — add defn emitted")
+      (is (str/includes? emitted "var mul = function") "macro expanded inline — mul defn emitted"))))
+
 (defn run-tests []
   (shell {:dir "test-resources/test_project"} "npm install")
   (let [{:keys [fail error]} (t/run-tests 'integration-tests)]
