@@ -17,6 +17,13 @@
 (defn spit [f s]
   (fs/writeFileSync f s "utf-8"))
 
+(defn- cljc-with-macros?
+  [[libname & _]]
+  (when (symbol? libname)
+    (when-let [path (utils/resolve-file libname)]
+      (and (str/ends-with? path ".cljc")
+           (str/includes? (slurp path) "defmacro")))))
+
 (defn scan-macros [s {:keys [ns-state]}]
   (let [maybe-ns (e/parse-next (e/reader s) compiler/cherry-parse-opts)]
     (when (and (seq? maybe-ns)
@@ -26,8 +33,15 @@
                                             (when (and (seq? clause)
                                                        (= :require-macros (first clause)))
                                               [(rest clause) reload]))
-                                          (partition-all 2 1 clauses))]
-        (when require-macros
+                                          (partition-all 2 1 clauses))
+            require-cljc (some->> clauses
+                                  (some (fn [clause]
+                                          (when (and (seq? clause)
+                                                     (= :require (first clause)))
+                                            (rest clause))))
+                                  (filter cljc-with-macros?))
+            all-macro-requires (concat require-macros require-cljc)]
+        (when (seq all-macro-requires)
           (.then (esm/dynamic-import "./compiler.sci.js")
                  (fn [_]
                    (let [eval-form (:eval-form @sci)]
@@ -65,7 +79,7 @@
                                                                                  merge
                                                                                  (zipmap refer (repeat macro-ns))))))))))))
                       (js/Promise.resolve nil)
-                      require-macros)))))))))
+                      all-macro-requires)))))))))
 
 (defn default-ns-state []
   (atom {:current 'user}))
