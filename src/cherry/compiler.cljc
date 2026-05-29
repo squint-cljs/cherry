@@ -249,7 +249,7 @@
                        #?@(:cljs [macro (or (.-afn ^js macro) macro)])
                        new-expr (apply macro expr (assoc env
                                                          ;; Added for CLJS compat
-                                                         :ns {:name cc/*cljs-ns*}
+                                                         :ns {:name (cc/current-ns env)}
                                                          :utils {:emit emit})
                                        (rest expr))]
                    (emit new-expr env))
@@ -378,7 +378,7 @@
         return? (= :return (:context env))
         env (if return? (assoc env :context :statement) env)]
     (loop [transpiled (if (:repl env)
-                        (let [ns (munge cc/*cljs-ns*)]
+                        (let [ns (munge (cc/current-ns env))]
                           (cc/ensure-global ns))
                         "")
            forms forms
@@ -419,8 +419,9 @@
                              (format "import * as %s from '%s';\n"
                                      core-alias "cherry-cljs/cljs.core.js")))
              pragmas (atom {:js ""})]
-         (binding [*jsx* false
-                   cc/*cljs-ns* (:ns opts cc/*cljs-ns*)]
+         (binding [*jsx* false]
+           ;; seed ns-state's :current so resolution works before a leading (ns ..)
+           (swap! (:ns-state opts) assoc :current (:ns opts 'user))
            (let [transpiled (transpile-internal x (assoc opts
                                                                 :core-alias core-alias
                                                                 :imports imports
@@ -462,7 +463,7 @@
                     :body transpiled
                     :javascript (str pragmas imports transpiled exports)
                     :jsx jsx
-                    :ns cc/*cljs-ns*
+                    :ns (cc/current-ns opts)
                     :ns-state (:ns-state opts)))))))))
 
 (defn compile-string*
