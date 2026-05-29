@@ -429,8 +429,6 @@
                    *aliases* aliases
                    cc/*target* :cherry
                    *jsx* false
-                   cc/*cljs-ns* (:ns opts cc/*cljs-ns*)
-                   cc/*async* (:async opts)
                    cc/*cljs-ns* (:ns opts cc/*cljs-ns*)]
            (let [transpiled (transpile-internal x (assoc opts
                                                                 :core-alias core-alias
