@@ -24,7 +24,7 @@
    [edamame.core :as e]
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
-                                          *public-vars* comma-list emit emit-args emit-infix
+                                          comma-list emit emit-args emit-infix
                                           emit-return escape-jsx infix-operator? prefix-unary?
 
                                           statement suffix-unary?]]
@@ -411,7 +411,6 @@
              need-html-import (atom false)
              opts (merge {:ns-state (atom {})
                           :top-level true} opts)
-             public-vars (atom #{})
              jsx-runtime (:jsx-runtime opts)
              jsx-dev (:development jsx-runtime)
              imports (atom (if repl?
@@ -420,8 +419,7 @@
                              (format "import * as %s from '%s';\n"
                                      core-alias "cherry-cljs/cljs.core.js")))
              pragmas (atom {:js ""})]
-         (binding [*public-vars* public-vars
-                   *jsx* false
+         (binding [*jsx* false
                    cc/*cljs-ns* (:ns opts cc/*cljs-ns*)]
            (let [transpiled (transpile-internal x (assoc opts
                                                                 :core-alias core-alias
@@ -449,12 +447,13 @@
                               "import * as squint_html from 'squint-cljs/src/squint/html.js';\n")))
                  pragmas (:js @pragmas)
                  imports (when-not elide-imports @imports)
+                 public-vars (get @(:ns-state opts) :public-vars #{})
                  exports (when-not elide-exports
-                           (str (when-let [vars (disj @public-vars "default$")]
+                           (str (when-let [vars (disj public-vars "default$")]
                                   (when (seq vars)
                                     (format "\nexport { %s }\n"
                                             (str/join ", " vars))))
-                                (when (contains? @public-vars "default$")
+                                (when (contains? public-vars "default$")
                                   "export default default$\n")))]
              (assoc opts
                     :pragmas pragmas
