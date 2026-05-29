@@ -229,7 +229,7 @@
                                       (let [macro-alias-ns (get-in current-ns-state [:macro-aliases nss])
                                             resolved-ns (or macro-alias-ns
                                                             (get-in current-ns-state [:aliases nss] nss))
-                                              macro-ns (cc/resolve-macro-ns resolved-ns)]
+                                              macro-ns (cc/resolve-macro-ns resolved-ns (:target env))]
                                         (or (get-in ns-state [:macros macro-ns nms])
                                             ;; Built-in fallback. Only consult if the user actually
                                             ;; required this ns. Check after we know there's a candidate.
@@ -241,7 +241,7 @@
                                                 m))))))
                                    (let [refers (:refers current-ns-state)]
                                      (when-let [macro-ns (get refers nms)]
-                                       (let [resolved (cc/resolve-macro-ns macro-ns)]
+                                       (let [resolved (cc/resolve-macro-ns macro-ns (:target env))]
                                          (or (some-> env :macros (get (symbol macro-ns)) (get nms))
                                              (get-in ns-state [:macros resolved nms])
                                              (get-in ns-state [:macros macro-ns nms])
@@ -321,11 +321,11 @@
 (defn transpile-form-internal
   ([f] (transpile-form-internal f nil))
   ([f opts]
-   (binding [cc/*target* :cherry
-             cc/*repl* (:repl opts cc/*repl*)]
+   (binding [cc/*repl* (:repl opts cc/*repl*)]
      (str
       (emit f (merge {:ns-state (atom {})
                       :context :statement
+                      :target :cherry
                       :core-vars core-vars
                       :infix-operators (disj cc/infix-operators "=")
                       :gensym (let [ctr (volatile! 0)]
@@ -427,7 +427,6 @@
          (binding [*imported-vars* imported-vars
                    *public-vars* public-vars
                    *aliases* aliases
-                   cc/*target* :cherry
                    *jsx* false
                    cc/*cljs-ns* (:ns opts cc/*cljs-ns*)]
            (let [transpiled (transpile-internal x (assoc opts
