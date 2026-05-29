@@ -24,7 +24,7 @@
    [edamame.core :as e]
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
-                                          *aliases* *imported-vars* *public-vars* comma-list emit emit-args emit-infix
+                                          *aliases* *public-vars* comma-list emit emit-args emit-infix
                                           emit-return escape-jsx infix-operator? prefix-unary?
 
                                           statement suffix-unary?]]
@@ -41,7 +41,6 @@
       (cond-> (name expr)
         js? (pr-str))
       (do
-        (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'keyword)
         (-> (emit-return (format "%skeyword(%s)"
                                  (if-let [core-alias (:core-alias env)]
                                    (str core-alias ".")
@@ -197,7 +196,6 @@
    (let [env (dissoc env :jsx)]
      (if (:quote env)
        (do
-         (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'list)
          (format "%slist(%s)"
                  (if-let [ca (:core-alias env)]
                    (str ca ".")
@@ -299,8 +297,6 @@
         mk-pair (fn [pair] (str (emit (key-fn (key pair)) expr-env) (if map-fn ", " ": ")
                                 (emit (val pair) expr-env)))
         keys (str/join ", " (map mk-pair (seq expr)))]
-    (when map-fn
-      (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) map-fn))
     (escape-jsx (-> (if map-fn
                       (format "%s%s(%s)"
                               (if-let [ca (:core-alias env)]
@@ -311,7 +307,6 @@
                     (emit-return env)) env*)))
 
 (defn emit-set [expr env]
-  (swap! *imported-vars* update "cherry-cljs/lib/cljs.core.js" (fnil conj #{}) 'hash_set)
   (emit-return (format "%s%s" (format "%shash_set"
                                       (if-let [ca (:core-alias env)]
                                         (str ca ".")
@@ -412,7 +407,6 @@
              need-html-import (atom false)
              opts (merge {:ns-state (atom {})
                           :top-level true} opts)
-             imported-vars (atom {})
              public-vars (atom #{})
              aliases (atom {core-alias "cherry-cljs/cljs.core.js"})
              jsx-runtime (:jsx-runtime opts)
@@ -423,8 +417,7 @@
                              (format "import * as %s from '%s';\n"
                                      core-alias "cherry-cljs/cljs.core.js")))
              pragmas (atom {:js ""})]
-         (binding [*imported-vars* imported-vars
-                   *public-vars* public-vars
+         (binding [*public-vars* public-vars
                    *aliases* aliases
                    *jsx* false
                    cc/*cljs-ns* (:ns opts cc/*cljs-ns*)]
