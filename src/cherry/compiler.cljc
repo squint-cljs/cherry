@@ -321,11 +321,10 @@
 (defn transpile-form-internal
   ([f] (transpile-form-internal f nil))
   ([f opts]
-   (binding [cc/*repl* (:repl opts cc/*repl*)]
-     (str
-      (emit f (merge {:ns-state (atom {})
-                      :context :statement
-                      :target :cherry
+   (str
+    (emit f (merge {:ns-state (atom {})
+                    :context :statement
+                    :target :cherry
                       :core-package "cherry-cljs/cljs.core.js"
                       :core-vars core-vars
                       :infix-operators (disj cc/infix-operators "=")
@@ -339,7 +338,7 @@
                              ::cc/map emit-map
                              ::cc/keyword emit-keyword
                              ::cc/set emit-set
-                             ::cc/special emit-special}} opts))))))
+                             ::cc/special emit-special}} opts)))))
 
 (def ^:dynamic *jsx* false)
 
@@ -379,7 +378,7 @@
         max-form-idx (dec (count forms))
         return? (= :return (:context env))
         env (if return? (assoc env :context :statement) env)]
-    (loop [transpiled (if cc/*repl*
+    (loop [transpiled (if (:repl env)
                         (let [ns (munge cc/*cljs-ns*)]
                           (cc/ensure-global ns))
                         "")
@@ -408,9 +407,9 @@
        :or {core-alias "cherry_core"}
        :as opts}]
    (let [opts (merge {:ns-state (atom {})} opts)]
-     (binding [*jsx* false
-               cc/*repl* (:repl opts cc/*repl*)]
-       (let [need-html-import (atom false)
+     (binding [*jsx* false]
+       (let [repl? (:repl opts)
+             need-html-import (atom false)
              opts (merge {:ns-state (atom {})
                           :top-level true} opts)
              imported-vars (atom {})
@@ -418,7 +417,7 @@
              aliases (atom {core-alias "cherry-cljs/cljs.core.js"})
              jsx-runtime (:jsx-runtime opts)
              jsx-dev (:development jsx-runtime)
-             imports (atom (if cc/*repl*
+             imports (atom (if repl?
                              (format "var %s = await import('%s');\n"
                                      core-alias "cherry-cljs/cljs.core.js")
                              (format "import * as %s from '%s';\n"
@@ -450,7 +449,7 @@
                                     "/jsx-runtime")))))
                  _ (when @need-html-import
                      (swap! imports str
-                            (if cc/*repl*
+                            (if repl?
                               "var squint_html = await import('squint-cljs/src/squint/html.js');\n"
                               "import * as squint_html from 'squint-cljs/src/squint/html.js';\n")))
                  pragmas (:js @pragmas)
