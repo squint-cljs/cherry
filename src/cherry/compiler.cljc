@@ -335,7 +335,6 @@
                              ::cc/set emit-set
                              ::cc/special emit-special}} opts)))))
 
-(def ^:dynamic *jsx* false)
 
 (defn jsx [form]
   (list 'clava-compiler-jsx form))
@@ -344,7 +343,7 @@
   (list 'squint-compiler-html form))
 
 (defmethod emit-special 'clava-compiler-jsx [_ env [_ form]]
-  (set! *jsx* true)
+  (swap! (:ns-state env) assoc :jsx true)
   (let [env (assoc env :jsx true)]
     (emit form env)))
 
@@ -406,8 +405,7 @@
        :or {core-alias "cherry_core"}
        :as opts}]
    (let [opts (merge {:ns-state (atom {})} opts)]
-     (binding [*jsx* false]
-       (let [repl? (:repl opts)
+     (let [repl? (:repl opts)
              need-html-import (atom false)
              opts (merge {:ns-state (atom {})
                           :top-level true} opts)
@@ -419,7 +417,6 @@
                              (format "import * as %s from '%s';\n"
                                      core-alias "cherry-cljs/cljs.core.js")))
              pragmas (atom {:js ""})]
-         (binding [*jsx* false]
            ;; seed ns-state's :current so resolution works before a leading (ns ..)
            (swap! (:ns-state opts) assoc :current (:ns opts 'user))
            (let [transpiled (transpile-internal x (assoc opts
@@ -428,7 +425,7 @@
                                                                 :jsx false
                                                                 :need-html-import need-html-import
                                                                 :pragmas pragmas))
-                 jsx *jsx*
+                 jsx (:jsx @(:ns-state opts))
                  _ (when (and jsx jsx-runtime)
                      (swap! imports str
                             (format
@@ -464,7 +461,7 @@
                     :javascript (str pragmas imports transpiled exports)
                     :jsx jsx
                     :ns (cc/current-ns opts)
-                    :ns-state (:ns-state opts)))))))))
+                    :ns-state (:ns-state opts)))))))
 
 (defn compile-string*
   ([s] (compile-string* s nil))
