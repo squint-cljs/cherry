@@ -326,6 +326,7 @@
       (emit f (merge {:ns-state (atom {})
                       :context :statement
                       :target :cherry
+                      :core-package "cherry-cljs/cljs.core.js"
                       :core-vars core-vars
                       :infix-operators (disj cc/infix-operators "=")
                       :gensym (let [ctr (volatile! 0)]
@@ -407,22 +408,21 @@
        :or {core-alias "cherry_core"}
        :as opts}]
    (let [opts (merge {:ns-state (atom {})} opts)]
-     (binding [cc/*core-package* "cherry-cljs/cljs.core.js"
-               *jsx* false
+     (binding [*jsx* false
                cc/*repl* (:repl opts cc/*repl*)]
        (let [need-html-import (atom false)
              opts (merge {:ns-state (atom {})
                           :top-level true} opts)
              imported-vars (atom {})
              public-vars (atom #{})
-             aliases (atom {core-alias cc/*core-package*})
+             aliases (atom {core-alias "cherry-cljs/cljs.core.js"})
              jsx-runtime (:jsx-runtime opts)
              jsx-dev (:development jsx-runtime)
              imports (atom (if cc/*repl*
                              (format "var %s = await import('%s');\n"
-                                     core-alias cc/*core-package*)
+                                     core-alias "cherry-cljs/cljs.core.js")
                              (format "import * as %s from '%s';\n"
-                                     core-alias cc/*core-package*)))
+                                     core-alias "cherry-cljs/cljs.core.js")))
              pragmas (atom {:js ""})]
          (binding [*imported-vars* imported-vars
                    *public-vars* public-vars
