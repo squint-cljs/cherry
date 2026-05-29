@@ -24,7 +24,7 @@
    [edamame.core :as e]
    [squint.compiler-common :as cc :refer [#?(:cljs Exception)
                                           #?(:cljs format)
-                                          *aliases* *public-vars* comma-list emit emit-args emit-infix
+                                          *public-vars* comma-list emit emit-args emit-infix
                                           emit-return escape-jsx infix-operator? prefix-unary?
 
                                           statement suffix-unary?]]
@@ -359,16 +359,20 @@
     :read-cond :allow
     :features #{:cljs :cherry}}))
 
-(defn read-forms [s]
-  (e/parse-string-all s (assoc cherry-parse-opts
-                               :auto-resolve-ns true
-                               :auto-resolve @*aliases*)))
+(defn read-forms
+  ([s] (read-forms s nil))
+  ([s env]
+   (let [ns-state (some-> (:ns-state env) deref)
+         aliases (get-in ns-state [(:current ns-state) :aliases])]
+     (e/parse-string-all s (assoc cherry-parse-opts
+                                  :auto-resolve-ns true
+                                  :auto-resolve (or aliases {}))))))
 
 (defn transpile-internal [s env]
   (let [env (merge {:ns-state (atom {})
                     :context :statement} env)
         forms (if (string? s)
-                (read-forms s)
+                (read-forms s env)
                 [s])
         max-form-idx (dec (count forms))
         return? (= :return (:context env))
@@ -408,7 +412,6 @@
              opts (merge {:ns-state (atom {})
                           :top-level true} opts)
              public-vars (atom #{})
-             aliases (atom {core-alias "cherry-cljs/cljs.core.js"})
              jsx-runtime (:jsx-runtime opts)
              jsx-dev (:development jsx-runtime)
              imports (atom (if repl?
@@ -418,7 +421,6 @@
                                      core-alias "cherry-cljs/cljs.core.js")))
              pragmas (atom {:js ""})]
          (binding [*public-vars* public-vars
-                   *aliases* aliases
                    *jsx* false
                    cc/*cljs-ns* (:ns opts cc/*cljs-ns*)]
            (let [transpiled (transpile-internal x (assoc opts
