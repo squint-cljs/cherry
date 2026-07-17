@@ -63,12 +63,37 @@
    (shadow-extra-config)
    test-config))
 
+;; cljs.core (1.10.439) defines `(defonce PROTOCOL_SENTINEL #js {})` — the protocol
+;; identity token used to mark, and dispatch on, protocol impls (incl. those extended
+;; onto native prototypes like js/Date). Built as an isolated ESM module, that `defonce`
+;; always mints a *fresh* object, and the guarded init newer ClojureScript uses to share
+;; one sentinel across independently-compiled runtimes in a realm is absent. So when
+;; Cherry output runs alongside another cljs runtime (e.g. shadow-cljs) on the same page,
+;; whichever loads last overwrites the shared prototypes' marker with its own sentinel,
+;; and the other runtime's `satisfies?`/`compare`/`=` on natives then throw. Reconcile by
+;; reusing a shared global `cljs.core.PROTOCOL_SENTINEL` (publishing ours if none exists),
+;; mirroring newer ClojureScript. See https://github.com/squint-cljs/cherry/issues/190
+(defn share-protocol-sentinel!
+  [file]
+  (let [src (slurp file)
+        ref (second (re-find #"export const PROTOCOL_SENTINEL=(\$APP\.\w+);" src))
+        _ (when-not ref
+            (throw (ex-info "PROTOCOL_SENTINEL export not found — cljs.core emit changed" {:file file})))
+        needle (str ref "={}")
+        replacement (str ref "=(function(){var g=typeof globalThis!==\"undefined\"?globalThis:"
+                         "typeof self!==\"undefined\"?self:this,c=g.cljs||(g.cljs={}),"
+                         "cc=c.core||(c.core={});return cc.PROTOCOL_SENTINEL||(cc.PROTOCOL_SENTINEL={})})()")]
+    (when-not (str/includes? src needle)
+      (throw (ex-info (str "sentinel init '" needle "' not found") {:file file})))
+    (spit file (str/replace-first src needle replacement))))
+
 (defn build-cherry-npm-package []
   (fs/create-dirs ".work")
   (fs/delete-tree "lib")
   (fs/delete-tree ".shadow-cljs")
   (spit ".work/config-merge.edn" (shadow-extra-config))
-  (shell "npx shadow-cljs --config-merge .work/config-merge.edn release cherry"))
+  (shell "npx shadow-cljs --config-merge .work/config-merge.edn release cherry")
+  (share-protocol-sentinel! "lib/cljs.core.js"))
 
 (defn publish []
   (build-cherry-npm-package)
