@@ -63,12 +63,32 @@
    (shadow-extra-config)
    test-config))
 
+(defn patch-protocol-sentinel
+  "Rewrites the PROTOCOL_SENTINEL init in lib/cljs.core.js to share one
+  sentinel with other CLJS runtimes in the same JS realm. See #190."
+  []
+  (let [f (fs/file "lib" "cljs.core.js")
+        s (slurp f)
+        [_ munged] (re-find #"PROTOCOL_SENTINEL=([\w$.]+)" s)
+        _ (when-not munged
+            (throw (ex-info "no PROTOCOL_SENTINEL export in lib/cljs.core.js" {})))
+        init (str munged "={}")
+        parts (str/split s (re-pattern (java.util.regex.Pattern/quote init)) -1)
+        _ (when-not (= 2 (count parts))
+            (throw (ex-info "expected one PROTOCOL_SENTINEL init site"
+                            {:munged munged :sites (dec (count parts))})))
+        shared (str munged
+                    "=(()=>{let g=globalThis,c=g.cljs||(g.cljs={}),o=c.core||(c.core={});"
+                    "return o.PROTOCOL_SENTINEL||(o.PROTOCOL_SENTINEL=Date.prototype.cljs$core$IEquiv$||{})})()")]
+    (spit f (str/join shared parts))))
+
 (defn build-cherry-npm-package []
   (fs/create-dirs ".work")
   (fs/delete-tree "lib")
   (fs/delete-tree ".shadow-cljs")
   (spit ".work/config-merge.edn" (shadow-extra-config))
-  (shell "npx shadow-cljs --config-merge .work/config-merge.edn release cherry"))
+  (shell "npx shadow-cljs --config-merge .work/config-merge.edn release cherry")
+  (patch-protocol-sentinel))
 
 (defn publish []
   (build-cherry-npm-package)
@@ -87,7 +107,11 @@
   (spit ".work/config-merge.edn" (shadow-extra-test-config))
   (shell "npm install")
   (shell "npx shadow-cljs --config-merge .work/config-merge.edn release cherry")
-  (shell "node lib/cherry.tests.js"))
+  (patch-protocol-sentinel)
+  (shell "node lib/cherry.tests.js")
+  (shell "node test-resources/sentinel/host_first.mjs")
+  (shell "node test-resources/sentinel/cherry_first.mjs")
+  (shell "node test-resources/sentinel/advanced_host_first.mjs"))
 
 (defn bump-compiler-common []
   (let [{:keys [out]}
