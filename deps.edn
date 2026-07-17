@@ -5,7 +5,10 @@
         {:git/sha "1a2f3b08f526d5ea0ec540434071f52955ea5cd3"}
         #_{:local/root "/Users/borkdude/dev/squint"}}
  :aliases
- {:cljs {:extra-paths ["test"]
+ ;; .work/cljs-patch holds a build-time copy of cljs/core.cljs with a patched
+ ;; PROTOCOL_SENTINEL (tasks/ensure-patched-core!); as an :extra-path it precedes the
+ ;; ClojureScript jar on the classpath, so shadow compiles the patched core.
+ {:cljs {:extra-paths ["test" ".work/cljs-patch"]
          :extra-deps {thheller/shadow-cljs {:mvn/version "3.3.4"}
                       funcool/promesa {:mvn/version "11.0.678"}
                       babashka/process {:mvn/version "0.6.23"}}}
