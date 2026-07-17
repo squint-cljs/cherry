@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix [#190](https://github.com/squint-cljs/cherry/issues/190): share
+  `PROTOCOL_SENTINEL` with coexisting CLJS runtimes in the same JS realm
 - Accept plain `await` as a special form, in anticipation of CLJS next.
   The legacy `js-await` and `js/await` spellings continue to work as
   aliases for now and may be deprecated in a future version.

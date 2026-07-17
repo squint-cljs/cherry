@@ -19,4 +19,5 @@ compiler-common
 out
 scratch.cljs
 !test-resources/js_api.mjs
+!test-resources/sentinel/*.mjs
 index2.html
