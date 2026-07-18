@@ -179,3 +179,18 @@ short names (the transform no longer cares), use pseudo-names as a debug
 flag for developing the transform. A shipped pseudo-names pipeline would
 also need every module minified, including the compiler; that works but
 buys nothing over short names.
+
+### Packaging: public facade over an internal module
+
+Exporting the ~916 internal names from `cljs.core.js` itself would invite
+user code to import them, and they churn with every build. Decision: the
+definitions move to an internal module (e.g. `lib/internal/cljs.core.js`)
+that exports internals and public names alike; `lib/cljs.core.js` becomes a
+facade re-exporting only the public API from it. User-compiled code keeps
+importing `cherry-cljs/cljs.core.js` unchanged; sibling modules (compiler,
+clojure.string, ...) import internals from the internal path.
+
+Verified: esbuild shakes through the re-export facade with no cost -
+`import { str }` via the facade bundles to 133.0 KB and the bare-import
+floor stays 2.0 KB, byte-identical to importing the impl directly. Cost is
+one extra file in the package and a second fetch for direct-CDN loads.
