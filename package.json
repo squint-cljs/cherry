@@ -13,6 +13,7 @@
     "cherry": "node_cli.js"
   },
   "dependencies": {
+    "chokidar": "^4.0.3",
     "squint-cljs": "0.9.174"
   },
   "devDependencies": {
