@@ -1,6 +1,6 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
-## Unreleased
+## 0.6.35 (2026-07-18)
 
 - Fix `deftype` implementing cljs.core protocols such as `Inst`, `IIterable`
   and `IAtom`: their marker properties were Closure-renamed in the precompiled

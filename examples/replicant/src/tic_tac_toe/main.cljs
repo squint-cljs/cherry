@@ -1,7 +1,7 @@
 (ns tic-tac-toe.main
   (:require [tic-tac-toe.core :as tic-tac-toe]))
 
-;; squint entry point (:main in squint.edn). The upstream tutorial boots from
+;; cherry entry point (:main in cherry.edn). The upstream tutorial boots from
 ;; dev/tic_tac_toe/dev.cljs via shadow's :dev/after-load; squint just runs this
 ;; module on load.
 
