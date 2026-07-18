@@ -26,6 +26,13 @@
   implementation: eval, load-file, lookup/eldoc and completions
 - Fix emitted import specifiers on Windows: backslashes are normalized via
   the path resolution now shared with squint
+- Add a vite plugin with browser REPL over nREPL and `^:dev/after-load` /
+  `^:dev/before-load` hot-reload hooks, sharing squint's implementation:
+  `import cherry from 'cherry-cljs/vite.js'`
+- Bump the `squint-cljs` npm dependency to 0.14.206. `#html` renders a nil
+  child as empty instead of `undefined`
+- nREPL server: no request/response logging by default, enable with
+  `--debug` or `:debug` in `cherry.edn`
 - CLI: add `watch` command, like squint
 - CLI: share the command implementations with squint
   (`squint.internal.cli-common`)

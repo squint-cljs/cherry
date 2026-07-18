@@ -1,7 +1,9 @@
 # ADR 0004: Port nREPL and vite REPL support from squint
 
-Status: accepted. Stage 1 (nREPL) in progress, stage 2 (vite) blocked on a
-squint npm release.
+Status: implemented. Stage 1 (nREPL) in #197, stage 2 (vite) against
+squint-cljs 0.14.206: cherry's vite.js supplies the dialect adapter to
+squint's makeVitePlugin (vite-common.js), verified end to end with a live
+vite dev server, browser eval over nREPL and hot-reload hooks.
 
 ## Problem
 

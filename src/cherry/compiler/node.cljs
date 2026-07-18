@@ -98,7 +98,7 @@
         opts (->opts opts)]
     (-> (compile-string contents (assoc opts :ns nil))
         (.then (fn [{:keys [javascript jsx] :as opts}]
-                 (let [paths (:paths @utils/!cfg ["." "src"])
+                 (let [paths (:paths opts ["." "src"])
                        out-file (path/resolve output-dir
                                               (or out-file
                                                   (str/replace (adjust-file-for-paths in-file paths) #".clj(s|c)$"
@@ -115,7 +115,8 @@
                                        {:output-dir output-dir
                                         :out-file out-file})))
                    (spit out-file javascript)
-                   (assoc opts :out-file out-file)))))))
+                   (cond-> (assoc opts :out-file out-file)
+                     (:repl opts) (assoc :dev-hooks (utils/dev-hooks (:ns-state opts))))))))))
 
 (defn ->clj [x]
   (js->clj x :keywordize-keys true))
@@ -135,4 +136,12 @@
 #_{:clj-kondo/ignore [:unused-private-var]}
 (def ^:private compile-file-js
   (jsify compile-file))
+
+#_{:clj-kondo/ignore [:unused-private-var]}
+(def ^:private read-config-js
+  (jsify #(utils/read-config % config-file)))
+
+#_{:clj-kondo/ignore [:unused-private-var]}
+(def ^:private deps-paths-js
+  (jsify #(utils/deps-paths % config-file)))
 
