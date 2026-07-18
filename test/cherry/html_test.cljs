@@ -55,7 +55,7 @@
           js (str/replace "(async function() { %s } )()" "%s" js)]
       (-> (js/eval js)
           (.then
-           #(is (html= "<div>undefined</div>" %)))
+           #(is (html= "<div></div>" %)))
           (.catch #(is false "nooooo"))
           (.finally done)))))
 

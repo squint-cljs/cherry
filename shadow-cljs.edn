@@ -11,6 +11,7 @@
    :modules
    ;; note: this is overriden in bb build-cherry
    {:cljs.core {:default true
+                :entries [cherry.dynvars]
                 :exports {assoc cljs.core/assoc
                           map cljs.core/map
                           str cljs.core/str
@@ -53,7 +54,9 @@
     :compiler.node {:depends-on #{:compiler :node}
                     :exports
                     {compileFile cherry.compiler.node/compile-file-js
-                     compileString cherry.compiler.node/compile-string-js}}
+                     compileString cherry.compiler.node/compile-string-js
+                     readConfig cherry.compiler.node/read-config-js
+                     depsPaths cherry.compiler.node/deps-paths-js}}
     :node.nrepl_server {:depends-on #{:compiler.node :cljs.pprint :node}
                         :exports
                         {startServer cherry.repl.nrepl-server/start-server

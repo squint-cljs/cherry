@@ -431,6 +431,44 @@
 (deftest dynamic-binding-test
   (is (= [1 2 1] (js->clj (jsv! "(def ^:dynamic *foo* 1) (defn f [] *foo*) [(f) (binding [*foo* 2] (f)) (f)]")))))
 
+(deftest core-dynvar-binding-test
+  (is (= "[1 2 ...]" (jsv! "(binding [*print-length* 2] (pr-str [1 2 3 4]))"))))
+
+(deftest reify-test
+  (is (= 42 (jsv! "(defprotocol P (f [this])) (f (reify P (f [_] 42)))"))))
+
+(deftest jsx-runtime-style-literal-test
+  (testing "a literal :style map on a DOM tag emits a plain JS object"
+    (let [s (:javascript (cherry/compile-string* "#jsx [:div {:style {:color \"red\"}}]"
+                                                 {:jsx-runtime {:import-source "preact"}}))]
+      (is (str/includes? s "({ \"color\": \"red\" })"))))
+  (testing "the same literal on a component stays a cljs map"
+    (let [s (:javascript (cherry/compile-string* "(defn C [_] nil) #jsx [C {:style {:color \"red\"}}]"
+                                                 {:jsx-runtime {:import-source "preact"}}))]
+      (is (str/includes? s "array_map")))))
+
+(deftest defmulti-test
+  (is (= [1 2] (js->clj (jsv! "(defmulti mm (fn [x] (:t x)))
+                               (defmethod mm :a [_] 1)
+                               (defmethod mm :default [_] 2)
+                               [(mm {:t :a}) (mm {:t :b})]")))))
+
+(deftest var-emits-value-test
+  (is (= 1 (jsv! "(defn f [] 1) (#'f)"))))
+
+(deftest extend-via-metadata-test
+  (is (= :meta (jsv! "(defprotocol P :extend-via-metadata true (pm [x]))
+                      (pm (with-meta {} {'user/pm (fn [_] :meta)}))"))))
+
+(deftest vswap!-test
+  (is (= 2 (jsv! "(def v (volatile! 1)) (vswap! v inc) @v"))))
+
+(deftest cross-ns-dynvar-set-test
+  (is (= 42 (jsv! "(def ^:dynamic *d* 1) (set! *d* 41) (inc *d*)")))
+  ;; cross-module set! goes through the box, a legal property write in ESM
+  (let [s (jss! "(ns b (:require [a])) (set! a/*d* 41) a/*d*")]
+    (is (str/includes? s "._STAR_d_STAR_.val = 41"))))
+
 (deftest named-variadic-munged-fn-test
   (is (= 1 (jsv! "((fn dispatch! [x & xs] (if (seq xs) (apply dispatch! xs) x)) 2 1)"))))
 

@@ -1,0 +1,6 @@
+{:paths ["src"]
+ :deps {io.github.borkdude/replicant {:git/sha "7ca933d0b984ddd130866f20454ffad14a4723da"}}
+ :output-dir "js"
+ :extension "js"
+ :main [plain preact replicant-app]
+ :jsx-runtime {:import-source "preact"}}

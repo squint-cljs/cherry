@@ -1,0 +1,281 @@
+(ns browser-repl-test
+  "End-to-end test of the cherry browser REPL, written in cherry.
+
+  Spawns `vite dev` (which starts the nREPL server + serves the app), loads the
+  page with a headless browser via playwright, connects an nREPL client over
+  bencode TCP, and evaluates forms. Exercises the whole stack: compiler REPL
+  output, /@resolve-deps ns fallback, nREPL bencode, vite-WS browser eval, and
+  cross-ns redef visibility (the live-global alias binding)."
+  (:require ["node:child_process" :as cp]
+            ["node:fs" :as fs]
+            ["node:path" :as path]
+            ["playwright$default" :as pw]
+            [clojure.string :as str]
+            [nrepl-client :refer [make-client nrepl-request nrepl-eval msg-field with-timeout]]))
+
+(def PORT 5299)        ;; vite dev (isolated from squint's e2e :5199)
+(def NREPL-PORT 1341)  ;; nREPL TCP (isolated from :1339/:1340)
+(def URL (str "http://localhost:" PORT "/"))
+(def EXDIR (path/resolve "examples/browser-repl"))
+
+;; --------------------------------------------------------------- helpers ----
+
+(defn wait-output
+  "Resolve when `substr` appears in the stream's accumulated output. Accumulates
+  (so a match split across chunks still works) and matches a raw substring (so
+  ANSI color codes vite emits in CI don't break it - we match the port number,
+  which stays contiguous between color codes)."
+  [stream substr]
+  (js/Promise.
+   (fn [resolve _]
+     (let [acc (atom "")]
+       (.on stream "data"
+            (fn [d]
+              (swap! acc str d)
+              (when (str/includes? @acc substr) (resolve true))))))))
+
+(defn wait-console [page substr]
+  (js/Promise.
+   (fn [resolve _]
+     (.on page "console"
+          (fn [msg] (when (str/includes? (.text msg) substr) (resolve true)))))))
+
+(def failures (atom 0))
+
+(defn check [label expected actual]
+  (if (= expected actual)
+    (println "PASS:" label)
+    (do (swap! failures inc)
+        (println "FAIL:" label "- expected" (pr-str expected) "got" (pr-str actual)))))
+
+(defn run-to-exit [proc]
+  (js/Promise. (fn [resolve _] (.on proc "exit" (fn [code] (resolve code))))))
+
+(defn ^:async check-counter
+  "Assert the counter widget at `sel` renders 'Counted: 0', then clicking its
+  button increments to 'Counted: 1'. Same behaviour, three rendering models."
+  [page name sel]
+  (let [text #(.textContent page sel)]
+    (await (with-timeout 15000 (str name " render")
+                         (.waitForFunction page (str "document.querySelector('" sel "') && document.querySelector('" sel "').textContent.includes('Counted: 0')"))))
+    (check (str name " rendered") true (str/includes? (await (text)) "Counted: 0"))
+    (await (.click page (str sel " button")))
+    (await (with-timeout 10000 (str name " click")
+                         (.waitForFunction page (str "document.querySelector('" sel "').textContent.includes('Counted: 1')"))))
+    (check (str name " click increments") true (str/includes? (await (text)) "Counted: 1"))))
+
+(defn ^:async check-build []
+  ;; `vite build` should emit a regular, optimizable bundle (no REPL/HMR output).
+  (let [code (await (run-to-exit (.spawn cp "node_modules/.bin/vite" #js ["build"]
+                                         #js {:cwd EXDIR :stdio "ignore"})))]
+    (check "vite build exit 0" 0 code)
+    (let [adir (path/join EXDIR "dist" "assets")
+          files (try (.readdirSync fs adir) (catch :default _ #js []))
+          js (some (fn [f] (when (str/ends-with? f ".js") f)) (js/Array.from files))]
+      (check "build emitted a JS bundle" true (some? js))
+      (when js
+        (let [content (.readFileSync fs (path/join adir js) "utf8")]
+          (check "bundle has no HMR" false (str/includes? content "import.meta.hot")))))))
+
+(defn ^:async check-macro-reload
+  "Issue squint#819: with the persistent vite compiler running, editing a macro
+  file and re-saving the file that uses it must surface the NEW macro output,
+  not the first-loaded definition."
+  [page macro-file consumer-file orig-consumer]
+  (await (with-timeout 15000 "macro-tag v1"
+                       (.waitForFunction page "document.querySelector('#macro-tag') && document.querySelector('#macro-tag').textContent.includes('macro-v1')")))
+  (check "macro initial render (v1)" true
+         (str/includes? (await (.textContent page "#macro-tag")) "macro-v1"))
+  ;; edit the macro, then touch the consuming source so vite recompiles it and
+  ;; re-runs the macro scan (the .cljc isn't in the JS module graph, so only the
+  ;; consumer edit triggers a recompile)
+  (.writeFileSync fs macro-file "(ns e2e-macros)\n(defmacro tag [] \"macro-v2\")\n")
+  (.writeFileSync fs consumer-file (str orig-consumer "\n;; touched by e2e\n"))
+  (await (with-timeout 20000 "macro-tag v2 (HMR after macro edit)"
+                       (.waitForFunction page "document.querySelector('#macro-tag') && document.querySelector('#macro-tag').textContent.includes('macro-v2')")))
+  (check "macro edit picked up across recompile (squint#819)" true
+         (str/includes? (await (.textContent page "#macro-tag")) "macro-v2")))
+
+(defn ^:async check-after-load
+  "Issue squint#957: editing a non-entry source (ui.cljs, shared styles) must
+  hot-swap the module and run the ^:dev/after-load fn in plain.cljs,
+  re-rendering with the new code and without a page reload. `card` is consumed
+  via the `ui` alias, `btn` via :refer - both must show the new value."
+  [page ui-file orig-ui]
+  (await (.evaluate page "window.__e2e_no_reload = true"))
+  (.writeFileSync fs ui-file (-> orig-ui
+                                 (str/replace "1px solid #e2e2e2" "4px solid #123456")
+                                 (str/replace "1px solid #ccc" "3px dashed #123456")))
+  (await (with-timeout 20000 "after-load re-render"
+                       (.waitForFunction page "document.querySelector('#plain').innerHTML.includes('4px solid')")))
+  (check "after-load hook re-renders on dep edit (squint#957)" true
+         (str/includes? (await (.innerHTML page "#plain")) "4px solid"))
+  (check "refer'd var sees the hot swap" true
+         (str/includes? (await (.innerHTML page "#plain")) "3px dashed"))
+  (check "hot swap without page reload" true (await (.evaluate page "!!window.__e2e_no_reload"))))
+
+(defn ^:async check-multimethod-hmr
+  "defmulti is defonce, like CLJS: hot-swapping the module that defines the
+  multimethod (shared.cljs) must keep methods registered from other modules
+  (the defmethod in plain.cljs), not reset to an empty method table."
+  [page shared-file orig-shared]
+  (check "multimethod cross-module dispatch" "circle-label"
+         (await (.textContent page "#mm")))
+  (.writeFileSync fs shared-file (str/replace orig-shared "(+ 1 2 3)" "(+ 3 4)"))
+  (await (with-timeout 20000 "shared.cljs hot swap"
+                       (.waitForFunction page "document.querySelector('#replicant').textContent.includes('Shared: 7')")))
+  ;; a stale #mm would still show the old text after a broken swap (the render
+  ;; throws before setting innerHTML), so force a fresh render through the
+  ;; multimethod: click the counter and require the new count to appear
+  (await (.click page "#plain button"))
+  (await (with-timeout 20000 "plain render after provider hot swap"
+                       (.waitForFunction page "document.querySelector('#plain').textContent.includes('Counted: 2')")))
+  (check "multimethod survives provider hot swap" "circle-label"
+         (await (.textContent page "#mm"))))
+
+;; ------------------------------------------------------------------ run ----
+
+;; Hard safety net: never let the process hang past 2 min (unref'd so a fast
+;; success can still exit immediately).
+(.unref (js/setTimeout
+         (fn [] (println "HARD TIMEOUT: test exceeded 120s") (js/process.exit 1))
+         120000))
+
+(defn ^:async run []
+  (await (check-build))
+  (let [vite (.spawn cp "node_modules/.bin/vite" #js ["dev" "--port" (str PORT)]
+                     #js {:cwd EXDIR
+                          :env (js/Object.assign #js {} js/process.env
+                                                 #js {"CHERRY_NREPL_PORT" (str NREPL-PORT)})})
+        browser (atom nil)
+        ;; squint#819 fixture: macro file + the source that uses it. Capture
+        ;; originals so we can restore after editing them at runtime.
+        macro-file (path/join EXDIR "src" "e2e_macros.cljc")
+        consumer-file (path/join EXDIR "src" "plain.cljs")
+        ui-file (path/join EXDIR "src" "ui.cljs")
+        shared-file (path/join EXDIR "src" "shared.cljs")
+        orig-macro (.readFileSync fs macro-file "utf8")
+        orig-consumer (.readFileSync fs consumer-file "utf8")
+        orig-ui (.readFileSync fs ui-file "utf8")
+        orig-shared (.readFileSync fs shared-file "utf8")
+        restore-files! (fn [] (try (.writeFileSync fs macro-file orig-macro)
+                                   (.writeFileSync fs consumer-file orig-consumer)
+                                   (.writeFileSync fs ui-file orig-ui)
+                                   (.writeFileSync fs shared-file orig-shared)
+                                   (catch :default _ nil)))
+        ;; safety net: the hard-timeout path calls process.exit and skips the
+        ;; finally below, so restore on exit too (sync, idempotent)
+        _ (.on js/process "exit" restore-files!)
+        ;; capture everything for diagnostics on failure (CI has no live view)
+        vlog (atom "")
+        log! (fn [& xs] (swap! vlog str (apply str xs) "\n"))]
+    (.on (.-stdout vite) "data" (fn [d] (swap! vlog str d)))
+    (.on (.-stderr vite) "data" (fn [d] (swap! vlog str d)))
+    (.on vite "error" (fn [e] (log! "[vite spawn error] " (.-message e))))
+    (.on vite "exit" (fn [code] (log! "[vite exited] code " code)))
+    (try
+      ;; match the port (contiguous between vite's ANSI color codes), not "Local:"
+      (await (with-timeout 45000 "vite ready" (wait-output (.-stdout vite) (str PORT))))
+      (reset! browser (await (with-timeout 30000 "chromium launch"
+                                           (.launch (.-chromium pw) #js {:headless true}))))
+      (let [page (await (.newPage @browser))
+            _ (.on page "pageerror" (fn [e] (log! "[pageerror] " (.-message e))))
+            _ (.on page "console" (fn [m] (when (= "error" (.type m)) (log! "[browser console.error] " (.text m)))))
+            ready (wait-console page "nrepl listener ready")]
+        (await (.goto page URL))
+        (await (with-timeout 30000 "browser nrepl listener ready" ready))
+        ;; The three :main entries each render a counter (Counted: 0 + button)
+        ;; via a different model: plain cherry #html, preact #jsx (useState),
+        ;; replicant hiccup. Each must render and increment on click.
+        (await (check-counter page "plain (#html)" "#plain"))
+        (await (check-counter page "preact (#jsx)" "#preact"))
+        (await (check-counter page "replicant (hiccup)" "#replicant"))
+        (await (check-macro-reload page macro-file consumer-file orig-consumer))
+        (await (check-after-load page ui-file orig-ui))
+        (await (check-multimethod-hmr page shared-file orig-shared))
+        (let [client (await (with-timeout 10000 "nrepl connect" (make-client NREPL-PORT)))
+              clone (await (with-timeout 10000 "nrepl clone" (nrepl-request client #js {:op "clone"})))
+              session (some (fn [m] (aget m "new-session")) (js/Array.from clone))
+              ev (fn [code] (with-timeout 20000 (str "eval " (pr-str code))
+                                          (nrepl-eval client session code)))]
+          ;; define a var in a real example ns (`ui`), read it from another ns
+          ;; via the alias. Values come back pr-str'd (a string prints quoted).
+          (await (ev "(ns ui) (def xns \"v1\")"))
+          (check "cross-ns read"
+                 "\"v1\""
+                 (await (ev "(ns repltest (:require [ui :as u])) u/xns")))
+          ;; redefine it in `ui`, the cross-ns ref must see the new value
+          (await (ev "(ns ui) (def xns \"v2\")"))
+          (check "cross-ns redef visible"
+                 "\"v2\""
+                 (await (ev "(ns repltest (:require [ui :as u])) u/xns")))
+          ;; ns honored + shared ns-state: eval in plain (via the request
+          ;; :ns, no (ns ...) form) referencing `state`, which is defined in
+          ;; replicant_app.cljs (compiled at page load, never redefined this
+          ;; session).
+          (check "file-defined var visible at REPL"
+                 "true"
+                 (await (with-timeout 20000 "eval in plain"
+                                      (nrepl-eval client session "(number? @state)" "plain"))))
+          ;; #jsx eval'd at the REPL must compile to jsx() calls (not raw <tags>,
+          ;; which the browser can't eval) and render into the live page
+          (await (ev (str "(ns repljsx (:require [\"preact\" :refer [render]]))"
+                          " (render #jsx [:div \"jsx-repl-ok\"] (js/document.querySelector \"#preact\"))")))
+          (check "REPL #jsx renders"
+                 "jsx-repl-ok"
+                 (await (.textContent page "#preact")))
+          ;; #html eval'd at the REPL must render into the live page
+          (await (ev (str "(set! (.-innerHTML (js/document.querySelector \"#plain\"))"
+                          " #html [:b \"html-repl-ok\"])")))
+          (check "REPL #html renders"
+                 "html-repl-ok"
+                 (await (.textContent page "#plain")))
+          ;; info / eldoc / complete: the server reads arglists/doc and
+          ;; completion candidates from the compiler ns-state, populated by the
+          ;; server-side compile that every eval runs (even browser evals).
+          (await (ev "(ns infotest) (defn add2 \"adds two\" [a b] (+ a b))"))
+          (let [info (await (with-timeout 10000 "nrepl info"
+                                          (nrepl-request client #js {:op "info" :sym "add2" :ns "infotest"})))]
+            (check "info arglists-str" "[a b]" (msg-field info "arglists-str"))
+            (check "info doc" "adds two" (msg-field info "doc")))
+          (let [eldoc (await (with-timeout 10000 "nrepl eldoc"
+                                           (nrepl-request client #js {:op "eldoc" :sym "add2" :ns "infotest"})))]
+            (check "eldoc docstring" "adds two" (msg-field eldoc "docstring")))
+          (let [cpl (await (with-timeout 10000 "nrepl complete"
+                                         (nrepl-request client #js {:op "complete" :prefix "add" :ns "infotest"})))
+                cands (msg-field cpl "completions")
+                names (when cands (map (fn [c] (aget c "candidate")) (js/Array.from cands)))]
+            (check "complete finds add2" true (boolean (some (fn [n] (= "add2" n)) names))))
+          ;; unknown symbol must reply no-info, not hang
+          (let [unknown (await (with-timeout 10000 "nrepl info unknown"
+                                             (nrepl-request client #js {:op "info" :sym "nope-nope" :ns "infotest"})))
+                st (msg-field unknown "status")]
+            (check "info unknown -> no-info" true (boolean (and st (.includes st "no-info")))))
+          ;; JS-interop completion routes to the browser (js/document is a browser
+          ;; global, absent in node - so this proves the complete-js round-trip).
+          (let [jscpl (await (with-timeout 10000 "nrepl js complete"
+                                           (nrepl-request client #js {:op "complete" :prefix "js/docume" :ns "infotest"})))
+                names (let [cs (msg-field jscpl "completions")]
+                        (when cs (map (fn [c] (aget c "candidate")) (js/Array.from cs))))]
+            (check "js complete finds js/document" true
+                   (boolean (some (fn [n] (= "js/document" n)) names))))
+          (let [jscpl (await (with-timeout 10000 "nrepl js member complete"
+                                           (nrepl-request client #js {:op "complete" :prefix "js/console.lo" :ns "infotest"})))
+                names (let [cs (msg-field jscpl "completions")]
+                        (when cs (map (fn [c] (aget c "candidate")) (js/Array.from cs))))]
+            (check "js complete finds js/console.log" true
+                   (boolean (some (fn [n] (= "js/console.log" n)) names))))))
+      (catch :default e
+        (swap! failures inc)
+        (println "ERROR:" (.-message e))
+        (println "----- vite / browser output -----")
+        (println @vlog)
+        (println "---------------------------------"))
+      (finally
+        (restore-files!)
+        (when @browser (try (await (.close @browser)) (catch :default _ nil)))
+        (.kill vite)))
+    (println (if (zero? @failures) "\nAll checks passed." (str "\n" @failures " failure(s).")))
+    (js/process.exit (if (zero? @failures) 0 1))))
+
+(run)

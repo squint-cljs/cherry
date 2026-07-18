@@ -1,0 +1,16 @@
+{
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "canvas-confetti": "^1.9.3",
+    "cherry-cljs": "file:../..",
+    "nanoid": "^5.0.0",
+    "preact": "^10.24.0"
+  },
+  "devDependencies": {
+    "vite": "^8.1.4"
+  }
+}

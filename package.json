@@ -7,14 +7,15 @@
     "cljs.core.js",
     "lib",
     "node_cli.js",
-    "index.js"
+    "index.js",
+    "vite.js"
   ],
   "bin": {
     "cherry": "node_cli.js"
   },
   "dependencies": {
     "chokidar": "^4.0.3",
-    "squint-cljs": "0.9.174"
+    "squint-cljs": "0.14.206"
   },
   "devDependencies": {
     "@babel/core": "^7.19.0",
@@ -23,6 +24,7 @@
     "chalk": "^5.0.1",
     "cherry-cljs": ".",
     "esbuild": "^0.23.0",
+    "playwright": "^1.56.1",
     "react": "^18.2.0",
     "shadow-cljs": "^2.28.10"
   },
