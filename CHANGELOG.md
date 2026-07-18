@@ -4,6 +4,19 @@
 
 - Fix [#190](https://github.com/squint-cljs/cherry/issues/190): share
   `PROTOCOL_SENTINEL` with coexisting CLJS runtimes in the same JS realm
+- Bump squint compiler-common, picking up `:as-alias` support among other
+  compiler fixes
+- Fix named variadic fn emitting an invalid self-reference for munged names
+  like `dispatch!`
+- Fix variadic fn emission on the JVM compiler path referencing a
+  nonexistent `array` var
+- CLI: `--help`/`-h`, argument validation and error messages via
+  babashka.cli's `dispatch`, like squint
+- CLI: report the file, line and column of a compile error and exit
+  non-zero
+- CLI: shell tab completion via babashka.cli's
+  `org.babashka.cli/completions` command
+- CLI: read options from `cherry.edn` instead of `squint.edn`
 - Accept plain `await` as a special form, in anticipation of CLJS next.
   The legacy `js-await` and `js/await` spellings continue to work as
   aliases for now and may be deprecated in a future version.

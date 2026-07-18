@@ -324,10 +324,12 @@
                       :core-vars core-vars
                       :infix-operators (disj cc/infix-operators "=")
                       :gensym (let [ctr (volatile! 0)]
-                                (fn [sym]
-                                  (let [next-id (vswap! ctr inc)]
-                                    (symbol (str (if sym (munge sym)
-                                                     "G__") next-id)))))
+                                (fn gensym*
+                                  ([] (gensym* nil))
+                                  ([sym]
+                                   (let [next-id (vswap! ctr inc)]
+                                     (symbol (str (if sym (munge sym)
+                                                      "G__") next-id))))))
                       :emit {::cc/list emit-list
                              ::cc/vector cc/emit-vector
                              ::cc/map emit-map

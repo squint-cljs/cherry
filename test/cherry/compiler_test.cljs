@@ -428,6 +428,15 @@
 (deftest with-out-str-test
   (is (str/includes? (jsv! "(with-out-str (time :hello))") "Elapsed time")))
 
+(deftest dynamic-binding-test
+  (is (= [1 2 1] (js->clj (jsv! "(def ^:dynamic *foo* 1) (defn f [] *foo*) [(f) (binding [*foo* 2] (f)) (f)]")))))
+
+(deftest named-variadic-munged-fn-test
+  (is (= 1 (jsv! "((fn dispatch! [x & xs] (if (seq xs) (apply dispatch! xs) x)) 2 1)"))))
+
+(deftest as-alias-test
+  (is (= :some.ns/x (jsv! "(ns foo (:require [some.ns :as-alias s])) ::s/x"))))
+
 (deftest defclass-test
   (is (= "[\"<<<<1-3-3>>>>\" \"1-3-3\"]" (str (jsv! (str (fs/readFileSync "test-resources/defclass_test.cljs")))))))
 

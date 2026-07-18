@@ -151,7 +151,8 @@
                  (case (alength ~(core-js-arguments))
                    ~@(mapcat #(fixed-arity rname %) sigs)
                    ~(if variadic?
-                      `(let [~args-arr (array)]
+                      ;; qualified so the JVM reader resolves it like the CLJS one
+                      `(let [~args-arr (cljs.core/array)]
                          ~(core-copy-arguments args-arr)
                          (let [argseq# (when (< ~maxfa (alength ~args-arr))
                                          (new #_:ana/no-resolve cljs.core/IndexedSeq
@@ -185,7 +186,9 @@
   (letfn [(dest-args [c]
             (map (fn [n] (core-unchecked-get (core-js-arguments) n))
                  (range c)))]
-    (let [name (or name (gensym "f"))
+    (let [;; munge up front (like multi-arity-fn) so the raw-name self-reference
+          ;; emitted below is a valid JS identifier for names like `dispatch!`
+          name (munge (or name (gensym "f")))
           rname (symbol #_(str nil #_ana/*cljs-ns*) (str name))
           sig   (remove '#{&} arglist)
           c-1   (dec (count sig))
@@ -205,7 +208,8 @@
       `(let [~name
              ~(with-meta
                 `(fn [~'var_args]
-                   (let [~args-sym (array)]
+                   ;; qualified so the JVM reader resolves it like the CLJS one
+                   (let [~args-sym (cljs.core/array)]
                      ~(core-copy-arguments args-sym)
                      (let [argseq# (when (< ~c-1 (alength ~args-sym))
                                      (new ^:ana/no-resolve cljs.core/IndexedSeq
