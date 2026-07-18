@@ -20,6 +20,8 @@
                :task (t/test-cherry)}
          gen-externs {:doc "Regenerate externs/cherry.txt from cljs.core's protocols"
                       :task (shell "clojure -M:cljs script/gen_externs.clj")}
+         test:e2e {:doc "Browser REPL e2e (vite + playwright + nREPL client).\nNeeds `npx playwright install chromium`."
+                   :task (t/e2e)}
          bump-common tasks/bump-compiler-common
          integration-tests {:doc "Run integration tests"
                             :task integration-tests/run-tests}}}

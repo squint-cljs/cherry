@@ -24,6 +24,7 @@
     "chalk": "^5.0.1",
     "cherry-cljs": ".",
     "esbuild": "^0.23.0",
+    "playwright": "^1.56.1",
     "react": "^18.2.0",
     "shadow-cljs": "^2.28.10"
   },

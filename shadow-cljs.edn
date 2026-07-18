@@ -11,6 +11,7 @@
    :modules
    ;; note: this is overriden in bb build-cherry
    {:cljs.core {:default true
+                :entries [cherry.dynvars]
                 :exports {assoc cljs.core/assoc
                           map cljs.core/map
                           str cljs.core/str

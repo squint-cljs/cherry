@@ -82,6 +82,29 @@
                              'doseq macros/core-doseq
                              'for macros/core-for
                              'lazy-seq macros/core-lazy-seq
+                             'vswap! (fn [_form _env v f & args]
+                                       `(cljs.core/vreset! ~v (~f (cljs.core/deref ~v) ~@args)))
+                             ;; mirrors the CLJS defmulti expansion: the four
+                             ;; state atoms are MultiFn constructor fields there
+                             ;; too, and defonce keeps registered methods alive
+                             ;; across REPL/HMR reloads
+                             'defmulti (fn [_form _env name & args]
+                                         (let [;; skip docstring/attr-map, find the dispatch fn
+                                               args (drop-while #(or (string? %) (map? %)) args)
+                                               [dispatch-fn & {:keys [default hierarchy]
+                                                               :or {default :default}}] args]
+                                           `(defonce ~name
+                                              (cljs.core/MultiFn. (cljs.core/symbol ~(str name))
+                                                                  ~dispatch-fn ~default
+                                                                  ~(or hierarchy
+                                                                       `(cljs.core/get-global-hierarchy))
+                                                                  (cljs.core/atom {})
+                                                                  (cljs.core/atom {})
+                                                                  (cljs.core/atom {})
+                                                                  (cljs.core/atom nil)))))
+                             'defmethod (fn [_form _env multifn dispatch-val & fn-tail]
+                                          `(cljs.core/-add-method ~multifn ~dispatch-val
+                                                                  (fn ~@fn-tail)))
                              'defonce macros/core-defonce
                              'exists? macros/core-exists?
                              'case macros/core-case
@@ -92,6 +115,7 @@
                              'unchecked-set macros/core-unchecked-set
                              'defprotocol protocols/core-defprotocol
                              'extend-type protocols/core-extend-type
+                             'reify protocols/core-reify
                              'deftype deftype/core-deftype
                              'defn core-defn
                              'defn- core-defn
@@ -138,6 +162,10 @@
                                   (str (when-not var-declarations "var ") (emit env name) " = " (emit env expr)))
                                 (partition 2 more))
                            (repeat statement-separator))))
+
+;; #'foo emits foo's value, like squint: vars are not reified
+(defmethod emit-special 'var [_ env [_ form]]
+  (emit form env))
 
 (defmethod emit-special 'deftype* [_ env [_ t fields pmasks body]]
   (let [fields (map munge fields)]
@@ -420,8 +448,10 @@
                              (format "import * as %s from '%s';\n"
                                      core-alias "cherry-cljs/cljs.core.js")))
              pragmas (atom {:js ""})]
-           ;; seed ns-state's :current so resolution works before a leading (ns ..)
-           (swap! (:ns-state opts) assoc :current (:ns opts 'user))
+           ;; seed ns-state's :current so resolution works before a leading (ns ..);
+           ;; :jsx is per-compile output info, don't let it leak from a previous
+           ;; compile through a shared ns-state (e.g. the vite plugin's)
+           (swap! (:ns-state opts) assoc :current (:ns opts 'user) :jsx false)
            (let [transpiled (transpile-internal x (assoc opts
                                                                 :core-alias core-alias
                                                                 :imports imports

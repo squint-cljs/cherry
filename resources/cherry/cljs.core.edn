@@ -470,4 +470,28 @@
          NaN_QMARK_
          iteration
          abs
+         _STAR_print_err_fn_STAR_
+         _STAR_print_newline_STAR_
+         _STAR_print_length_STAR_
+         _STAR_print_level_STAR_
+         _STAR_print_meta_STAR_
+         _STAR_print_readably_STAR_
+         _STAR_print_dup_STAR_
+         _STAR_print_namespace_maps_STAR_
+         _STAR_flush_on_newline_STAR_
+         _STAR_assert_STAR_
+         MultiFn
+         _add_method
+         get_global_hierarchy
+         Atom
+         Volatile
+         UUID
+         Keyword
+         List
+         Var
+         ExceptionInfo
+         PersistentVector
+         PersistentArrayMap
+         PersistentHashMap
+         PersistentHashSet
          }}

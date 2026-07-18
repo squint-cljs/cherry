@@ -33,6 +33,37 @@
   child as empty instead of `undefined`
 - nREPL server: no request/response logging by default, enable with
   `--debug` or `:debug` in `cherry.edn`
+- Dynamic vars compile to squint's box scheme, so `set!` and `binding` work
+  across ESM modules. cljs.core dynamic vars are exported as accessor boxes
+  proxying the real var, so `(binding [*print-length* ..] ..)` works in user
+  code
+- Add `reify`, `defmulti`/`defmethod` and the `vswap!` macro. `#'foo` emits
+  foo's value, like squint
+- `defonce` (and so `defmulti`) survives REPL and vite HMR module reloads:
+  the guard checks the ns-qualified var, so a hot-swapped module keeps its
+  state and registered methods, like CLJS
+- `defprotocol` `:extend-via-metadata` impls resolve under the fully
+  qualified method symbol, so replicant's mutation-log renderer works:
+  replicant's own test suite passes under cherry
+- Export cljs.core types such as `Atom`, `Keyword` and `PersistentVector`,
+  so `(instance? cljs.core/Atom x)` and friends work
+- `cherry.test/report` is a multimethod dispatching on
+  `[:cljs.test/default type]` like cljs.test, so reporting can be extended
+  with `defmethod`; `run-tests` accepts quoted namespace symbols
+- `#jsx` with `:jsx-runtime` emits props as a plain JS object with a JS
+  children array, so preact and react runtimes work. A literal `:style` map
+  on a DOM tag emits a plain JS object too; dynamic values and component
+  props stay cljs data
+- Fix local ns requires to resolve to their compiled output (`:resolve-ns`
+  was never consulted for cherry)
+- Macro loading: a regular `:require` of a `.cljc` containing `defmacro`
+  loads its macros, bare symbol libspecs work, dep `:paths` from `:deps` are
+  visible, macro namespaces reload when their file changes, and macro
+  namespaces can require JS libraries
+- Record `:arglists` in var metadata so nREPL `info`/`eldoc` report them
+- Bump SCI to 0.15.56
+- Add `examples/browser-repl` and `examples/replicant`, and a browser REPL
+  e2e test (`bb test:e2e`)
 - CLI: add `watch` command, like squint
 - CLI: share the command implementations with squint
   (`squint.internal.cli-common`)

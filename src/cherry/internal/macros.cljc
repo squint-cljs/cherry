@@ -329,14 +329,18 @@
 (defn core-defonce
   "defs name to have the root value of init iff the named var has no root value,
   else init is unevaluated"
-  [_&form _&env x init]
-  (let [qualified (if (namespace x)
-                    x
-                    x
-                    ;; TODO:
-                    #_(symbol (str (-> &env :ns :name)) (name x)))]
-    `(when-not (exists? ~qualified)
-       (def ~x ~init))))
+  [_&form &env x init]
+  (if (:repl &env)
+    ;; in REPL mode vars live on globalThis.<ns>, so the guard must check the
+    ;; ns-qualified name to survive module re-runs (HMR hot swaps)
+    (let [qualified (if (namespace x)
+                      x
+                      (if-let [ns (some-> &env :ns :name)]
+                        (symbol (str ns) (name x))
+                        x))]
+      `(when-not (~'exists? ~qualified)
+         (def ~x ~init)))
+    `(def ~x ~init)))
 
 (defn- bool-expr [e]
   (vary-meta e assoc :tag 'boolean))

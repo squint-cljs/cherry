@@ -62,7 +62,7 @@
         (bar-me [this] x)
         (bar-me [this y] x))))
   => 17"
-  [&env _ psym & doc+methods]
+  [_&form &env psym & doc+methods]
   (core/let [p psym #_(:name (cljs.analyzer/resolve-var (dissoc &env :locals) psym))
              [opts methods]
              (core/loop [opts {:protocol-symbol true}
@@ -86,6 +86,9 @@
                      ))))
              psym (vary-meta psym merge opts)
              ns-name (core/-> &env :ns :name)
+             ;; the ns currently being compiled, for fully qualified
+             ;; :extend-via-metadata keys
+             meta-key-ns ns-name
              ;; TODO
              fqn (core/fn [n] (symbol nil #_(core/str ns-name) (core/str n)))
              prefix (protocol-prefix p)
@@ -148,7 +151,11 @@
                                      check
                                      (core/if-not (:extend-via-metadata opts)
                                        check
-                                       `(if-let [meta-impl# (-> ~fsig (core/meta) (core/get '~fqn-fname))]
+                                       ;; the metadata key is the fully qualified method symbol,
+                                       ;; per the :extend-via-metadata contract
+                                       `(if-let [meta-impl# (-> ~fsig (core/meta)
+                                                                (core/get '~(symbol (core/str meta-key-ns)
+                                                                                    (core/str fname))))]
                                           (meta-impl# ~@sig)
                                           ~check))]
                             `(~sig ~check)))
@@ -381,6 +388,18 @@
             (add-ifn-methods type type-sym sig)
             (add-proto-methods* pprefix type type-sym sig)))
         sigs)))))
+
+(core/defn core-reify
+  "Like specify! on a fresh object: the protocol marker and method properties
+  land on the object itself, which dispatch reads like prototype properties.
+  Protocol syms normalize to their name, like satisfies?."
+  [_&form _&env & impls]
+  (core/let [obj (with-meta (gensym "reify") {:extend :instance})
+             resolve (core/fn [p] (symbol (name p)))
+             impl-map (->impl-map impls)]
+    `(let [~obj (cljs.core/js-obj)]
+       ~@(mapcat #(proto-assign-impls nil resolve obj nil %) impl-map)
+       ~obj)))
 
 (core/defn core-extend-type
   "Extend a type to a series of protocols. Useful when you are

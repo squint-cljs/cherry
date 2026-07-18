@@ -13,9 +13,18 @@
       (str s "$")
       s)))
 
+(defn- dynvar? [v]
+  (let [s (str v)]
+    (and (str/starts-with? s "_STAR_")
+         (str/ends-with? s "_STAR_"))))
+
 (defn ->namespace [the-ns-name vars reserved]
   (let [ks (map #(symbol (munge* % reserved)) vars)
-        vs (map #(symbol (str the-ns-name) (str %)) vars)
+        ;; earmuffed vars export their accessor box (see cherry.dynvars)
+        vs (map #(if (and (= "cljs.core" the-ns-name) (dynvar? %))
+                   (symbol "cherry.dynvars" (str %))
+                   (symbol (str the-ns-name) (str %)))
+                vars)
         the-map (zipmap ks vs)]
     the-map))
 
@@ -29,7 +38,8 @@
         test-config (edn/read-string (slurp (io/resource "cherry/cherry.test.edn")))
         reserved (edn/read-string (slurp (io/resource "cherry/js_reserved.edn")))]
     {:modules
-     {:cljs.core {:exports (assoc (->namespace "cljs.core" (:vars core-config) reserved)
+     {:cljs.core {:entries '[cherry.dynvars]
+                  :exports (assoc (->namespace "cljs.core" (:vars core-config) reserved)
                                   'goog_typeOf 'goog/typeOf)}
       :clojure.string {:exports (->namespace "clojure.string" (:vars string-config) reserved)
                        :entries '[clojure.string]
@@ -125,6 +135,20 @@
   (shell "node test-resources/sentinel/host_first.mjs")
   (shell "node test-resources/sentinel/cherry_first.mjs")
   (shell "node test-resources/sentinel/advanced_host_first.mjs"))
+
+(defn- compile-e2e []
+  (shell "node" "node_cli.js" "compile"
+         "--paths" "e2e"
+         "--output-dir" "e2e"
+         "--extension" "mjs"))
+
+(defn e2e
+  "Browser REPL e2e: `vite dev` against examples/browser-repl (isolated ports),
+  headless playwright browser and an nREPL client."
+  []
+  (compile-e2e)
+  (shell {:dir "examples/browser-repl"} "npm" "install")
+  (shell "node" "e2e/browser_repl_test.mjs"))
 
 (defn bump-compiler-common []
   (let [{:keys [out]}

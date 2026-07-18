@@ -1,0 +1,5 @@
+{:paths ["src"]
+ :deps {io.github.borkdude/replicant {:git/sha "7ca933d0b984ddd130866f20454ffad14a4723da"}}
+ :output-dir "js"
+ :extension "js"
+ :main [tic-tac-toe.main]}

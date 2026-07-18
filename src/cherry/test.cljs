@@ -47,35 +47,49 @@
       ctx ctx
       :else "test")))
 
-(defn report [{:keys [type message expected actual line column file] :as m}]
-  (when (contains? #{:pass :fail :error} type)
-    (inc-report-counter! type))
-  (let [location (when (or line column file)
-                   (str (when file (str file ":"))
-                        (when line line)
-                        (when column (str ":" column))))]
-    (case type
-      :pass nil
-      :fail (do
-              (js/console.error (str "FAIL in " (current-test-str)
-                                     (when location (str " (" location ")"))))
-              (when message (js/console.error "  " message))
-              (js/console.error "  expected:" (pr-str expected))
-              (js/console.error "    actual:" (pr-str actual)))
-      :error (do
-               (js/console.error (str "ERROR in " (current-test-str)
-                                      (when location (str " (" location ")"))))
-               (when message (js/console.error "  " message))
-               (when expected (js/console.error "  expected:" (pr-str expected)))
-               (js/console.error "    actual:" (pr-str actual)))
-      :begin-test-ns (js/console.log "\nTesting" (str (:ns m)))
-      :end-test-ns nil
-      :begin-test-var nil
-      :end-test-var nil
-      :summary (let [{:keys [test pass fail error]} (:report-counters (get-current-env))]
-                 (js/console.log "\nRan" test "tests containing" (+ pass fail error) "assertions.")
-                 (js/console.log (str fail) "failures," (str error) "errors."))
-      (js/console.log "Unknown report type:" type m))))
+(defn- location-str [{:keys [line column file]}]
+  (when (or line column file)
+    (str (when file (str file ":"))
+         (when line line)
+         (when column (str ":" column)))))
+
+;; a multimethod dispatching on [:cljs.test/default type] like cljs.test, so
+;; consumers can hook reporting with defmethod/get-method
+(defmulti report (fn [m] [:cljs.test/default (:type m)]))
+
+(defmethod report :default [m]
+  (js/console.log "Unknown report type:" (:type m) m))
+
+(defmethod report [:cljs.test/default :pass] [_m]
+  (inc-report-counter! :pass))
+
+(defmethod report [:cljs.test/default :fail] [{:keys [message expected actual] :as m}]
+  (inc-report-counter! :fail)
+  (js/console.error (str "FAIL in " (current-test-str)
+                         (when-let [location (location-str m)] (str " (" location ")"))))
+  (when message (js/console.error "  " message))
+  (js/console.error "  expected:" (pr-str expected))
+  (js/console.error "    actual:" (pr-str actual)))
+
+(defmethod report [:cljs.test/default :error] [{:keys [message expected actual] :as m}]
+  (inc-report-counter! :error)
+  (js/console.error (str "ERROR in " (current-test-str)
+                         (when-let [location (location-str m)] (str " (" location ")"))))
+  (when message (js/console.error "  " message))
+  (when expected (js/console.error "  expected:" (pr-str expected)))
+  (js/console.error "    actual:" (pr-str actual)))
+
+(defmethod report [:cljs.test/default :begin-test-ns] [m]
+  (js/console.log "\nTesting" (str (:ns m))))
+
+(defmethod report [:cljs.test/default :end-test-ns] [_m] nil)
+(defmethod report [:cljs.test/default :begin-test-var] [_m] nil)
+(defmethod report [:cljs.test/default :end-test-var] [_m] nil)
+
+(defmethod report [:cljs.test/default :summary] [_m]
+  (let [{:keys [test pass fail error]} (:report-counters (get-current-env))]
+    (js/console.log "\nRan" test "tests containing" (+ pass fail error) "assertions.")
+    (js/console.log (str fail) "failures," (str error) "errors.")))
 
 (defn successful? [results]
   (and (zero? (:fail results 0))
@@ -212,7 +226,9 @@
    Returns (or resolves to, for async tests) the :report-counters
    summary map for this run."
   [& args]
-  (let [test-vars (cond
+  (let [;; quoted ns symbols normalize to the registry's string keys
+        args (mapv #(if (symbol? %) (str %) %) args)
+        test-vars (cond
                     (empty? args)
                     (registered-tests)
                     (string? (first args))
