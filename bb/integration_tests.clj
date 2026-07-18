@@ -58,6 +58,13 @@
     (is (str/includes? out "22"))
     (is (str/includes? out "1"))))
 
+(deftest nested-macro-test
+  (t/testing "a macro expansion calling another macro ns fully qualified expands, not a runtime call"
+    (let [out (:out (sh {:err :inherit
+                         :dir "test-resources/test_project"}
+                        "npx cherry run nested_macro_test.cljs"))]
+      (is (str/includes? out "25")))))
+
 (deftest equality-test
   (let [out (:out (sh {:err :inherit
                        :dir "test-resources/test_project"}

@@ -1,44 +1,17 @@
 (ns cherry.compiler.node
   (:require
-   ["crypto" :as crypto]
    ["fs" :as fs]
    ["path" :as path]
    [cherry.compiler :as compiler]
    [clojure.string :as str]
-   [edamame.core :as e]
    [shadow.esm :as esm]
-   [squint.compiler-common :as cc]
+   [squint.internal.node.macro-scan :as ms]
    [squint.internal.node.utils :as utils]))
 
 (def sci (atom nil))
 
 (def config-file "cherry.edn")
 
-;; Tracks macro source files so we only re-eval (`:reload`) a macro namespace
-;; when its file actually changed. Without this, the persistent SCI instance
-;; keeps the first-loaded macro defs forever in watch mode (squint#819);
-;; reloading on every compile would re-eval untouched macro nses instead of a
-;; microsecond stat. path -> {:mtime _ :sha _}.
-(def macro-state (atom {}))
-
-(defn- sha256 [s]
-  (-> (crypto/createHash "sha256") (.update s) (.digest "hex")))
-
-(defn- macro-file [macro-ns]
-  (utils/resolve-file macro-ns (:paths (utils/get-cfg config-file) ["." "src"])))
-
-(defn- macro-file-changed?
-  "True when macro-ns's source file changed since last seen. Cheap mtime gate
-  first; only on mtime change do we read + sha256 to confirm real content
-  change (suppresses spurious reloads on touch-without-edit). Updates cache."
-  [macro-ns]
-  (when-let [path (macro-file macro-ns)]
-    (let [{:keys [mtime sha]} (get @macro-state path)
-          cur-mtime (.-mtimeMs (fs/statSync path))]
-      (when (not= cur-mtime mtime)
-        (let [cur-sha (sha256 (fs/readFileSync path "utf-8"))]
-          (swap! macro-state assoc path {:mtime cur-mtime :sha cur-sha})
-          (not= cur-sha sha))))))
 
 (defn slurp [f]
   (fs/readFileSync f "utf-8"))
@@ -46,88 +19,18 @@
 (defn spit [f s]
   (fs/writeFileSync f s "utf-8"))
 
-(defn- cljc-with-macros?
-  "Check if a require clause refers to a .cljc file that contains defmacro."
-  [libspec]
-  (let [libname (if (symbol? libspec) libspec (first libspec))]
-    (when (symbol? libname)
-      (when-let [path (macro-file libname)]
-        (and (str/ends-with? path ".cljc")
-             (str/includes? (fs/readFileSync path "utf-8") "defmacro"))))))
+(def dialect
+  {:parse-opts compiler/cherry-parse-opts
+   :features #{:cherry :cljs :default}
+   :config-file config-file
+   :target :cherry
+   :import-sci (fn [] (esm/dynamic-import "./compiler.sci.js"))
+   :sci sci})
 
-(defn- as-alias? [libspec]
-  (and (sequential? libspec)
-       (some #{:as-alias} libspec)))
+(def compile-time-source (partial ms/compile-time-source dialect))
 
-(defn- self-ref? [the-ns-name libspec]
-  (and (sequential? libspec) (= the-ns-name (first libspec))))
-
-(defn scan-macros [s {:keys [ns-state]}]
-  (let [maybe-ns (e/parse-next (e/reader s) compiler/cherry-parse-opts)]
-    (when (and (seq? maybe-ns)
-               (= 'ns (first maybe-ns)))
-      (let [[_ns the-ns-name & clauses] maybe-ns
-            [require-macros reload] (some (fn [[clause reload]]
-                                            (when (and (seq? clause)
-                                                       (= :require-macros (first clause)))
-                                              [(rest clause) reload]))
-                                          (partition-all 2 1 clauses))
-            ;; a regular :require of a .cljc that contains defmacro loads its
-            ;; macros too, like squint
-            require-libs (some->> clauses
-                                  (some (fn [clause]
-                                          (when (and (seq? clause)
-                                                     (= :require (first clause)))
-                                            (rest clause)))))
-            require-cljc (->> require-libs
-                              (remove #(self-ref? the-ns-name %))
-                              (remove as-alias?)
-                              (filter cljc-with-macros?))
-            require-macros (concat require-macros require-cljc)]
-        (when (seq require-macros)
-          (.then (esm/dynamic-import "./compiler.sci.js")
-                 (fn [_]
-                   (let [eval-form (:eval-form @sci)]
-                     (reduce
-                      (fn [prev require-macros]
-                        (.then prev
-                               (fn [_]
-                                 (let [;; a libspec may be a bare symbol, normalize to vector
-                                       require-macros (if (symbol? require-macros)
-                                                        [require-macros]
-                                                        require-macros)
-                                       [macro-ns & {:keys [refer as]}] require-macros
-                                       actual-ns (cc/resolve-macro-ns macro-ns :cherry)
-                                       file (macro-file actual-ns)
-                                       built-in (get compiler/built-in-macro-nss actual-ns)
-                                       reload? (or reload (macro-file-changed? actual-ns))
-                                       macros (cond
-                                                file
-                                                (js/Promise.resolve
-                                                 (do (eval-form (cond-> (list 'require (list 'quote actual-ns))
-                                                                  reload? (concat [:reload])))
-                                                     (let [publics (eval-form
-                                                                    `(ns-publics '~actual-ns))
-                                                           macros (keep (fn [[k v]]
-                                                                          (when (:macro (meta v))
-                                                                            [k (deref v)])) publics)
-                                                           macros (into {} macros)]
-                                                       macros)))
-                                                built-in
-                                                (js/Promise.resolve built-in)
-                                                :else
-                                                (throw (js/Error. (str "Could not locate macro namespace " actual-ns))))]
-                                   (.then macros
-                                          (fn [macros]
-                                            (swap! ns-state (fn [ns-state]
-                                                              (cond-> (assoc-in ns-state [:macros actual-ns] macros)
-                                                                as (-> (assoc-in [the-ns-name :aliases as] macro-ns)
-                                                                       (assoc-in [the-ns-name :macro-aliases as] macro-ns))
-                                                                refer (update-in [the-ns-name :refers]
-                                                                                 merge
-                                                                                 (zipmap refer (repeat macro-ns))))))))))))
-                      (js/Promise.resolve nil)
-                      require-macros)))))))))
+(defn scan-macros [s opts]
+  (ms/scan-macros dialect s opts))
 
 (defn default-ns-state []
   (atom {:current 'user}))

@@ -2,6 +2,12 @@
 
 ## 0.6.35 (2026-07-18)
 
+- Fix nested macro expansion: a macro expanding to a fully qualified call of
+  another macro namespace's macro was emitted as a runtime call, like squint
+- Share the macro scan and macro lookup with squint. Namespaces flagged
+  `{:squint/compile-time true}` load only their compile-time part into the
+  macro environment, like squint
+
 - Fix `deftype` implementing cljs.core protocols such as `Inst`, `IIterable`
   and `IAtom`: their marker properties were Closure-renamed in the precompiled
   core and missing from the emitter's core protocol set. The externs list and
