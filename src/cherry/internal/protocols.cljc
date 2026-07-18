@@ -1,14 +1,19 @@
 (ns cherry.internal.protocols
   (:require [clojure.core :as core]))
 
-(def core-protocols #{'ICounted 'IEmptyableCollection 'ICollection 'IIndexed 'ISeq 'INext
-                      'ILookup 'IAssociative 'IMap 'IMapEntry 'ISet 'IStack 'IVector 'IDeref
-                      'IMeta 'IWithMeta 'IReduce 'IKVReduce 'IEquiv 'IHash
-                      'ISeqable 'IReversible
-                      'IPrintWithWriter 'IPending 'IWatchable 'IEditableCollection 'ITransientCollection
-                      'ITransientAssociative 'ITransientMap 'ITransientVector 'ITransientSet
-                      'IComparable 'INamed 'ICloneable
-                      'IReset 'ISwap})
+;; all cljs.core protocols; keep in sync with externs/cherry.txt (bb gen-externs)
+(def core-protocols '#{APersistentVector ASeq Fn IAssociative IAtom IChunk
+                       IChunkedNext IChunkedSeq ICloneable ICollection
+                       IComparable ICounted IDeref IDerefWithTimeout IDrop
+                       IEditableCollection IEmptyableCollection IEncodeClojure
+                       IEncodeJS IEquiv IFind IHash IIndexed IIterable
+                       IKVReduce IList ILookup IMap IMapEntry IMeta IMultiFn
+                       INamed INext Inst IPending IPrintWithWriter IRecord
+                       IReduce IReset IReversible ISeq ISeqable ISequential
+                       ISet ISorted IStack ISwap ITransientAssociative
+                       ITransientCollection ITransientMap ITransientSet
+                       ITransientVector IUUID IVector IVolatile IWatchable
+                       IWithMeta IWriter})
 (defn- ->core [psym]
   (if (contains? core-protocols psym)
     (symbol (str "cljs$core$" psym))

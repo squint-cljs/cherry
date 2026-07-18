@@ -18,6 +18,8 @@
                            :task (t/start-playground-server playground-cli-opts)}
          test {:doc "Run tests"
                :task (t/test-cherry)}
+         gen-externs {:doc "Regenerate externs/cherry.txt from cljs.core's protocols"
+                      :task (shell "clojure -M:cljs script/gen_externs.clj")}
          bump-common tasks/bump-compiler-common
          integration-tests {:doc "Run integration tests"
                             :task integration-tests/run-tests}}}

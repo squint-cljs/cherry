@@ -77,6 +77,19 @@
         _ (when-not (= 2 (count parts))
             (throw (ex-info "expected one PROTOCOL_SENTINEL init site"
                             {:munged munged :sites (dec (count parts))})))
+        ;; every property stamped with the sentinel is a protocol marker and
+        ;; part of cherry's ABI: it must survive Closure renaming
+        marker-re (re-pattern (str "\\.([A-Za-z_$][A-Za-z0-9_$]*)="
+                                   (java.util.regex.Pattern/quote munged)
+                                   "(?![=A-Za-z0-9_$])"))
+        renamed (into (sorted-set)
+                      (keep (fn [[_ prop]]
+                              (when-not (str/starts-with? prop "cljs$")
+                                prop)))
+                      (re-seq marker-re s))
+        _ (when (seq renamed)
+            (throw (ex-info "protocol markers renamed by Closure, run bb gen-externs"
+                            {:props (vec renamed)})))
         shared (str munged
                     "=(()=>{let g=globalThis,c=g.cljs||(g.cljs={}),o=c.core||(c.core={});"
                     "return o.PROTOCOL_SENTINEL||(o.PROTOCOL_SENTINEL=Date.prototype.cljs$core$IEquiv$||{})})()")]

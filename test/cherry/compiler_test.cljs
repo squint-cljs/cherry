@@ -437,6 +437,14 @@
 (deftest as-alias-test
   (is (= :some.ns/x (jsv! "(ns foo (:require [some.ns :as-alias s])) ::s/x"))))
 
+(deftest deftype-inst-test
+  (is (= 42 (jsv! "(deftype T [] Inst (inst-ms* [_] 42)) (inst-ms (->T))"))))
+
+(deftest deftype-iiterable-test
+  (is (= [1 2 3] (js->clj (jsv! "(deftype T [] IIterable (-iterator [_] (.values #js [1 2 3])))
+                                 (let [it (iter (->T))]
+                                   [(.-value (.next it)) (.-value (.next it)) (.-value (.next it))])")))))
+
 (deftest defclass-test
   (is (= "[\"<<<<1-3-3>>>>\" \"1-3-3\"]" (str (jsv! (str (fs/readFileSync "test-resources/defclass_test.cljs")))))))
 
