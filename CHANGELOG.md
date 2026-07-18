@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Fix `deftype` implementing cljs.core protocols such as `Inst`, `IIterable`
+  and `IAtom`: their marker properties were Closure-renamed in the precompiled
+  core and missing from the emitter's core protocol set. The externs list and
+  the set are now generated from cljs.core's protocols (`bb gen-externs`) and
+  the build fails on drift
 - Fix [#190](https://github.com/squint-cljs/cherry/issues/190): share
   `PROTOCOL_SENTINEL` with coexisting CLJS runtimes in the same JS realm
 - Bump squint compiler-common, picking up `:as-alias` support among other
