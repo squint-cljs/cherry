@@ -125,6 +125,24 @@
   (spit ".work/config-merge.edn" (shadow-extra-test-config))
   (shell "npx shadow-cljs --config-merge .work/config-merge.edn watch cherry"))
 
+(defn test-cljs-test []
+  ;; Compiled with test-resources as the working dir so the :require-macros
+  ;; companion (cljs_test_smoke_macros.cljc) resolves on the default path.
+  (let [dir "test-resources"
+        out-file (str dir "/cljs_test_smoke.mjs")
+        macros-out (str dir "/cljs_test_smoke_macros.mjs")]
+    (shell {:dir dir} "node" "../node_cli.js" "compile" "cljs_test_smoke.cljs")
+    (let [out (:out (shell {:dir dir :out :string} "node" "cljs_test_smoke.mjs"))]
+      (fs/delete out-file)
+      (when (fs/exists? macros-out) (fs/delete macros-out))
+      (assert (str/includes? out "Ran 13 tests containing 26 assertions") out)
+      (assert (str/includes? out "1 failures, 0 errors") out)
+      ;; :begin-test-ns must fire for each ns visited by run-tests
+      (assert (str/includes? out "Testing ns.a") out)
+      (assert (str/includes? out "Testing ns.b") out)
+      ;; (run-tests 'synthetic.ns) macro must compile to a string lookup
+      (assert (str/includes? out "Testing synthetic.ns") out))))
+
 (defn test-cherry []
   (fs/create-dirs ".work")
   (spit ".work/config-merge.edn" (shadow-extra-test-config))
@@ -134,7 +152,8 @@
   (shell "node lib/cherry.tests.js")
   (shell "node test-resources/sentinel/host_first.mjs")
   (shell "node test-resources/sentinel/cherry_first.mjs")
-  (shell "node test-resources/sentinel/advanced_host_first.mjs"))
+  (shell "node test-resources/sentinel/advanced_host_first.mjs")
+  (test-cljs-test))
 
 (defn- compile-e2e []
   (shell "node" "node_cli.js" "compile"

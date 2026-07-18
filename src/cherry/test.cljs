@@ -2,6 +2,9 @@
   (:require [clojure.string]))
 
 (def ^:dynamic *current-env* nil)
+(def ^:dynamic *current-reporter* :cljs.test/default)
+
+(defn current-reporter [] (or *current-reporter* :cljs.test/default))
 
 (defn empty-env []
   {:report-counters {:test 0 :pass 0 :fail 0 :error 0}
@@ -53,34 +56,36 @@
          (when line line)
          (when column (str ":" column)))))
 
-;; a multimethod dispatching on [:cljs.test/default type] like cljs.test, so
-;; consumers can hook reporting with defmethod/get-method
-(defmulti report (fn [m] [:cljs.test/default (:type m)]))
+(defmulti report
+  "Reports a test event. Dispatch is on [*current-reporter* (:type m)].
+  Users extend by adding methods keyed on their own reporter, e.g.
+  (defmethod report [:cljs.test/default :begin-test-var] [m] ...).
+  Unknown dispatch values fall through to a no-op default."
+  (fn [m] [(current-reporter) (:type m)]))
 
-(defmethod report :default [m]
-  (js/console.log "Unknown report type:" (:type m) m))
+(defmethod report :default [_m] nil)
 
 (defmethod report [:cljs.test/default :pass] [_m]
   (inc-report-counter! :pass))
 
 (defmethod report [:cljs.test/default :fail] [{:keys [message expected actual] :as m}]
   (inc-report-counter! :fail)
-  (js/console.error (str "FAIL in " (current-test-str)
-                         (when-let [location (location-str m)] (str " (" location ")"))))
-  (when message (js/console.error "  " message))
-  (js/console.error "  expected:" (pr-str expected))
-  (js/console.error "    actual:" (pr-str actual)))
+  (println (str "FAIL in " (current-test-str)
+                (when-let [location (location-str m)] (str " (" location ")"))))
+  (when message (println "  " message))
+  (println "  expected:" (pr-str expected))
+  (println "    actual:" (pr-str actual)))
 
 (defmethod report [:cljs.test/default :error] [{:keys [message expected actual] :as m}]
   (inc-report-counter! :error)
-  (js/console.error (str "ERROR in " (current-test-str)
-                         (when-let [location (location-str m)] (str " (" location ")"))))
-  (when message (js/console.error "  " message))
-  (when expected (js/console.error "  expected:" (pr-str expected)))
-  (js/console.error "    actual:" (pr-str actual)))
+  (println (str "ERROR in " (current-test-str)
+                (when-let [location (location-str m)] (str " (" location ")"))))
+  (when message (println "  " message))
+  (when expected (println "  expected:" (pr-str expected)))
+  (println "    actual:" (pr-str actual)))
 
 (defmethod report [:cljs.test/default :begin-test-ns] [m]
-  (js/console.log "\nTesting" (str (:ns m))))
+  (println "\nTesting" (str (:ns m))))
 
 (defmethod report [:cljs.test/default :end-test-ns] [_m] nil)
 (defmethod report [:cljs.test/default :begin-test-var] [_m] nil)
@@ -88,8 +93,8 @@
 
 (defmethod report [:cljs.test/default :summary] [_m]
   (let [{:keys [test pass fail error]} (:report-counters (get-current-env))]
-    (js/console.log "\nRan" test "tests containing" (+ pass fail error) "assertions.")
-    (js/console.log (str fail) "failures," (str error) "errors.")))
+    (println "\nRan" test "tests containing" (+ pass fail error) "assertions.")
+    (println (str fail) "failures," (str error) "errors.")))
 
 (defn successful? [results]
   (and (zero? (:fail results 0))
@@ -147,21 +152,24 @@
           wrapped-test (if (seq each-fixtures)
                          (fn [] ((join-fixtures each-fixtures) v))
                          v)
-          pop-test-name! #(update-current-env! [:testing-vars] rest)]
+          end! (fn []
+                 (report {:type :end-test-var :name test-name :ns ns-str :var v})
+                 (update-current-env! [:testing-vars] rest))]
       (update-current-env! [:testing-vars] conj test-name)
       (inc-report-counter! :test)
+      (report {:type :begin-test-var :name test-name :ns ns-str :var v})
       (try
         (let [result (wrapped-test)]
           (if (async? result)
             (-> result
-                (.then (fn [r] (pop-test-name!) r))
+                (.then (fn [r] (end!) r))
                 (.catch (fn [e]
                           (report {:type :error :message (.-message e) :expected nil :actual e})
-                          (pop-test-name!))))
-            (do (pop-test-name!) result)))
+                          (end!))))
+            (do (end!) result)))
         (catch :default e
-          (pop-test-name!)
-          (report {:type :error :message (.-message e) :expected nil :actual e}))))))
+          (report {:type :error :message (.-message e) :expected nil :actual e})
+          (end!))))))
 
 (def ^:private test-registry (atom {}))
 

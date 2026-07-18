@@ -5,7 +5,8 @@
             ["url" :refer [pathToFileURL]]
             [cherry.compiler.node :as cn :refer [sci]]
             [sci.core :as sci]
-            [squint.internal.node.utils :as utils]))
+            [squint.internal.node.utils :as utils]
+            [squint.internal.test :as internal-test]))
 
 (defn slurp [f]
   (fs/readFileSync f "utf-8"))
@@ -21,6 +22,11 @@
 (defn- resolve-macro-file [namespace]
   (utils/resolve-file namespace (:paths (utils/get-cfg cn/config-file) ["." "src"])))
 
+;; Expose the compiler's assert-expr multimethod so a compile-time user
+;; defmethod extends the object the `is` built-in dispatches on.
+(def test-ns
+  {'assert-expr internal-test/assert-expr})
+
 (declare ctx)
 (def ctx (sci/init {:load-fn (fn [{:keys [namespace]}]
                                (if (string? namespace)
@@ -34,6 +40,9 @@
                                      ;; while loading this ns names its source.
                                      {:file f
                                       :source fstr}))))
+                    :namespaces {'cljs.test test-ns
+                                 'clojure.test test-ns
+                                 'cherry.test test-ns}
                     :classes {:allow :all
                               'js js/globalThis}
                     :features #{:cherry :cljs}

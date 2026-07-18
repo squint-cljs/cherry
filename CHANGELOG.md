@@ -48,8 +48,10 @@
 - Export cljs.core types such as `Atom`, `Keyword` and `PersistentVector`,
   so `(instance? cljs.core/Atom x)` and friends work
 - `cherry.test/report` is a multimethod dispatching on
-  `[:cljs.test/default type]` like cljs.test, so reporting can be extended
-  with `defmethod`; `run-tests` accepts quoted namespace symbols
+  `[*current-reporter* type]` like cljs.test, so reporting can be extended
+  with `defmethod`; `test-var` reports `:begin-test-var`/`:end-test-var`;
+  reporters print via `*print-fn*`; custom `assert-expr` defmethods register
+  via the macro loader; `run-tests` accepts quoted namespace symbols
 - `#jsx` with `:jsx-runtime` emits props as a plain JS object with a JS
   children array, so preact and react runtimes work. A literal `:style` map
   on a DOM tag emits a plain JS object too; dynamic values and component
@@ -71,7 +73,8 @@
   The legacy `js-await` and `js/await` spellings continue to work as
   aliases for now and may be deprecated in a future version.
 - Multiple `:require-macros` clauses with `:refer` now properly accumulate instead of overwriting each other
-- Add `cherry.test` with `clojure.test`-compatible testing API: `deftest`,
+- Add `cherry.test` with `clojure.test`-compatible testing API, requirable
+  as `cljs.test` or `clojure.test`: `deftest`,
   `is`, `testing`, `are`, `use-fixtures`, `async`, `run-tests`
   (no-args defaults to current ns; also accepts quoted ns symbols). Macros
   are compiler built-ins (shared with squint) — no `:require-macros`
