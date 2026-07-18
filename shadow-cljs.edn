@@ -53,6 +53,11 @@
     :compiler.node {:depends-on #{:compiler :node}
                     :exports
                     {compileFile cherry.compiler.node/compile-file-js
-                     compileString cherry.compiler.node/compile-string-js}}}
+                     compileString cherry.compiler.node/compile-string-js}}
+    :node.nrepl_server {:depends-on #{:compiler.node :cljs.pprint :node}
+                        :exports
+                        {startServer cherry.repl.nrepl-server/start-server
+                         handleBrowserMessage cherry.repl.nrepl-server/handle-browser-message
+                         evalString cherry.repl.nrepl-server/evaluate-string}}}
    :build-hooks [(shadow.cljs.build-report/hook
                   {:output-to "report.html"})]}}}

@@ -22,6 +22,8 @@
 - CLI: shell tab completion via babashka.cli's
   `org.babashka.cli/completions` command
 - CLI: read options from `cherry.edn` instead of `squint.edn`
+- CLI: add `nrepl-server` command, sharing squint's nREPL server
+  implementation: eval, load-file, lookup/eldoc and completions
 - CLI: add `watch` command, like squint
 - CLI: share the command implementations with squint
   (`squint.internal.cli-common`)
