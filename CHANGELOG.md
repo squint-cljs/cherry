@@ -17,6 +17,9 @@
 - CLI: shell tab completion via babashka.cli's
   `org.babashka.cli/completions` command
 - CLI: read options from `cherry.edn` instead of `squint.edn`
+- CLI: add `watch` command, like squint
+- CLI: share the command implementations with squint
+  (`squint.internal.cli-common`)
 - Accept plain `await` as a special form, in anticipation of CLJS next.
   The legacy `js-await` and `js/await` spellings continue to work as
   aliases for now and may be deprecated in a future version.

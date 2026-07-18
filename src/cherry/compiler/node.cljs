@@ -80,26 +80,9 @@
     (-> (js/Promise.resolve (scan-macros contents opts))
         (.then #(compiler/compile-string* contents opts)))))
 
-(defn in-dir? [dir file]
-  (let [dir (.split ^js (path/resolve dir) path/sep)
-        file (.split ^js (path/resolve file) path/sep)]
-    (loop [dir dir
-           file file]
-      (or (empty? dir)
-          (and (seq file)
-               (= (first dir)
-                  (first file))
-               (recur (rest dir)
-                      (rest file)))))))
+(def in-dir? utils/in-dir?)
 
-(defn adjust-file-for-paths [in-file paths]
-  (let [out-file (reduce (fn [acc path]
-                           (if (in-dir? path in-file)
-                             (reduced (path/relative path in-file))
-                             acc))
-                         in-file
-                         paths)]
-    out-file))
+(def adjust-file-for-paths utils/adjust-file-for-paths)
 
 (defn compile-file [{:keys [in-file in-str out-file extension output-dir]
                      :or {output-dir ""}
