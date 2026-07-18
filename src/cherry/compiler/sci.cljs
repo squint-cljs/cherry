@@ -36,10 +36,11 @@
                                    {})
                                  (when-let [f (resolve-macro-file namespace)]
                                    (let [fstr (slurp f)]
+                                     ;; flagged ns -> its compile-time part only.
                                      ;; :file lets SCI bind *file* so an error
                                      ;; while loading this ns names its source.
                                      {:file f
-                                      :source fstr}))))
+                                      :source (or (cn/compile-time-source fstr) fstr)}))))
                     :namespaces {'cljs.test test-ns
                                  'clojure.test test-ns
                                  'cherry.test test-ns}

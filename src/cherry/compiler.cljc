@@ -241,37 +241,7 @@
                    macro (when (and (symbol? head)
                                     (not (:squint.compiler/skip-macro mexpr)))
                            (or (built-in-macros (strip-core-symbol head))
-                               (let [ns (namespace head)
-                                     nm (name head)
-                                     ns-state @(:ns-state env)
-                                     current-ns (:current ns-state)
-                                     nms (symbol nm)
-                                     current-ns-state (get ns-state current-ns)]
-                                 (if ns
-                                   (let [nss (symbol ns)]
-                                     (or
-                                      ;; used by cherry embed:
-                                      (some-> env :macros (get nss) (get nms))
-                                      (let [macro-alias-ns (get-in current-ns-state [:macro-aliases nss])
-                                            resolved-ns (or macro-alias-ns
-                                                            (get-in current-ns-state [:aliases nss] nss))
-                                              macro-ns (cc/resolve-macro-ns resolved-ns (:target env))]
-                                        (or (get-in ns-state [:macros macro-ns nms])
-                                            ;; Built-in fallback. Only consult if the user actually
-                                            ;; required this ns. Check after we know there's a candidate.
-                                            (when-let [m (get-in built-in-macro-nss [macro-ns nms])]
-                                              (when (or (contains? (:aliases current-ns-state) nss)
-                                                        (contains? (:macro-aliases current-ns-state) nss)
-                                                        (contains? (:aliases current-ns-state)
-                                                                   (symbol (cc/alias-munge (str nss)))))
-                                                m))))))
-                                   (let [refers (:refers current-ns-state)]
-                                     (when-let [macro-ns (get refers nms)]
-                                       (let [resolved (cc/resolve-macro-ns macro-ns (:target env))]
-                                         (or (some-> env :macros (get (symbol macro-ns)) (get nms))
-                                             (get-in ns-state [:macros resolved nms])
-                                             (get-in ns-state [:macros macro-ns nms])
-                                             (get-in built-in-macro-nss [resolved nms])))))))))]
+                               (cc/lookup-macro head env built-in-macro-nss)))]
                (if macro
                  (let [;; fix for calling macro with more than 20 args
                        #?@(:cljs [macro (or (.-afn ^js macro) macro)])
