@@ -42,6 +42,7 @@
   [(cli-common/run-cmd dialect)
    (cli-common/compile-cmd dialect)
    (cli-common/watch-cmd dialect)
+   (cli-common/nrepl-server-cmd dialect)
    (cli-common/eval-cmd dialect)])
 
 (defn init []
