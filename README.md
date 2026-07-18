@@ -54,6 +54,8 @@ A few examples of currenly working projects compiled by cherry:
 - [wordle](https://squint-cljs.github.io/cherry/examples/wordle/index.html)
 - [react](https://squint-cljs.github.io/cherry/examples/react/index.html)
 - [vite](examples/vite)
+- [browser-repl](examples/browser-repl): vite + browser REPL, three rendering models
+- [replicant](examples/replicant): tic-tac-toe with replicant hiccup
 - [cherry-action-example](https://github.com/borkdude/cherry-action-example)
 
 See the [examples](examples) directory for more.
@@ -112,6 +114,68 @@ reworked to meet the above goals.
 
 <!-- - [Nextjournal](https://nextjournal.com/) -->
 <!-- - The main author's [Github Sponsors](https://github.com/sponsors/borkdude) -->
+
+## `cherry.edn`
+
+In `cherry.edn` you can describe the following options:
+
+- `:paths`: the source paths to search for files. At the moment, only `.cljc` and `.cljs` are supported.
+- `:extension`: the preferred extension to output, which defaults to `.mjs`, but can be set to `.jsx` for React(-like) projects.
+- `:copy-resources`: a set of keywords that represent file extensions of files
+  that should be copied over from source paths. E.g. `:css`, `:json`. Strings
+  may also be used which represent regexes which are processed through
+  `re-find`.
+- `:output-dir`: the directory where compiled files will be created,
+  which defaults to the project root directory.
+- `:deps`: a map of dependencies from the Clojure ecosystem, in the same format
+  as `deps.edn`. Only `:git/url` (with `:git/sha`) and `:local/root` libraries
+  are supported, no jars yet. Their source directories are resolved via the
+  `clojure` CLI (`-Spath`) and added to `:paths`. Requires `clojure` on the
+  `PATH`. Example:
+  ```clojure
+  {:paths ["src"]
+   :deps {io.github.cjohansen/replicant {:git/sha "..."}}}
+  ```
+
+See [examples/browser-repl](examples/browser-repl) for an example project which
+uses a `cherry.edn`, including a git dependency via `:deps`.
+
+## Watch
+
+Run `npx cherry watch` to watch the source directories described in
+`cherry.edn` and they will be (re-)compiled whenever they change.
+
+## Testing
+
+Cherry ships a `clojure.test`-compatible testing library, requirable as
+`cljs.test` or `clojure.test`:
+
+```clojure
+(ns example-test
+  (:require [cljs.test :as t :refer [deftest is]]))
+
+(deftest math-test
+  (is (= 4 (+ 2 2))))
+
+(t/run-tests 'example-test)
+```
+
+## nREPL
+
+An (currently immature!) nREPL implementation can be used on Node.js with:
+
+``` shell
+npx cherry nrepl-server --port 1888
+```
+
+Please try it out and file issues so it can be improved.
+
+## Browser REPL
+
+The `cherry-cljs/vite.js` plugin provides a browser REPL: it hot-reloads
+compiled cherry in the page and runs an nREPL server that your editor connects
+to, evaluating forms in the live page. See
+[doc/browser-repl.md](doc/browser-repl.md).
 
 ## Embed cherry in a CLJS/shadow app
 
