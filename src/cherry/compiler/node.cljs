@@ -11,6 +11,8 @@
 
 (def sci (atom nil))
 
+(def config-file "cherry.edn")
+
 (defn slurp [f]
   (fs/readFileSync f "utf-8"))
 
@@ -37,7 +39,7 @@
                                (fn [_]
                                  (let [[macro-ns & {:keys [refer as]}] require-macros
                                        actual-ns (cc/resolve-macro-ns macro-ns :cherry)
-                                       file (utils/resolve-file actual-ns)
+                                       file (utils/resolve-file actual-ns (:paths (utils/get-cfg config-file) ["." "src"]))
                                        built-in (get compiler/built-in-macro-nss actual-ns)
                                        macros (cond
                                                 file
