@@ -71,6 +71,10 @@ collections, seqs, atoms, protocols, deftype, defmulti, print and binding).
 Companions: `0002-spike-analyze.mjs` profiles which statements anchor a
 bundle, `0002-spike-exercise.cljs` is the runtime acceptance harness,
 `0002-spike-rewrite-lib.mjs` is the cross-module extension.
+The transformed artifacts themselves (shaken core, facade + internal module,
+rewritten lib modules) live on the
+[`adr2-tree-shaking-spike`](https://github.com/squint-cljs/cherry/tree/adr2-tree-shaking-spike/spike)
+branch in `spike/`, with a README covering reproduce/measure/run.
 
 Measurements (esbuild --bundle --minify):
 
