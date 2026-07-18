@@ -24,6 +24,8 @@
 - CLI: read options from `cherry.edn` instead of `squint.edn`
 - CLI: add `nrepl-server` command, sharing squint's nREPL server
   implementation: eval, load-file, lookup/eldoc and completions
+- Fix emitted import specifiers on Windows: backslashes are normalized via
+  the path resolution now shared with squint
 - CLI: add `watch` command, like squint
 - CLI: share the command implementations with squint
   (`squint.internal.cli-common`)
