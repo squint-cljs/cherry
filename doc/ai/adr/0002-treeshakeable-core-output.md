@@ -198,3 +198,65 @@ Verified: esbuild shakes through the re-export facade with no cost -
 `import { str }` via the facade bundles to 133.0 KB and the bare-import
 floor stays 2.0 KB, byte-identical to importing the impl directly. Cost is
 one extra file in the package and a second fetch for direct-CDN loads.
+
+### Production transform (2026-07-19)
+
+`treeshake/` on the same branch is the production-grade successor: Babel
+AST-only (scope-aware self-reference renaming, no textual substitution),
+with hard assertions on every shape assumption and the facade packaging
+built in. `dce_test.mjs` proves the properties: a negative control (the
+untransformed core must not shake), byte budgets (floor 2.0 KB,
+`import { not }` 2.1 KB, `str` 136 KB, clojure.string helpers 2.2 KB), an
+unchanged public export surface, zero facade overhead, and differential
+runtime equivalence (byte-identical stdout for compiled cherry programs on
+baseline vs shaken cores). Its stricter census also surfaced a class the
+spike handled implicitly: props with deferred (in-function) writes, now an
+explicit classification. The replicant tic-tac-toe build improves on the
+spike: 439.5 KB / 80.7 gz -> 260.4 KB / 47.9 gz (spike: 281.7 / 52.7),
+verified playing in Chrome with no console errors. Remaining for integration: compiler and nREPL
+modules, bb task ordering with the sentinel patch, CI wiring.
+
+### Vanilla CLJS comparison (2026-07-19)
+
+The same tic-tac-toe compiled as plain CLJS with shadow-cljs `:advanced`
+(whole-program Closure DCE), all builds verified playing in Chrome:
+
+| toolchain | raw | gzip | brotli |
+|---|---|---|---|
+| cherry, unshaken core | 439.5 KB | 80.7 KB | - |
+| cherry, treeshaken (vite) | 264.6 KB | 45.5 KB | ~38 KB |
+| vanilla CLJS, shadow `:advanced` | 183.4 KB | 44.1 KB | 36.8 KB |
+
+Vanilla wins raw by ~31% (Closure renames properties and prunes unused
+arities across the whole program; a post-hoc transform cannot), but the
+long protocol property names compress so well that the wire gap is ~3-7%.
+The transform recovers nearly all of the DCE cherry's precompiled-core
+architecture had given up: the vite build goes from +71% over vanilla
+(gzip, 75.3 KB vs 44.1 KB) to +3.2% (45.5 KB), while keeping user builds
+Closure-free. The remaining shared floor in all three
+is cljs.core's internal coupling (chunked seqs, toString -> printer),
+the territory of CLJS's experimental :lite-mode / :elide-to-string flags
+(clojure/clojurescript commit f9a6856): stock CLJS is ~17-19K brotli for
+small collection-using programs, :lite-mode ~6K. A lite-style cherry core
+run through this transform is the identified lever beyond the ~130 KB /
+23 KB gz collection tier.
+
+### js-framework-benchmark comparison (2026-07-19)
+
+The replicant data-table app from js-framework-benchmark (the app behind
+reagami's README size chart), all entries rebuilt as proper production
+builds on one machine, gzip:
+
+| build | raw | gzip |
+|---|---|---|
+| Replicant Squint | 57.4 KB | 17.0 KB |
+| Reagami CLJS (shadow) | 130.4 KB | 28.8 KB |
+| Replicant CLJS (shadow) | 177.8 KB | 41.4 KB |
+| Replicant Cherry, treeshaken | 257.9 KB | 44.5 KB |
+| Replicant Cherry, unshaken | 441.8 KB | 77.4 KB |
+
+Third wire-parity datapoint: +7.6% over vanilla CLJS (tic-tac-toe: +3.2%).
+Side finding: the 75.9 KB Replicant CLJS figure previously published in
+reagami's README was a figwheel `:pretty-print true` artifact; fixed in
+reagami#48 (now 41.2 KB). The squint-vs-CLJS/cherry gap (~17 vs ~41-45 KB)
+is the persistent-data-structure machinery itself.
