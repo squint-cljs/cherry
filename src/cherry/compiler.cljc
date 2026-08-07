@@ -321,13 +321,17 @@
                       :core-package "cherry-cljs/cljs.core.js"
                       :core-vars core-vars
                       :infix-operators (disj cc/infix-operators "=")
+                      ;; the _ separator keeps renames of digit-ending names
+                      ;; (seq__3 -> seq__3_7) from colliding with the no-separator
+                      ;; top-level renames clojure.core/gensym produces (seq__37)
                       :gensym (let [ctr (volatile! 0)]
                                 (fn gensym*
                                   ([] (gensym* nil))
                                   ([sym]
                                    (let [next-id (vswap! ctr inc)]
-                                     (symbol (str (if sym (munge sym)
-                                                      "G__") next-id))))))
+                                     (symbol (if sym
+                                               (str (munge sym) "_" next-id)
+                                               (str "G__" next-id)))))))
                       :emit {::cc/list emit-list
                              ::cc/vector cc/emit-vector
                              ::cc/map emit-map
