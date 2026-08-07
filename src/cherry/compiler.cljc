@@ -269,7 +269,7 @@
                    (prefix-unary? head) (emit-prefix-unary head expr)
                    (suffix-unary? head) (emit-suffix-unary head expr)
                    :else (cc/emit-special 'funcall env expr))))
-             (list? expr)
+             (seq? expr)
              (cc/emit-special 'funcall env expr)
              :else
              (throw (new Exception (str "invalid form: " expr))))))
