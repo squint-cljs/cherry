@@ -63,11 +63,11 @@
                    `(fn
                       ([~restarg]
                        (let [~@(mapcat param-bind params)]
-                         (this-as self#
+                         (cljs.core/this-as self#
                            (. self# (~(get-delegate) ~@params ~restarg)))))))
                  (with-meta `(fn
                                ([~restarg]
-                                (this-as self#
+                                (cljs.core/this-as self#
                                   (. self# (~(get-delegate) (seq ~restarg))))))
                    {:async async})))]
        `(do

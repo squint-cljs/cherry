@@ -118,17 +118,17 @@
                                      ;; construct protocol checks in reverse order
                                      ;; check the.protocol/fn["_"] for default impl last
                                      check
-                                     `(let [m# (unchecked-get ~fqn-fname "_")]
+                                     `(let [m# (cljs.core/unchecked-get ~fqn-fname "_")]
                                         (if-not (nil? m#)
                                           (m# ~@sig)
                                           (throw
-                                            (missing-protocol
+                                            (cljs.core/missing-protocol
                                               ~(core/str psym "." fname) ~fsig))))
 
                                      ;; then check protocol on js string,function,array,object (first dynamic check actually executed)
                                      check
                                      `(let [x# (if (nil? ~fsig) nil ~fsig)
-                                            m# (unchecked-get ~fqn-fname (cljs.core/goog_typeOf x#))]
+                                            m# (cljs.core/unchecked-get ~fqn-fname (cljs.core/goog_typeOf x#))]
                                         (if-not (nil? m#)
                                           (m# ~@sig)
                                           ~check))]
@@ -275,9 +275,9 @@
   (core/let [psym       (resolve p)
              pfn-prefix (subs (core/str psym) 0
                               (clojure.core/inc (.indexOf (core/str psym) "/")))]
-    (cons `(unchecked-set ~psym ~type true)
+    (cons `(cljs.core/unchecked-set ~psym ~type true)
           (map (core/fn [[f & meths :as form]]
-                 `(unchecked-set ~(symbol (core/str pfn-prefix f))
+                 `(cljs.core/unchecked-set ~(symbol (core/str pfn-prefix f))
                                  ~type ~(with-meta `(fn ~@meths) (meta form))))
                sigs))))
 
@@ -347,11 +347,11 @@
       `(set! ~(extend-prefix type-sym 'apply)
              ~(with-meta
                 `(fn ~[this-sym argsym]
-                   (this-as ~self-sym
-                     (this-as ~this-sym
+                   (cljs.core/this-as ~self-sym
+                     (cljs.core/this-as ~this-sym
                        (let [args# (cljs.core/aclone ~argsym)]
                          (.apply (.-call ~this-sym) ~this-sym
-                                 (.concat (array ~this-sym)
+                                 (.concat (cljs.core/array ~this-sym)
                                           (if (> (.-length args#) ~max-ifn-arity)
                                             (doto (.slice args# 0 ~max-ifn-arity)
                                               (.push (.slice args# ~max-ifn-arity)))

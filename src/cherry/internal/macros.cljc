@@ -255,10 +255,10 @@
                                     (let [c# ^not-native (chunk-first ~gxs)
                                           size# (count c#)
                                           ~gb (chunk-buffer size#)]
-                                      (if (coercive-boolean
+                                      (if (cljs.core/coercive-boolean
                                            (loop [~gi 0]
                                              (if (< ~gi size#)
-                                               (let [~bind (-nth c# ~gi)]
+                                               (let [~bind (cljs.core/-nth c# ~gi)]
                                                  ~(do-cmod mod-pairs))
                                                true)))
                                         (chunk-cons
@@ -313,7 +313,7 @@
                                            ~countsym 0
                                            ~isym 0]
                                       (if (< ~isym ~countsym)
-                                        (let [~k (-nth ~chunksym ~isym)]
+                                        (let [~k (cljs.core/-nth ~chunksym ~isym)]
                                           ~subform-chunk
                                           ~@(when needrec [recform-chunk]))
                                         (when-let [~seqsym (seq ~seqsym)]
@@ -490,10 +490,10 @@
 (defn core-time
   "Evaluates expr and prints the time it took. Returns the value of expr."
   [_ _ expr]
-  `(let [start# (system-time)
+  `(let [start# (cljs.core/system-time)
          ret# ~expr]
      (prn (str "Elapsed time: "
-               (.toFixed (- (system-time) start#) 6)
+               (.toFixed (- (cljs.core/system-time) start#) 6)
                " msecs"))
      ret#))
 
