@@ -1,6 +1,6 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
-## Unreleased
+## 0.6.37 (2026-08-08)
 
 - Add `cljs.core/*e` holding the last repl exception; bump squint
 
