@@ -83,6 +83,31 @@
     (sh "npx" "cherry" "compile" tmp-file)
     (is (.exists (java.io.File. out-file)) "compile should create output file")))
 
+(deftest compile-time-extraction-test
+  (t/testing "a {:squint/compile-time true} ns loads its macros, not its runtime"
+    (let [dir (fs/create-temp-dir)
+          src (fs/file (str dir) "src" "t")
+          cli (str (fs/absolutize "node_cli.js"))]
+      (fs/create-dirs src)
+      (spit (fs/file (str dir) "cherry.edn")
+            (pr-str {:paths ["src"] :output-dir "out" :extension "mjs"}))
+      (spit (fs/file src "macros.cljc")
+            (str "(ns t.macros {:squint/compile-time true}\n"
+                 "  #?(:cljs (:require-macros [t.macros :refer [concat2]])))\n"
+                 "(defmacro concat2 [a b] `(~'js* \"~{} + ~{}\" ~a ~b))\n"
+                 ;; the runtime part is never evaluated in SCI, so a top-level
+                 ;; throw here does not stop the compile
+                 "(throw (js/Error. \"runtime ns evaluated\"))\n"
+                 "(defn f [a b] (concat2 a b))\n"))
+      (let [{:keys [exit err]} (p/shell {:dir (str dir) :continue true
+                                         :out :string :err :string}
+                                        "node" cli "compile")]
+        (is (zero? exit) err)
+        (when (zero? exit)
+          (is (str/includes? (slurp (fs/file (str dir) "out" "t" "macros.mjs"))
+                             "a + b")
+              "the macro expanded, js* and all"))))))
+
 (deftest cross-platform-jvm-test
   (let [{:keys [exit]} (sh {:err :inherit}
                            "clojure -M:test -n cherry.cross-platform-test")]

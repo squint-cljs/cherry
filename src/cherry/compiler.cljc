@@ -356,6 +356,11 @@
    {:all true
     :end-location false
     :location? seq?
+    ;; conform location metadata to Clojure's :line/:column keys, like squint
+    ;; does. the compile-time extraction in squint.internal.node.macro-scan is
+    ;; shared between the two and slices source by those keys.
+    :row-key :line
+    :col-key :column
     :readers {'js #(vary-meta % assoc ::cc/js true)
               'jsx jsx
               'html html}
