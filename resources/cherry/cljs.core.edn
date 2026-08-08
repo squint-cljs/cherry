@@ -1,5 +1,6 @@
 ;; (sort (map munge (keys (ns-publics 'cljs.core))))
-{:vars #{IndexedSeq
+{:vars #{_STAR_e
+         IndexedSeq
          LazySeq
          PROTOCOL_SENTINEL
          _

@@ -44,4 +44,6 @@
        (let [o #js {}]
          (js/Object.defineProperty o "val" #js {:get get-fn :set set-fn})
          o))
-     (core-dynvar-boxes)))
+     (core-dynvar-boxes)
+     ;; repl var; no cljs.core var to proxy, so a plain box
+     (def _STAR_e #js {:val nil})))

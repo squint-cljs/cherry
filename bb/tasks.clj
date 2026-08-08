@@ -15,8 +15,10 @@
 
 (defn- dynvar? [v]
   (let [s (str v)]
-    (and (str/starts-with? s "_STAR_")
-         (str/ends-with? s "_STAR_"))))
+    (or (and (str/starts-with? s "_STAR_")
+             (str/ends-with? s "_STAR_"))
+        ;; repl var, boxed in cherry.dynvars without a proxied core var
+        (= "_STAR_e" s))))
 
 (defn ->namespace [the-ns-name vars reserved]
   (let [ks (map #(symbol (munge* % reserved)) vars)

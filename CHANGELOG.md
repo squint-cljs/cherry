@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## Unreleased
+
+- Add `cljs.core/*e` holding the last repl exception; bump squint
+
 ## 0.6.36 (2026-08-08)
 
 - Fix nested macro expansion: a macro expanding to a fully qualified call of
