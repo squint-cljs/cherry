@@ -7,6 +7,10 @@
 - Share the macro scan and macro lookup with squint. Namespaces flagged
   `{:squint/compile-time true}` load only their compile-time part into the
   macro environment, like squint
+- Fix core var references in macro expansions on the JVM compiler path
+- Fix let rename collisions in REPL output
+- Fix "invalid form" error for expanded call forms on the JVM compiler path
+- Bump squint: repeated REPL `require` no longer throws
 
 ## 0.6.35 (2026-07-18)
 
