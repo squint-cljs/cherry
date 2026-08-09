@@ -9,6 +9,7 @@
 ;; remove this notice, or any other, from this software.
 
 (ns cherry.compiler
+  (:refer-clojure :exclude [munge])
   (:require
    #?(:clj [cherry.resource :as resource])
    #?(:cljs [goog.string.format])
@@ -28,6 +29,7 @@
                                           emit-return escape-jsx infix-operator? prefix-unary?
 
                                           statement suffix-unary?]]
+   [squint.compiler.utils :refer [munge]]
    [squint.defclass :as defclass])
   #?(:cljs (:require-macros [cherry.resource :as resource])))
 

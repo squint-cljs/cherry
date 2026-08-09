@@ -1,5 +1,7 @@
 (ns cherry.internal.protocols
-  (:require [clojure.core :as core]))
+  (:refer-clojure :exclude [munge])
+  (:require [clojure.core :as core]
+            [squint.compiler.utils :refer [munge]]))
 
 ;; all cljs.core protocols; keep in sync with externs/cherry.txt (bb gen-externs)
 (def core-protocols '#{APersistentVector ASeq Fn IAssociative IAtom IChunk

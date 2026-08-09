@@ -1,5 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
+## Unreleased
+
+- Fix [squint#985](https://github.com/squint-cljs/squint/issues/985): munge JS reserved words on the JVM compiler path; bump squint
+
 ## 0.6.37 (2026-08-08)
 
 - Add `cljs.core/*e` holding the last repl exception; bump squint

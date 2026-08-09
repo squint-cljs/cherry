@@ -8,7 +8,9 @@
 ;;   license.  You must not remove this notice, or any other, from this
 ;;   software.
 
-(ns cherry.internal.fn)
+(ns cherry.internal.fn
+  (:refer-clojure :exclude [munge])
+  (:require [squint.compiler.utils :refer [munge]]))
 
 #?(:cljs (def Exception js/Error))
 
