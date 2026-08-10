@@ -19,6 +19,7 @@
    [cherry.internal.loop :as loop]
    [cherry.internal.macros :as macros]
    [cherry.internal.protocols :as protocols]
+   [squint.internal.protocols :as squint-protocols]
    [squint.internal.test :as test]
    [squint.internal.macros :as squint-macros]
    [clojure.string :as str]
@@ -118,6 +119,7 @@
                              'unchecked-set macros/core-unchecked-set
                              'defprotocol protocols/core-defprotocol
                              'extend-type protocols/core-extend-type
+                             'extend-protocol squint-protocols/core-extend-protocol
                              'reify protocols/core-reify
                              'deftype deftype/core-deftype
                              'defn core-defn

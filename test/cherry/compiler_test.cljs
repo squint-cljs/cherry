@@ -232,6 +232,14 @@
   (is (= [true false]
          (jsv! '(do (defn exists? [p] (= p "yes")) [(exists? "yes") (exists? "no")])))))
 
+(deftest extend-protocol-test
+  (is (= ["str" "num"]
+         (jsv! '(do (defprotocol Kind (kind [x]))
+                    (extend-protocol Kind
+                      string (kind [_] "str")
+                      number (kind [_] "num"))
+                    [(kind "a") (kind 1)])))))
+
 (deftest quote-test
   (is (= '{x 1} (jsv! (list 'quote '{x 1}))))
   (is (= '(def x 1) (jsv! (list 'quote '(def x 1))))))
