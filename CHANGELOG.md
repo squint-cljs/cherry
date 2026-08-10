@@ -1,8 +1,9 @@
 [Cherry](https://github.com/squint-cljs/cherry): Experimental ClojureScript to ES6 module compiler
 
-## Unreleased
+## 0.6.38 (2026-08-10)
 
 - Fix [squint#985](https://github.com/squint-cljs/squint/issues/985): munge JS reserved words on the JVM compiler path; bump squint
+- Fix emitting function called `delete`
 
 ## 0.6.37 (2026-08-08)
 
