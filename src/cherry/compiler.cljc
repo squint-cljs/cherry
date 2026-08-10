@@ -251,7 +251,7 @@
                                ;; self-hosted macros: compiled fns registered
                                ;; at eval time, called in-realm
                                #?(:cljs
-                                  (when (:self_hosted_macros env)
+                                  (when (:self-hosted-macros env)
                                     (let [ns-state @(:ns-state env)
                                           current-ns (get ns-state (:current ns-state))
                                           reg (or (unchecked-get js/globalThis "__cherryMacros")
@@ -520,6 +520,7 @@
     (:ns opts) (update :ns symbol)
     (:elide_imports opts) (assoc :elide-imports (:elide_imports opts))
     (:elide_exports opts) (assoc :elide-exports (:elide_exports opts))
+    (:self_hosted_macros opts) (assoc :self-hosted-macros (:self_hosted_macros opts))
     (:macros opts) (update :macros symbolize-macro-config)))
 
 #?(:cljs
