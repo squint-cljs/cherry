@@ -252,15 +252,24 @@
                                ;; at eval time, called in-realm
                                #?(:cljs
                                   (when (:self_hosted_macros env)
-                                    (when-let [reg (unchecked-get js/globalThis "__cherryMacros")]
-                                      (let [ns-state @(:ns-state env)
-                                            current-ns (get ns-state (:current ns-state))
-                                            target-ns (str (or (get-in current-ns [:refers head])
-                                                               (some->> (namespace head) symbol
-                                                                        (get (:aliases current-ns)))
-                                                               (:current ns-state)))]
-                                        (some-> (unchecked-get reg target-ns)
-                                                (unchecked-get (name head)))))))))]
+                                    (let [ns-state @(:ns-state env)
+                                          current-ns (get ns-state (:current ns-state))
+                                          reg (or (unchecked-get js/globalThis "__cherryMacros")
+                                                  #js {})
+                                          target-ns (if-let [ns* (namespace head)]
+                                                      (str (or (get (:aliases current-ns) (symbol ns*))
+                                                               ns*))
+                                                      (str (or (get-in current-ns [:refers head])
+                                                               (:current ns-state))))]
+                                      (or (some-> (unchecked-get reg target-ns)
+                                                  (unchecked-get (name head)))
+                                          ;; a macro defined in this compile unit
+                                          ;; has not been evaluated yet, so it
+                                          ;; cannot expand here
+                                          (when (:macro (get current-ns head))
+                                            (throw (ex-info (str "Macro " head " is defined and used in the same compiled string. The host must compile and evaluate top level forms one at a time for this to work, like a repl does. Move the macro to its own namespace as a workaround.")
+                                                            {:type ::macro-not-evaluated
+                                                             :macro head})))))))))]
                (if macro
                  (let [;; fix for calling macro with more than 20 args
                        #?@(:cljs [macro (or (.-afn ^js macro) macro)])
