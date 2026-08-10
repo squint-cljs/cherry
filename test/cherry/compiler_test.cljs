@@ -223,6 +223,10 @@
   ;; delete is not a special form; babashka.fs defines a delete fn
   (is (= 1 (jsv! '(do (defn delete [x] x) (delete 1))))))
 
+(deftest delay-test
+  (is (= 42 (jsv! '(deref (delay 42)))))
+  (is (= 42 (jsv! '(force (delay 42))))))
+
 (deftest quote-test
   (is (= '{x 1} (jsv! (list 'quote '{x 1}))))
   (is (= '(def x 1) (jsv! (list 'quote '(def x 1))))))

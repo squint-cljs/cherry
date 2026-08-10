@@ -65,6 +65,7 @@
                              '->> macros/core->>
                              'as-> macros/core-as->
                              'comment macros/core-comment
+                             'delay squint-macros/delay
                              'dotimes squint-macros/core-dotimes
                              'if-not macros/core-if-not
                              'when macros/core-when
