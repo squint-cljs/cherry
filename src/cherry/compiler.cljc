@@ -242,6 +242,7 @@
                           expr)
                    head-str (str head)
                    macro (when (and (symbol? head)
+                                    (not (cc/core-macro-shadowed? head* env))
                                     (not (:squint.compiler/skip-macro mexpr)))
                            (or (built-in-macros (strip-core-symbol head))
                                (cc/lookup-macro head env built-in-macro-nss)))]

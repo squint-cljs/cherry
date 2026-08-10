@@ -227,6 +227,11 @@
   (is (= 42 (jsv! '(deref (delay 42)))))
   (is (= 42 (jsv! '(force (delay 42))))))
 
+(deftest refer-clojure-exclude-test
+  ;; a same-ns defn shadows the core exists? macro via :refer-clojure :exclude
+  (is (= [true false]
+         (jsv! '(do (defn exists? [p] (= p "yes")) [(exists? "yes") (exists? "no")])))))
+
 (deftest quote-test
   (is (= '{x 1} (jsv! (list 'quote '{x 1}))))
   (is (= '(def x 1) (jsv! (list 'quote '(def x 1))))))
