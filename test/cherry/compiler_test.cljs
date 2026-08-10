@@ -219,6 +219,10 @@
 (deftest new-test
   (is (= "hello" (jsv! '(str (js/String. "hello"))))))
 
+(deftest delete-as-var-test
+  ;; delete is not a special form; babashka.fs defines a delete fn
+  (is (= 1 (jsv! '(do (defn delete [x] x) (delete 1))))))
+
 (deftest quote-test
   (is (= '{x 1} (jsv! (list 'quote '{x 1}))))
   (is (= '(def x 1) (jsv! (list 'quote '(def x 1))))))
