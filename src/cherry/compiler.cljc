@@ -247,7 +247,20 @@
                                     (not (cc/core-macro-shadowed? head* env))
                                     (not (:squint.compiler/skip-macro mexpr)))
                            (or (built-in-macros (strip-core-symbol head))
-                               (cc/lookup-macro head env built-in-macro-nss)))]
+                               (cc/lookup-macro head env built-in-macro-nss)
+                               ;; self-hosted macros: compiled fns registered
+                               ;; at eval time, called in-realm
+                               #?(:cljs
+                                  (when (:self_hosted_macros env)
+                                    (when-let [reg (unchecked-get js/globalThis "__cherryMacros")]
+                                      (let [ns-state @(:ns-state env)
+                                            current-ns (get ns-state (:current ns-state))
+                                            target-ns (str (or (get-in current-ns [:refers head])
+                                                               (some->> (namespace head) symbol
+                                                                        (get (:aliases current-ns)))
+                                                               (:current ns-state)))]
+                                        (some-> (unchecked-get reg target-ns)
+                                                (unchecked-get (name head)))))))))]
                (if macro
                  (let [;; fix for calling macro with more than 20 args
                        #?@(:cljs [macro (or (.-afn ^js macro) macro)])
