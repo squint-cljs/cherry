@@ -485,6 +485,7 @@
          _add_method
          get_global_hierarchy
          Atom
+         Delay
          Volatile
          UUID
          Keyword

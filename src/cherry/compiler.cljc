@@ -51,7 +51,7 @@
             (escape-jsx env))))))
 
 (def special-forms (set ['var '. 'if 'funcall 'fn 'fn* 'quote 'set!
-                         'return 'delete 'new 'do 'aget 'aset 'while
+                         'return 'new 'do 'aget 'aset 'while
                          'inc! 'dec! 'dec 'inc 'defined? 'and 'or
                          '? 'try 'break 'throw
                          'js/await 'js-await 'await 'const 'let 'let* 'letfn* 'ns 'require 'def 'loop*
@@ -65,6 +65,7 @@
                              '->> macros/core->>
                              'as-> macros/core-as->
                              'comment macros/core-comment
+                             'delay squint-macros/delay
                              'dotimes squint-macros/core-dotimes
                              'if-not macros/core-if-not
                              'when macros/core-when
