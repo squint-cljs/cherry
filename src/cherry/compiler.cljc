@@ -248,21 +248,25 @@
                                     (not (:squint.compiler/skip-macro mexpr)))
                            (or (built-in-macros (strip-core-symbol head))
                                (cc/lookup-macro head env built-in-macro-nss)
-                               ;; self-hosted macros: compiled fns registered
-                               ;; at eval time, called in-realm
+                               ;; self-hosted macros: compiled fns evaluated
+                               ;; into their namespace, called in-realm. A
+                               ;; macro carries :macro in its metadata, which
+                               ;; is what tells it apart from a fn.
                                #?(:cljs
                                   (when (:self-hosted-macros env)
                                     (let [ns-state @(:ns-state env)
                                           current-ns (get ns-state (:current ns-state))
-                                          reg (or (unchecked-get js/globalThis "__cherryMacros")
-                                                  #js {})
                                           target-ns (if-let [ns* (namespace head)]
                                                       (str (or (get (:aliases current-ns) (symbol ns*))
                                                                ns*))
                                                       (str (or (get-in current-ns [:refers head])
-                                                               (:current ns-state))))]
-                                      (or (some-> (unchecked-get reg target-ns)
-                                                  (unchecked-get (name head)))
+                                                               (:current ns-state))))
+                                          v (-> (reduce (fn [o k]
+                                                          (some-> o (unchecked-get k)))
+                                                        js/globalThis
+                                                        (str/split target-ns #"\."))
+                                                (some-> (unchecked-get (str (cc/munge* (name head))))))]
+                                      (or (when (:macro (meta v)) v)
                                           ;; a macro defined in this compile unit
                                           ;; has not been evaluated yet, so it
                                           ;; cannot expand here
@@ -395,14 +399,36 @@
     :read-cond :allow
     :features #{:cljs :cherry}}))
 
+(defn leading-ns-form
+  "The source's own ns form, read ahead of the source itself: syntax quote
+  resolves symbols against it while reading, so it has to be known before the
+  first form is read. Only a leading ns form counts, which is where a
+  namespace declares itself. A source that does not read is left to the real
+  read to report."
+  [s opts]
+  (let [form (try (e/parse-next (e/reader s) (assoc opts :ns-state (atom nil)))
+                  (catch #?(:clj Exception :cljs :default) _ nil))]
+    (when (and (seq? form) (= 'ns (first form)))
+      form)))
+
 (defn read-forms
   ([s] (read-forms s nil))
   ([s env]
    (let [ns-state (some-> (:ns-state env) deref)
-         aliases (get-in ns-state [(:current ns-state) :aliases])]
-     (e/parse-string-all s (assoc cherry-parse-opts
-                                  :auto-resolve-ns true
-                                  :auto-resolve (or aliases {}))))))
+         aliases (get-in ns-state [(:current ns-state) :aliases])
+         opts (assoc cherry-parse-opts
+                     :auto-resolve-ns true
+                     :auto-resolve (or aliases {}))
+         ;; edamame auto-tracks the source's ns form and uses it to auto-resolve
+         ;; keywords and syntax-quoted symbols, matching Clojure semantics. Its
+         ;; resolution knows nothing of core, so where the ns form is ours to
+         ;; read we resolve syntax-quoted symbols ourselves instead.
+         resolution (some-> (leading-ns-form s opts) cc/ns-form-resolution)]
+     (e/parse-string-all s (cond-> opts
+                             resolution
+                             (assoc :syntax-quote
+                                    {:resolve-symbol
+                                     (cc/syntax-quote-resolver resolution core-vars)}))))))
 
 (defn transpile-internal [s env]
   (let [env (merge {:ns-state (atom {})
@@ -528,6 +554,30 @@
      (let [opts (js->clj opts :keywordize-keys true)
            state (js->clj state :keywordize-keys true)]
        (clj->js (compile-string* s (clj-ize-opts opts) (clj-ize-opts state))))))
+
+#?(:cljs
+   (defn readStringEx
+     "The forms of `s`, as an array. Compiling them one at a time with
+   `compileFormEx`, evaluating each before the next is compiled, is what lets
+   a form use a macro that an earlier form in the same source defines - the
+   thing `compileStringEx` cannot do, because it compiles the whole string
+   before any of it runs.
+
+   The forms are compiler data, not JS values: pass them back as they are."
+     [s opts state]
+     (let [opts (js->clj opts :keywordize-keys true)
+           state (js->clj state :keywordize-keys true)]
+       (into-array (read-forms s (merge (clj-ize-opts state)
+                                        (clj-ize-opts opts)))))))
+
+#?(:cljs
+   (defn compileFormEx
+     "Like `compileStringEx`, for a single form from `readStringEx`."
+     [form opts state]
+     (let [opts (js->clj opts :keywordize-keys true)
+           state (js->clj state :keywordize-keys true)]
+       (clj->js (compile-internal form (merge (clj-ize-opts state)
+                                              (clj-ize-opts opts)))))))
 
 (defn compile-string
   ([s] (compile-string s nil))

@@ -43,7 +43,9 @@
     :compiler {:depends-on #{:cljs.core :clojure.string :clojure.walk}
                :exports
                {compileString cherry.compiler/compile-string
-                compileStringEx cherry.compiler/compileStringEx}}
+                compileStringEx cherry.compiler/compileStringEx
+                readStringEx cherry.compiler/readStringEx
+                compileFormEx cherry.compiler/compileFormEx}}
     :cli {:depends-on #{:compiler.node
                         :compiler :clojure.string
                         :clojure.walk

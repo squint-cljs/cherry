@@ -741,6 +741,47 @@ IReset (-reset! [this v]
                           \"dude\"))
                 [(pr-str Person) (try (nth (->Person nil) 1) (catch :default e (ex-message e)))] "))))
 
+(deftest syntax-quote-resolution-test
+  (testing "a core var qualifies to cljs.core, not to the current ns"
+    (let [s (jss! "(ns my.macros) `(map inc [1 2])")]
+      (is (str/includes? s "cljs.core/map"))
+      (is (str/includes? s "cljs.core/inc"))
+      (is (not (str/includes? s "my.macros/map")))))
+  (testing "a refer wins over the core var of the same name"
+    (is (str/includes? (jss! "(ns my.macros (:require [my.lib :refer [map]])) `(map 1)")
+                       "my.lib/map")))
+  (testing ":refer-clojure :exclude keeps the core var out"
+    (is (str/includes? (jss! "(ns my.macros (:refer-clojure :exclude [map])) `(map 1)")
+                       "my.macros/map")))
+  (testing "an alias expands to the lib it names"
+    (is (str/includes? (jss! "(ns my.macros (:require [clojure.string :as str])) `(str/join 1)")
+                       "clojure.string/join")))
+  (testing "a symbol core does not know still qualifies to the current ns"
+    (is (str/includes? (jss! "(ns my.macros) `(no-such-var 1)")
+                       "my.macros/no-such-var"))))
+
+(deftest read-then-compile-form-test
+  (let [opts {:elide-imports true :core-alias nil :repl true :self-hosted-macros true}
+        src "(defmacro twice [x] `(* 2 ~x)) (twice 21)"]
+    (testing "compiling the whole string cannot expand a macro it also defines"
+      (is (thrown-with-msg? js/Error #"same compiled string"
+                            (cherry/compile-string* src opts))))
+    (testing "compiling form by form can, once the macro has been evaluated"
+      (let [forms (cherry/read-forms src opts)]
+        (is (= 2 (count forms)))
+        (let [state (cherry/compile-form* (first forms) opts)]
+          (js/eval (:javascript state))
+          (is (str/includes? (:javascript (cherry/compile-form* (second forms)
+                                                               (merge state opts)))
+                             "2 * 21")))))))
+
+(deftest self-require-macros-test
+  (testing "a namespace requiring its own macros imports nothing"
+    (is (not (str/includes?
+              (jss! "(ns test (:require-macros [test :refer [twice]]))"
+                    {:self-hosted-macros true})
+              "import")))))
+
 (defn init []
   (cljs.test/run-tests 'cherry.compiler-test 'cherry.jsx-test 'cherry.squint-and-cherry-test
                        'cherry.html-test 'cherry.embed-test))
