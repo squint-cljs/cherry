@@ -761,7 +761,7 @@ IReset (-reset! [this v]
                        "my.macros/no-such-var"))))
 
 (deftest read-then-compile-form-test
-  (let [opts {:elide-imports true :core-alias nil :repl true :self-hosted-macros true}
+  (let [opts {:elide-imports true :core-alias nil :repl true :runtime-macros true}
         src "(defmacro twice [x] `(* 2 ~x)) (twice 21)"]
     (testing "compiling the whole string cannot expand a macro it also defines"
       (is (thrown-with-msg? js/Error #"same compiled string"
@@ -779,7 +779,7 @@ IReset (-reset! [this v]
   (testing "a namespace requiring its own macros imports nothing"
     (is (not (str/includes?
               (jss! "(ns test (:require-macros [test :refer [twice]]))"
-                    {:self-hosted-macros true})
+                    {:runtime-macros true})
               "import")))))
 
 (defn init []

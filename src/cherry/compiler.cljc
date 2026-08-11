@@ -248,12 +248,13 @@
                                     (not (:squint.compiler/skip-macro mexpr)))
                            (or (built-in-macros (strip-core-symbol head))
                                (cc/lookup-macro head env built-in-macro-nss)
-                               ;; self-hosted macros: compiled fns evaluated
-                               ;; into their namespace, called in-realm. A
-                               ;; macro carries :macro in its metadata, which
-                               ;; is what tells it apart from a fn.
+                               ;; runtime macros: compiled fns evaluated into
+                               ;; their namespace and called from there, the
+                               ;; compiler sharing that runtime. A macro
+                               ;; carries :macro in its metadata, which is
+                               ;; what tells it apart from a fn.
                                #?(:cljs
-                                  (when (:self-hosted-macros env)
+                                  (when (:runtime-macros env)
                                     (let [ns-state @(:ns-state env)
                                           current-ns (get ns-state (:current ns-state))
                                           target-ns (if-let [ns* (namespace head)]
@@ -546,7 +547,7 @@
     (:ns opts) (update :ns symbol)
     (:elide_imports opts) (assoc :elide-imports (:elide_imports opts))
     (:elide_exports opts) (assoc :elide-exports (:elide_exports opts))
-    (:self_hosted_macros opts) (assoc :self-hosted-macros (:self_hosted_macros opts))
+    (:runtime_macros opts) (assoc :runtime-macros (:runtime_macros opts))
     (:macros opts) (update :macros symbolize-macro-config)))
 
 #?(:cljs
