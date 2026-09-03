@@ -2,7 +2,7 @@
  :deps {org.babashka/cli {:mvn/version "0.11.72"}
         org.babashka/sci {:mvn/version "0.15.56"}
         io.github.squint-cljs/squint
-        {:git/sha "21afdd38aad5ee5e064133d8c37a82f1d592a498"}
+        {:git/sha "cd555e0007884036c78b3ebaaf449a96df3384e8"}
         #_{:local/root "/Users/borkdude/dev/squint"}}
  :aliases
  {:cljs {:extra-paths ["test"]
